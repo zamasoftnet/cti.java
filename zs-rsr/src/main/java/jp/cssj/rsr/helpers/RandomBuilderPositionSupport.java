@@ -88,13 +88,10 @@ public class RandomBuilderPositionSupport extends RandomBuilderWrapper implement
 		Fragment anchor = this.getFragment(anchorId);
 		Fragment frg = new Fragment(id);
 		this.putFragment(id, frg);
-		frg.prev = anchor.prev;
 		frg.next = anchor;
+		frg.prev = anchor.prev;
 		anchor.prev.next = frg;
 		anchor.prev = frg;
-		if (this.first == anchor) {
-			this.first = frg;
-		}
 		super.insertBlockBefore(anchorId);
 	}
 

@@ -8,7 +8,7 @@ import java.io.OutputStream;
 import jp.cssj.rsr.Sequential;
 
 /**
- * ファイルに対して結果を構築する RandomBuilder です。
+ * File-based RandomBuilder implementation.
  * 
  * @author MIYABE Tatsuhiko
  * @version $Id: FileRandomBuilder.java 1565 2018-07-04 11:51:25Z miyabe $

@@ -34,3 +34,7 @@ target/
 
 # Logs
 *.log
+
+# Test config
+test-config.json
+**/bin/

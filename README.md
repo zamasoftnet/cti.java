@@ -50,6 +50,72 @@ http://ホスト:ポート/コンテキスト/source.jsp
 **(Servlet of the test)**
 http://ホスト:ポート/コンテキスト/pdf/source.jsp
 
+## API概要
+
+### 主要なクラス
+
+| クラス/インターフェース | 説明 |
+| :--- | :--- |
+| `CTIDriverManager` | ドライバの取得、セッションの作成 |
+| `CTISession` | 文書変換セッションの管理 |
+| `CTIDriver` | サーバー接続ドライバ |
+| `Results` | 出力先の抽象化 |
+| `SingleResult` | 単一結果の出力 |
+| `DirectoryResults` | 複数ファイルの出力 |
+| `MessageHandler` | メッセージ受信ハンドラ |
+| `ProgressListener` | 進捗リスナー |
+| `SourceResolver` | リソース解決 |
+
+### CTISession の主要メソッド
+
+| メソッド | 説明 |
+| :--- | :--- |
+| `setResults(Results)` | 出力先の設定 |
+| `setMessageHandler(MessageHandler)` | メッセージハンドラの設定 |
+| `setProgressListener(ProgressListener)` | 進捗リスナーの設定 |
+| `setSourceResolver(SourceResolver)` | リソースリゾルバの設定 |
+| `property(String, String)` | プロパティの設定 |
+| `transcode(MetaSource)` | 変換の実行（ストリーム） |
+| `transcode(URI)` | 変換の実行（URI） |
+| `setContinuous(boolean)` | 連続モードの設定 |
+| `join()` | 結果の結合 |
+| `reset()` | セッションのリセット |
+| `close()` | セッションのクローズ |
+
+## テストの実行方法
+
+テストにはCopper PDFサーバーへの接続が必要です。
+
+1. `test-config.json` をプロジェクトルートに作成:
+```json
+{
+  "host": "localhost",
+  "port": 8099,
+  "user": "user",
+  "password": "kappa"
+}
+```
+
+2. Gradle でテストを実行:
+```bash
+./gradlew test
+```
+
+サーバーが起動していない場合、テストは自動的にスキップされます。
+
+## ドキュメント生成
+
+Javadocを生成:
+```bash
+./gradlew javadoc
+```
+
+## ビルド
+
+```bash
+./gradlew build
+```
+
 ## ライセンス
 
 Copyright (c) 2012-2024 座間ソフト
