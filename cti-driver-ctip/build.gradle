@@ -1,3 +1,67 @@
 dependencies {
     api project(':cti-if')
+    testImplementation 'org.apache.pdfbox:pdfbox:2.0.32'
 }
+
+// 他言語ドライバのPDF生成タスク
+// 各言語ランタイムがPATHにない場合や、サーバー未接続の場合は無視して続行する
+def zamasoftRoot = rootProject.projectDir.parentFile
+
+task generateNodejsPdfs(type: Exec) {
+    group = 'verification'
+    description = 'Node.jsドライバでPDFを生成する'
+    workingDir new File(zamasoftRoot, 'cti.nodejs')
+    commandLine 'node', 'test/generate-pdfs.js'
+    ignoreExitValue = true
+    doFirst { new File(zamasoftRoot, 'test-output').mkdirs() }
+}
+
+task generatePerlPdfs(type: Exec) {
+    group = 'verification'
+    description = 'PerlドライバでPDFを生成する'
+    workingDir new File(zamasoftRoot, 'cti.perl')
+    commandLine 'bash', '-c', 'timeout 600 perl -Isrc/code src/test/generate-pdfs.pl'
+    ignoreExitValue = true
+    doFirst { new File(zamasoftRoot, 'test-output').mkdirs() }
+}
+
+task generatePhpPdfs(type: Exec) {
+    group = 'verification'
+    description = 'PHPドライバでPDFを生成する'
+    workingDir new File(zamasoftRoot, 'cti.php')
+    commandLine 'php', 'examples/generate-pdfs.php'
+    ignoreExitValue = true
+    doFirst { new File(zamasoftRoot, 'test-output').mkdirs() }
+}
+
+task generateRubyPdfs(type: Exec) {
+    group = 'verification'
+    description = 'RubyドライバでPDFを生成する'
+    workingDir new File(zamasoftRoot, 'cti.ruby')
+    commandLine 'ruby', '-Isrc/code', 'src/test/generate-pdfs.rb'
+    ignoreExitValue = true
+    doFirst { new File(zamasoftRoot, 'test-output').mkdirs() }
+}
+
+// Python2はEOL(2020年)のためテスト対象外。Python3のみ対応。
+task generatePythonPdfs(type: Exec) {
+    group = 'verification'
+    description = 'Python3ドライバでPDFを生成する'
+    workingDir new File(zamasoftRoot, 'cti.python')
+    commandLine 'python3', 'python3/src/test/python3/generate-pdfs.py'
+    ignoreExitValue = true
+    doFirst { new File(zamasoftRoot, 'test-output').mkdirs() }
+}
+
+task generateDotNetPdfs(type: Exec) {
+    group = 'verification'
+    description = '.NETドライバでPDFを生成する'
+    workingDir new File(zamasoftRoot, 'cti.net')
+    commandLine 'dotnet', 'run', '--project', 'src/test/generate-pdfs'
+    ignoreExitValue = true
+    doFirst { new File(zamasoftRoot, 'test-output').mkdirs() }
+}
+
+// テスト実行前に全言語のPDF生成を行う
+// 生成済みPDFはPdfBoxTestで一括検証される
+test.dependsOn generateNodejsPdfs, generatePerlPdfs, generatePhpPdfs, generateRubyPdfs, generatePythonPdfs, generateDotNetPdfs

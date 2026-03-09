@@ -118,7 +118,7 @@ Javadocを生成:
 
 ## ライセンス
 
-Copyright (c) 2012-2024 座間ソフト
+Copyright (c) 2012-2026 座間ソフト
 
 Apache License Version 2.0に基づいてライセンスされます。
 あなたがこのファイルを使用するためには、本ライセンスに従わなければなりません。
@@ -129,7 +129,7 @@ http://www.apache.org/licenses/LICENSE-2.0
 適用される法律または書面での同意によって命じられない限り、本ライセンスに基づいて頒布されるソフトウェアは、明示黙示を問わず、いかなる保証も条件もなしに「現状のまま」頒布されます。
 本ライセンスでの権利と制限を規定した文言については、本ライセンスを参照してください。 
 
-Copyright (c) 2012-2024 Zamasoft.
+Copyright (c) 2012-2026 Zamasoft.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

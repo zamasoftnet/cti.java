@@ -367,6 +367,7 @@ public class V2Session extends AbstractCTISession implements CTISession {
 		if (this.results == null) {
 			throw new IllegalStateException("Resultsが設定されていません。");
 		}
+		this.init();
 		this.request.serverMain(uri);
 		this.state = 2;
 		this.next();
