@@ -7,6 +7,107 @@ allprojects {
     }
 }
 
+// 配布用アーカイブに同梱するサンプルコンパイル用ライブラリ
+configurations {
+    exampleLibs
+}
+
+dependencies {
+    exampleLibs 'javax.servlet:javax.servlet-api:4.0.1'
+    exampleLibs 'jakarta.servlet:jakarta.servlet-api:5.0.0'
+}
+
+task dist {
+    group = 'distribution'
+    description = '配布用アーカイブ (zip + tar.gz) を生成する'
+
+    dependsOn ':cti-driver:fullJar', ':cti-driver:minJar', 'aggregateJavadoc'
+
+    doLast {
+        def ver = version as String
+        def distDir = layout.buildDirectory.dir('dist').get().asFile
+        def archiveName = "cti-java-${ver}"
+
+        delete distDir
+        distDir.mkdirs()
+
+        // ドライバ JAR
+        copy {
+            from project(':cti-driver').tasks.named('fullJar')
+            from project(':cti-driver').tasks.named('minJar')
+            into distDir
+        }
+
+        // Javadoc
+        copy {
+            from tasks.named('aggregateJavadoc').get().destinationDir
+            into new File(distDir, 'apidoc')
+        }
+
+        // サンプルソース
+        copy {
+            from 'cti-examples/src/main/java'
+            into new File(distDir, 'examples/src')
+        }
+        copy {
+            from 'cti-examples/src/main/files'
+            into new File(distDir, 'examples/files')
+        }
+        copy {
+            from 'cti-examples/src/main/webapp'
+            into new File(distDir, 'examples/webapp')
+        }
+
+        // スクリプト（@version@ を実際のバージョンに置換）
+        copy {
+            from 'cti-examples/src/scripts'
+            into distDir
+            filter { String line -> line.replace('@version@', ver) }
+        }
+
+        // サンプルコンパイル用ライブラリ
+        copy {
+            from configurations.exampleLibs
+            into new File(distDir, 'lib')
+        }
+
+        // README
+        copy {
+            from 'README.md'
+            into distDir
+        }
+
+        // zip 生成
+        def buildDir = layout.buildDirectory.get().asFile
+        def zipFile = new File(buildDir, "${archiveName}.zip")
+        ant.zip(destfile: zipFile.absolutePath) {
+            zipfileset(dir: distDir.absolutePath, prefix: archiveName)
+        }
+
+        // tar.gz 生成
+        def tarFile = new File(buildDir, "${archiveName}.tar")
+        ant.tar(tarfile: tarFile.absolutePath, longfile: 'gnu') {
+            tarfileset(dir: distDir.absolutePath, prefix: archiveName, filemode: '644') {
+                exclude(name: 'copper')
+                exclude(name: 'compile-examples.sh')
+            }
+            tarfileset(dir: distDir.absolutePath, prefix: archiveName, filemode: '755') {
+                include(name: 'copper')
+                include(name: 'compile-examples.sh')
+            }
+        }
+        ant.gzip(
+            zipfile: new File(buildDir, "${archiveName}.tar.gz").absolutePath,
+            src: tarFile.absolutePath
+        )
+        tarFile.delete()
+
+        logger.lifecycle("配布アーカイブを作成しました:")
+        logger.lifecycle("  build/${archiveName}.zip")
+        logger.lifecycle("  build/${archiveName}.tar.gz")
+    }
+}
+
 subprojects {
     apply plugin: 'java-library'
     apply plugin: 'java'
@@ -28,4 +129,30 @@ subprojects {
     tasks.withType(JavaCompile) {
         options.encoding = 'UTF-8'
     }
+
+    tasks.withType(Javadoc) {
+        options.encoding = 'UTF-8'
+        options.addStringOption('Xdoclint:none', '-quiet')
+    }
+}
+
+// 公開 API の集約 Javadoc（cti-if + cti-driver-ctip）
+task aggregateJavadoc(type: Javadoc) {
+    group = 'documentation'
+    description = '公開 API の集約 Javadoc を生成する'
+
+    source = files(
+        project(':cti-if').sourceSets.main.allJava,
+        project(':cti-driver-ctip').sourceSets.main.allJava
+    )
+    classpath = files(
+        project(':cti-if').sourceSets.main.compileClasspath,
+        project(':cti-driver-ctip').sourceSets.main.compileClasspath
+    )
+    destinationDir = file('build/apidoc')
+
+    options.encoding = 'UTF-8'
+    options.addStringOption('Xdoclint:none', '-quiet')
+    options.windowTitle = "CTI Driver API ${version}"
+    options.docTitle = "CTI Driver API ${version}"
 }
