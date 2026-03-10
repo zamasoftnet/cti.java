@@ -30,15 +30,15 @@ GitHub Releases からダウンロードできます。
 
 ## インストール方法
 
-| 言語 | インストール方法 |
-|------|----------------|
-| Java | GitHub Releases より JAR を取得（パッケージマネージャー未対応） |
-| .NET | GitHub Releases より zip を取得し DLL を参照（パッケージマネージャー未対応） |
-| Node.js | `npm install https://github.com/zamasoftnet/cti.nodejs.git` |
-| PHP | composer.json に `repositories` で VCS を追加後 `composer require zamasoft/cti-php` |
-| Ruby | Gemfile に `gem 'copper-cti', git: 'https://github.com/zamasoftnet/cti.ruby.git'` を追加 |
-| Perl | GitHub Releases より tar.gz を取得し手動インストール（パッケージマネージャー未対応） |
-| Python | `pip install "git+https://github.com/zamasoftnet/cti.python.git#subdirectory=python3"` |
+| 言語 | パッケージマネージャー | 手動インストール |
+|------|---------------------|----------------|
+| Java | — | GitHub Releases より JAR を取得 |
+| .NET | — | GitHub Releases より zip を取得し DLL を参照 |
+| Node.js | `npm install https://github.com/zamasoftnet/cti.nodejs.git` | — |
+| PHP | `composer require zamasoft/cti-php`（要: composer.json に VCS 設定追加） | — |
+| Ruby | Gemfile に `gem 'copper-cti', git: 'https://github.com/zamasoftnet/cti.ruby.git'` を追加 | — |
+| Perl | — | GitHub Releases より tar.gz を取得し展開 |
+| Python | `pip install "git+https://github.com/zamasoftnet/cti.python.git#subdirectory=python3"` | — |
 
 ## 動作環境
 
