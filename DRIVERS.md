@@ -30,15 +30,15 @@ GitHub Releases からダウンロードできます。
 
 ## パッケージマネージャー
 
-| 言語 | パッケージマネージャー | 公開状況 |
-|------|---------------------|---------|
-| Java | — | GitHub Releases より JAR を取得 |
-| .NET | NuGet | 未公開 |
-| Node.js | npm | 未公開 |
-| PHP | Composer / Packagist | 未公開 |
-| Ruby | RubyGems | 未公開 |
-| Perl | CPAN | 未公開 |
-| Python | pip / PyPI | 未公開 |
+| 言語 | インストール方法 | レジストリ登録 |
+|------|----------------|--------------|
+| Java | GitHub Releases より JAR を取得 | — |
+| .NET | `dotnet add package Zamasoft.CTI` | NuGet 未登録 |
+| Node.js | `npm install https://github.com/zamasoftnet/cti.nodejs.git` | npm 未登録 |
+| PHP | composer.json に VCS 設定後 `composer require zamasoft/cti-php` | Packagist 未登録 |
+| Ruby | `gem install copper-cti` | RubyGems 未登録 |
+| Perl | `cpanm CTI` | CPAN 未登録 |
+| Python | `pip install "git+https://github.com/zamasoftnet/cti.python.git#subdirectory=python3"` | PyPI 未登録 |
 
 ## 動作環境
 
