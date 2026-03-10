@@ -6,8 +6,12 @@ Copper PDF 2.1.0以降が必要です。
 使用方法は付属のAPIドキュメント、サンプルプログラム、以下のオンラインマニュアルを参照してください。
 http://dl.cssj.jp/docs/copper/3.2/html/3420_ctip2_java.html
 
+## API ドキュメント
+
+- **オンライン (Javadoc)**: https://zamasoftnet.github.io/cti.java/
+
 ソースコードはGitHubで公開しています。
-https://github.com/mimidesunya/copper3/tree/main/cti-java
+https://github.com/zamasoftnet/cti.java
 
 ## 付属物
 
