@@ -33,12 +33,14 @@ GitHub Releases からダウンロードできます。
 | 言語 | パッケージマネージャー | 現在のインストール方法 |
 |------|---------------------|----------------------|
 | Java | Maven / Gradle（JitPack 経由） | `implementation 'com.github.zamasoftnet:cti.java:v2.2.3'`（要: JitPack リポジトリ追加） |
-| .NET | NuGet（未登録） | GitHub Releases より zip を取得し DLL を参照 |
+| .NET | NuGet | `dotnet add package Zamasoft.CTI` |
 | Node.js | npm | `npm install https://github.com/zamasoftnet/cti.nodejs.git` |
-| PHP | Composer（Packagist 未登録） | `composer require zamasoft/cti-php`（要: composer.json に VCS 設定） |
-| Ruby | RubyGems / Bundler（RubyGems 未登録） | Gemfile に `gem 'copper-cti', git: 'https://github.com/zamasoftnet/cti.ruby.git'` を追加 |
-| Perl | CPAN（未登録） | GitHub Releases より tar.gz を取得し展開 |
+| PHP | Composer / Packagist | `composer require zamasoft/cti-php` |
+| Ruby | Bundler / RubyGems（GitHub ソース） | Gemfile に `gem 'copper-cti', git: 'https://github.com/zamasoftnet/cti.ruby.git'` を追加 |
+| Perl | cpanm（GitHub archive） | `cpanm https://github.com/zamasoftnet/cti.perl/archive/refs/heads/main.tar.gz` |
 | Python | pip | `pip install "git+https://github.com/zamasoftnet/cti.python.git#subdirectory=python3"` |
+
+この一覧の全ドライバは、標準レジストリまたは GitHub 経由で各言語の一般的なパッケージマネージャから利用できます。
 
 ## 動作環境
 
