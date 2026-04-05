@@ -49,6 +49,15 @@ dependencies {
 </dependency>
 ```
 
+### GitHub Releases のアーカイブを使う方法
+
+ビルド済みアーカイブは GitHub Releases から取得できます。
+
+- **Releases**: https://github.com/zamasoftnet/cti.java/releases/latest
+- **配布形式**: `cti-java-{VERSION}.zip`, `cti-java-{VERSION}.tar.gz`
+
+アーカイブにはドライバ本体の JAR、Javadoc、サンプル、コマンドラインツールが含まれます。展開後、そのまま `cti-driver-*.jar` をアプリケーションの classpath に追加して利用できます。
+
 ## 付属物
 
 - `cti-driver-2.2.3.jar` -- ドライバ本体（CTIP, REST, CLIが利用可能）
