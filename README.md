@@ -13,6 +13,42 @@ http://dl.cssj.jp/docs/copper/3.2/html/3420_ctip2_java.html
 ソースコードはGitHubで公開しています。
 https://github.com/zamasoftnet/cti.java
 
+## インストール
+
+### Maven / Gradle（JitPack 経由）
+
+JitPack リポジトリを追加した上で、`com.github.zamasoftnet:cti.java:v2.2.3` を利用してください。
+
+#### Gradle
+
+```gradle
+repositories {
+    mavenCentral()
+    maven { url 'https://jitpack.io' }
+}
+
+dependencies {
+    implementation 'com.github.zamasoftnet:cti.java:v2.2.3'
+}
+```
+
+#### Maven
+
+```xml
+<repositories>
+  <repository>
+    <id>jitpack.io</id>
+    <url>https://jitpack.io</url>
+  </repository>
+</repositories>
+
+<dependency>
+  <groupId>com.github.zamasoftnet</groupId>
+  <artifactId>cti.java</artifactId>
+  <version>v2.2.3</version>
+</dependency>
+```
+
 ## 付属物
 
 - `cti-driver-2.2.3.jar` -- ドライバ本体（CTIP, REST, CLIが利用可能）
