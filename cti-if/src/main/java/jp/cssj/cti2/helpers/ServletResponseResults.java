@@ -5,10 +5,10 @@ import java.io.IOException;
 import javax.servlet.ServletResponse;
 
 import jp.cssj.cti2.results.Results;
-import jp.cssj.resolver.MetaSource;
-import jp.cssj.rsr.RandomBuilder;
-import jp.cssj.rsr.helpers.RandomBuilderMeasurer;
-import jp.cssj.rsr.impl.StreamRandomBuilder;
+import net.zamasoft.zstream.resolver.SourceMetadata;
+import net.zamasoft.zstream.io.FragmentedOutput;
+import net.zamasoft.zstream.io.util.OutputMeasurer;
+import net.zamasoft.zstream.io.impl.StreamFragmentedOutput;
 
 /**
  * 構築したデータをサーブレットのレスポンスとして送り出します。
@@ -18,7 +18,7 @@ import jp.cssj.rsr.impl.StreamRandomBuilder;
  */
 public class ServletResponseResults implements Results {
 	protected final ServletResponse response;
-	protected RandomBuilderMeasurer builder = null;
+	protected OutputMeasurer builder = null;
 
 	public ServletResponseResults(ServletResponse response) {
 		this.response = response;
@@ -28,7 +28,7 @@ public class ServletResponseResults implements Results {
 		return this.builder == null;
 	}
 
-	public RandomBuilder nextBuilder(MetaSource metaSource) throws IOException {
+	public FragmentedOutput nextBuilder(SourceMetadata metaSource) throws IOException {
 		if (this.builder != null) {
 			throw new IllegalStateException();
 		}
@@ -41,11 +41,11 @@ public class ServletResponseResults implements Results {
 		if (length != -1L) {
 			this.response.setContentLengthLong(length);
 		}
-		RandomBuilder builder = new StreamRandomBuilder(this.response.getOutputStream());
-		this.builder = new RandomBuilderMeasurer(builder) {
-			public void finish() throws IOException {
+		FragmentedOutput builder = new StreamFragmentedOutput(this.response.getOutputStream());
+		this.builder = new OutputMeasurer(builder) {
+			public void close() throws IOException {
 				ServletResponseResults.this.finish();
-				super.finish();
+				super.close();
 			}
 		};
 		return this.builder;

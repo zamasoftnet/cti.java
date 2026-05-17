@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jp.cssj.driver.ctip.common.ChannelIO;
-import jp.cssj.resolver.helpers.URIHelper;
+import net.zamasoft.zstream.resolver.util.URIHelper;
 
 /**
  * @author MIYABE Tatsuhiko

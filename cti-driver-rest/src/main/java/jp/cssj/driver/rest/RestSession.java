@@ -52,15 +52,15 @@ import jp.cssj.cti2.helpers.AbstractCTISession;
 import jp.cssj.cti2.message.MessageHandler;
 import jp.cssj.cti2.progress.ProgressListener;
 import jp.cssj.cti2.results.Results;
-import jp.cssj.resolver.MetaSource;
-import jp.cssj.resolver.Source;
-import jp.cssj.resolver.SourceResolver;
-import jp.cssj.resolver.file.FileSource;
-import jp.cssj.resolver.helpers.MetaSourceImpl;
-import jp.cssj.rsr.RandomBuilder;
-import jp.cssj.rsr.Sequential;
-import jp.cssj.rsr.helpers.RandomBuilderOutputStream;
-import jp.cssj.rsr.helpers.SequentialOutputStream;
+import net.zamasoft.zstream.resolver.SourceMetadata;
+import net.zamasoft.zstream.resolver.Source;
+import net.zamasoft.zstream.resolver.SourceResolver;
+import net.zamasoft.zstream.resolver.protocol.file.FileSource;
+import net.zamasoft.zstream.resolver.util.SimpleSourceMetadata;
+import net.zamasoft.zstream.io.FragmentedOutput;
+import net.zamasoft.zstream.io.SequentialOutput;
+import net.zamasoft.zstream.io.util.FragmentOutputAdapter;
+import net.zamasoft.zstream.io.util.SequentialOutputAdapter;
 
 /**
  * @author MIYABE Tatsuhiko
@@ -88,7 +88,7 @@ public class RestSession extends AbstractCTISession implements CTISession {
 
 	protected int state = 1;
 
-	protected RandomBuilder builder = null;
+	protected FragmentedOutput builder = null;
 
 	protected HttpClient client;
 
@@ -250,7 +250,7 @@ public class RestSession extends AbstractCTISession implements CTISession {
 		}
 	}
 
-	public OutputStream resource(final MetaSource metaSource) throws IOException {
+	public OutputStream resource(final SourceMetadata metaSource) throws IOException {
 		final File file = File.createTempFile("copper-rest-rsrc-", ".dat");
 		return new FilterOutputStream(new FileOutputStream(file)) {
 			public void close() throws IOException {
@@ -374,10 +374,10 @@ public class RestSession extends AbstractCTISession implements CTISession {
 				Attr mimeType = result.getAttributeNode("mimeType");
 				Attr encoding = result.getAttributeNode("encoding");
 				Attr length = result.getAttributeNode("length");
-				MetaSource metaSource = new MetaSourceImpl(uri, mimeType == null ? null : mimeType.getValue(),
+				SourceMetadata metaSource = new SimpleSourceMetadata(uri, mimeType == null ? null : mimeType.getValue(),
 						encoding == null ? null : encoding.getValue(),
 						length == null ? -1L : Long.parseLong(length.getValue()));
-				RandomBuilder builder = this.results.nextBuilder(metaSource);
+				FragmentedOutput builder = this.results.nextBuilder(metaSource);
 				this.result(builder, uri);
 			}
 			NodeList interruptedList = doc.getElementsByTagName("interrupted");
@@ -405,12 +405,12 @@ public class RestSession extends AbstractCTISession implements CTISession {
 		}
 	}
 
-	private void result(RandomBuilder builder, URI uri) throws IOException {
+	private void result(FragmentedOutput builder, URI uri) throws IOException {
 		OutputStream out;
-		if (builder instanceof Sequential) {
-			out = new SequentialOutputStream((Sequential) builder);
+		if (builder instanceof SequentialOutput) {
+			out = new SequentialOutputAdapter((SequentialOutput) builder);
 		} else {
-			out = new RandomBuilderOutputStream(builder, 0);
+			out = new FragmentOutputAdapter(builder, 0);
 		}
 		List<NameValuePair> list = new ArrayList<NameValuePair>();
 		list.add(new BasicNameValuePair("rest.id", this.sessionId));
@@ -461,7 +461,7 @@ public class RestSession extends AbstractCTISession implements CTISession {
 		}
 	}
 
-	public OutputStream transcode(final MetaSource metaSource) throws IOException, TranscoderException {
+	public OutputStream transcode(final SourceMetadata metaSource) throws IOException, TranscoderException {
 		final File file = File.createTempFile("copper-rest-main-", ".dat");
 		return new FilterOutputStream(new FileOutputStream(file)) {
 			public void close() throws IOException {

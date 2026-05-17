@@ -28,8 +28,6 @@ jar {
     dependsOn(':cti-driver-rest:jar')
     dependsOn(':cti-if:jar')
     dependsOn(':zs-plugin:jar')
-    dependsOn(':zs-rsr:jar')
-    dependsOn(':zs-resolver:jar')
 }
 
 task fullJar(type: Jar) {
@@ -66,8 +64,8 @@ task minJar(type: Jar) {
     
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     
-    // Ant script: cti-driver-ctip, cti-if, zs-plugin, zs-resolver, zs-rsr
-    def minProjects = [':cti-driver-ctip', ':cti-if', ':zs-plugin', ':zs-resolver', ':zs-rsr']
+    // Ant script: cti-driver-ctip, cti-if, zs-plugin
+    def minProjects = [':cti-driver-ctip', ':cti-if', ':zs-plugin']
     minProjects.each { projectName ->
         from(zipTree(project(projectName).jar.archiveFile))
         dependsOn "${projectName}:jar"

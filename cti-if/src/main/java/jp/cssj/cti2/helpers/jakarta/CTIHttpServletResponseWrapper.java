@@ -13,7 +13,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpServletResponseWrapper;
 
 import jp.cssj.cti2.CTISession;
-import jp.cssj.resolver.MetaSource;
+import net.zamasoft.zstream.resolver.SourceMetadata;
 
 /**
  * 転送先のサーブレット/JSPの出力をキャプチャしてCTISessionに渡します。
@@ -22,7 +22,7 @@ import jp.cssj.resolver.MetaSource;
  * @version $Id: CTIHttpServletResponseWrapper.java 694 2011-09-27 11:48:14Z
  *          miyabe $
  */
-public class CTIHttpServletResponseWrapper extends HttpServletResponseWrapper implements MetaSource, Closeable {
+public class CTIHttpServletResponseWrapper extends HttpServletResponseWrapper implements SourceMetadata, Closeable {
 	private final CTISession session;
 
 	private final URI uri;

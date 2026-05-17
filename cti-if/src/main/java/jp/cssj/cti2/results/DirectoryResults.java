@@ -2,9 +2,9 @@ package jp.cssj.cti2.results;
 
 import java.io.File;
 
-import jp.cssj.resolver.MetaSource;
-import jp.cssj.rsr.RandomBuilder;
-import jp.cssj.rsr.impl.FileRandomBuilder;
+import net.zamasoft.zstream.resolver.SourceMetadata;
+import net.zamasoft.zstream.io.FragmentedOutput;
+import net.zamasoft.zstream.io.impl.FileFragmentedOutput;
 
 /**
  * ディレクトリに複数の結果を出力するResultsです。
@@ -40,10 +40,10 @@ public class DirectoryResults implements Results {
 		return true;
 	}
 
-	public RandomBuilder nextBuilder(MetaSource metaSource) {
+	public FragmentedOutput nextBuilder(SourceMetadata metaSource) {
 		++this.counter;
 		File file = new File(this.dir, this.prefix + this.counter + this.suffix);
-		return new FileRandomBuilder(file);
+		return new FileFragmentedOutput(file);
 	}
 
 	public void end() {

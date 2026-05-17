@@ -1,3 +1,7 @@
 dependencies {
     api project(':cti-if')
+    implementation 'commons-io:commons-io:2.11.0'
+    implementation 'org.apache.httpcomponents:httpclient:4.5.14'
+    implementation 'org.apache.httpcomponents:httpcore:4.4.16'
+    implementation 'org.apache.httpcomponents:httpmime:4.5.14'
 }

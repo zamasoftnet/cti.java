@@ -3,18 +3,18 @@ package jp.cssj.cti2.helpers;
 import java.io.IOException;
 import java.net.URI;
 
-import jp.cssj.resolver.MetaSource;
-import jp.cssj.resolver.Source;
-import jp.cssj.resolver.helpers.URIHelper;
+import net.zamasoft.zstream.resolver.SourceMetadata;
+import net.zamasoft.zstream.resolver.Source;
+import net.zamasoft.zstream.resolver.util.URIHelper;
 
 /**
  * デフォルトのデータのメタ情報です。
  * 
- * @deprecated jp.cssj.resolver.helpers.MetaSourceImplを使ってください。
+ * @deprecated net.zamasoft.zstream.resolver.util.SimpleSourceMetadataを使ってください。
  * @author MIYABE Tatsuhiko
  * @version $Id: DefaultMetaSource.java 1552 2018-04-26 01:43:24Z miyabe $
  */
-public class DefaultMetaSource implements MetaSource {
+public class DefaultMetaSource implements SourceMetadata {
 	private URI uri;
 	private String encoding;
 	private String mimeType;

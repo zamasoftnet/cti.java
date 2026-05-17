@@ -13,9 +13,9 @@ import org.apache.commons.io.IOUtils;
 import jp.cssj.cti2.CTIDriverManager;
 import jp.cssj.cti2.CTISession;
 import jp.cssj.cti2.helpers.CTISessionHelper;
-import jp.cssj.resolver.Source;
-import jp.cssj.resolver.SourceResolver;
-import jp.cssj.resolver.helpers.MetaSourceImpl;
+import net.zamasoft.zstream.resolver.Source;
+import net.zamasoft.zstream.resolver.SourceResolver;
+import net.zamasoft.zstream.resolver.util.SimpleSourceMetadata;
 
 /**
  * クライアントから送ったデータを変換します。
@@ -52,7 +52,7 @@ public class ClientResource {
 
 			// 出力先ストリームを取得
 			try (OutputStream out = 
-					session.transcode(new MetaSourceImpl(URI.create("."), "text/html", "UTF-8"))) {
+					session.transcode(new SimpleSourceMetadata(URI.create("."), "text/html", "UTF-8", -1))) {
 				// 入力ファイルを読み込み、変換結果を出力する
 				try (InputStream in = new FileInputStream(inFile)) {
 					IOUtils.copy(in, out);

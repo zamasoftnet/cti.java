@@ -13,9 +13,9 @@ import jp.cssj.cti2.CTIDriverManager;
 import jp.cssj.cti2.CTISession;
 import jp.cssj.cti2.helpers.CTIMessageHelper;
 import jp.cssj.cti2.results.SingleResult;
-import jp.cssj.resolver.Source;
-import jp.cssj.resolver.SourceResolver;
-import jp.cssj.resolver.composite.CompositeSourceResolver;
+import net.zamasoft.zstream.resolver.Source;
+import net.zamasoft.zstream.resolver.SourceResolver;
+import net.zamasoft.zstream.resolver.composite.CompositeSourceResolver;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DirectoryScanner;

@@ -1,8 +1,8 @@
 rootProject.name = 'cti-java'
 
+includeBuild 'F:/dev/zamasoftnet-public/zstream'
+
 include 'zs-plugin'
-include 'zs-rsr'
-include 'zs-resolver'
 include 'cti-if'
 include 'cti-driver-ctip'
 include 'cti-driver-rest'

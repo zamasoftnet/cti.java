@@ -3,11 +3,11 @@ package jp.cssj.cti2.results;
 import java.io.File;
 import java.io.OutputStream;
 
-import jp.cssj.resolver.MetaSource;
-import jp.cssj.rsr.RandomBuilder;
-import jp.cssj.rsr.impl.FileRandomBuilder;
-import jp.cssj.rsr.impl.NopRandomBuilder;
-import jp.cssj.rsr.impl.StreamRandomBuilder;
+import net.zamasoft.zstream.resolver.SourceMetadata;
+import net.zamasoft.zstream.io.FragmentedOutput;
+import net.zamasoft.zstream.io.impl.FileFragmentedOutput;
+import net.zamasoft.zstream.io.impl.NoOpFragmentedOutput;
+import net.zamasoft.zstream.io.impl.StreamFragmentedOutput;
 
 /**
  * 単一の結果を出力するResultsです。
@@ -19,14 +19,14 @@ public class SingleResult implements Results {
 	/**
 	 * 出力先のデータ構築オブジェクトです。
 	 */
-	protected RandomBuilder builder;
+	protected FragmentedOutput builder;
 
 	/**
 	 * 1つのデータ構築オブジェクトに対して出力します。
 	 * 
 	 * @param builder
 	 */
-	public SingleResult(RandomBuilder builder) {
+	public SingleResult(FragmentedOutput builder) {
 		this.builder = builder;
 	}
 
@@ -36,7 +36,7 @@ public class SingleResult implements Results {
 	 * @param out
 	 */
 	public SingleResult(OutputStream out) {
-		this(new StreamRandomBuilder(out));
+		this(new StreamFragmentedOutput(out));
 	}
 
 	/**
@@ -45,16 +45,16 @@ public class SingleResult implements Results {
 	 * @param file
 	 */
 	public SingleResult(File file) {
-		this(new FileRandomBuilder(file));
+		this(new FileFragmentedOutput(file));
 	}
 
 	public boolean hasNext() {
 		return this.builder != null;
 	}
 
-	public RandomBuilder nextBuilder(MetaSource metaSource) {
+	public FragmentedOutput nextBuilder(SourceMetadata metaSource) {
 		if (this.builder == null) {
-			return NopRandomBuilder.SHARED_INSTANCE;
+			return NoOpFragmentedOutput.INSTANCE;
 		}
 		try {
 			return this.builder;

@@ -30,15 +30,15 @@ import jp.cssj.cti2.helpers.ServletResponseResults;
 import jp.cssj.cti2.message.MessageHandler;
 import jp.cssj.cti2.progress.ProgressListener;
 import jp.cssj.cti2.results.Results;
-import jp.cssj.resolver.MetaSource;
-import jp.cssj.resolver.Source;
-import jp.cssj.resolver.SourceResolver;
-import jp.cssj.resolver.composite.CompositeSourceResolver;
-import jp.cssj.resolver.helpers.MetaSourceImpl;
-import jp.cssj.resolver.helpers.URIHelper;
-import jp.cssj.resolver.stream.StreamSource;
-import jp.cssj.rsr.RandomBuilder;
-import jp.cssj.rsr.impl.FileRandomBuilder;
+import net.zamasoft.zstream.resolver.SourceMetadata;
+import net.zamasoft.zstream.resolver.Source;
+import net.zamasoft.zstream.resolver.SourceResolver;
+import net.zamasoft.zstream.resolver.composite.CompositeSourceResolver;
+import net.zamasoft.zstream.resolver.util.SimpleSourceMetadata;
+import net.zamasoft.zstream.resolver.util.URIHelper;
+import net.zamasoft.zstream.resolver.protocol.stream.StreamSource;
+import net.zamasoft.zstream.io.FragmentedOutput;
+import net.zamasoft.zstream.io.impl.FileFragmentedOutput;
 import jp.cssj.server.rest.RestRequest.FormField;
 
 import org.apache.commons.fileupload.FileItemHeaders;
@@ -130,8 +130,8 @@ public class RestSession {
 		private List<URI> resultList = null;
 		/** URIと結果ファイルのマップ。 */
 		private Map<URI, File> uriToResult = null;
-		/** URIと結果MetaSourceのマップ。 */
-		private Map<URI, MetaSource> uriToMetaSource = null;
+		/** URIと結果SourceMetadataのマップ。 */
+		private Map<URI, SourceMetadata> uriToSourceMetadata = null;
 		private boolean transcoding = false;
 		private IOException ex = null;
 		private Thread th = null;
@@ -187,7 +187,11 @@ public class RestSession {
 		}
 
 		public void release(Source source) {
-			((StreamSource) source).close();
+			try {
+				((StreamSource) source).close();
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
 		}
 
 		public void transcode(final HttpServletRequest req, final HttpServletResponse res, boolean async,
@@ -264,22 +268,22 @@ public class RestSession {
 			try {
 				this.resultList = new ArrayList<URI>();
 				this.uriToResult = new HashMap<URI, File>();
-				this.uriToMetaSource = new HashMap<URI, MetaSource>();
+				this.uriToSourceMetadata = new HashMap<URI, SourceMetadata>();
 				Results results = new Results() {
 					public boolean hasNext() {
 						return true;
 					}
 
-					public RandomBuilder nextBuilder(final MetaSource metaSource) throws IOException {
+					public FragmentedOutput nextBuilder(final SourceMetadata metaSource) throws IOException {
 						final URI uri = metaSource.getURI();
 						final File file = File.createTempFile("copper-rest-result-", ".dat");
-						RandomBuilder builder = new FileRandomBuilder(file) {
-							public void dispose() {
-								super.dispose();
+						FragmentedOutput builder = new FileFragmentedOutput(file) {
+							public void close() throws IOException {
+								super.close();
 								synchronized (RestSession.this) {
 									resultList.add(uri);
 									uriToResult.put(uri, file);
-									uriToMetaSource.put(uri, metaSource);
+									uriToSourceMetadata.put(uri, metaSource);
 									RestSession.this.notifyAll();
 								}
 							}
@@ -332,7 +336,7 @@ public class RestSession {
 				}
 				this.resultList = null;
 				this.uriToResult = null;
-				this.uriToMetaSource = null;
+				this.uriToSourceMetadata = null;
 			}
 		}
 	}
@@ -355,7 +359,7 @@ public class RestSession {
 		this.timeout = timeout;
 	}
 
-	private void resource(MetaSource metaSource, byte[] data) throws IOException {
+	private void resource(SourceMetadata metaSource, byte[] data) throws IOException {
 		if (this.transcode != null) {
 			synchronized (this.transcode) {
 				if (metaSource.getURI().equals(this.transcode.requiredResource)) {
@@ -520,7 +524,7 @@ public class RestSession {
 							data = field.value.getBytes(charset);
 							e = charset;
 						}
-						this.resource(new MetaSourceImpl(rsrcURI, mimeType, e, data.length), data);
+						this.resource(new SimpleSourceMetadata(rsrcURI, mimeType, e, data.length), data);
 					} else if (field.name.equals("rest.uri")) {
 						uri = field.value;
 					} else if (field.name.equals("rest.mimeType")) {
@@ -695,7 +699,7 @@ public class RestSession {
 								rsrcURI = URIHelper.CURRENT_URI;
 							}
 						}
-						MetaSource metaSource = new MetaSourceImpl(rsrcURI, mimeType, enc, data.length);
+						SourceMetadata metaSource = new SimpleSourceMetadata(rsrcURI, mimeType, enc, data.length);
 						this.resource(metaSource, data);
 					} else if (field.name.equals("rest.uri")) {
 						uri = field.value;
@@ -977,7 +981,7 @@ public class RestSession {
 			if (file == null) {
 				throw new FileNotFoundException(resultURI.toString());
 			}
-			MetaSource metaSource = (MetaSource) this.transcode.uriToMetaSource.get(resultURI);
+			SourceMetadata metaSource = (SourceMetadata) this.transcode.uriToSourceMetadata.get(resultURI);
 			res.setContentLengthLong(file.length());
 			res.setContentType(ServletHelper.getContentType(metaSource));
 			try (InputStream in = new FileInputStream(file)) {

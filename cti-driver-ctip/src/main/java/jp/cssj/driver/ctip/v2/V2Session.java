@@ -13,12 +13,12 @@ import jp.cssj.cti2.helpers.AbstractCTISession;
 import jp.cssj.cti2.message.MessageHandler;
 import jp.cssj.cti2.progress.ProgressListener;
 import jp.cssj.cti2.results.Results;
-import jp.cssj.resolver.MetaSource;
-import jp.cssj.resolver.Source;
-import jp.cssj.resolver.SourceResolver;
-import jp.cssj.resolver.helpers.MetaSourceImpl;
-import jp.cssj.rsr.RandomBuilder;
-import jp.cssj.rsr.Sequential;
+import net.zamasoft.zstream.resolver.SourceMetadata;
+import net.zamasoft.zstream.resolver.Source;
+import net.zamasoft.zstream.resolver.SourceResolver;
+import net.zamasoft.zstream.resolver.util.SimpleSourceMetadata;
+import net.zamasoft.zstream.io.FragmentedOutput;
+import net.zamasoft.zstream.io.SequentialOutput;
 
 /**
  * @author MIYABE Tatsuhiko
@@ -52,7 +52,7 @@ public class V2Session extends AbstractCTISession implements CTISession {
 	// 1=変換準備OK, 2=変換中, 3=クローズ
 	protected int state = 1;
 
-	protected RandomBuilder builder = null;
+	protected FragmentedOutput builder = null;
 
 	public V2Session(URI uri, String encoding, String user, String password) throws IOException {
 		this.uri = uri;
@@ -127,7 +127,7 @@ public class V2Session extends AbstractCTISession implements CTISession {
 		this.request.property(key, value);
 	}
 
-	public OutputStream resource(MetaSource metaSource) throws IOException {
+	public OutputStream resource(SourceMetadata metaSource) throws IOException {
 		if (this.state >= 2) {
 			throw new IllegalStateException("既に本体が変換されています。");
 		}
@@ -165,15 +165,15 @@ public class V2Session extends AbstractCTISession implements CTISession {
 		switch (this.producer.getType()) {
 		case V2ServerPackets.START_DATA: {
 			if (this.builder != null) {
-				this.builder.finish();
-				this.builder.dispose();
+				this.builder.close();
+				this.builder = null;
 				this.builder = null;
 			}
 			URI uri = this.producer.getURI();
 			String mimeType = this.producer.getMimeType();
 			String encoding = this.producer.getEncoding();
 			long length = this.producer.getLength();
-			MetaSource metaSource = new MetaSourceImpl(uri, mimeType, encoding, length);
+			SourceMetadata metaSource = new SimpleSourceMetadata(uri, mimeType, encoding, length);
 			this.builder = this.results.nextBuilder(metaSource);
 		}
 			break;
@@ -193,7 +193,7 @@ public class V2Session extends AbstractCTISession implements CTISession {
 		case V2ServerPackets.ADD_BLOCK: {
 			assert this.builder != null;
 			assert !serial;
-			this.builder.addBlock();
+			this.builder.addFragment();
 		}
 			break;
 
@@ -201,7 +201,7 @@ public class V2Session extends AbstractCTISession implements CTISession {
 			assert this.builder != null;
 			assert !serial;
 			int anchorId = this.producer.getAnchorId();
-			this.builder.insertBlockBefore(anchorId);
+			this.builder.insertFragmentBefore(anchorId);
 		}
 			break;
 
@@ -209,7 +209,7 @@ public class V2Session extends AbstractCTISession implements CTISession {
 			assert this.builder != null;
 			assert !serial;
 			int anchorId = this.producer.getAnchorId();
-			this.builder.closeBlock(anchorId);
+			this.builder.finishFragment(anchorId);
 		}
 			break;
 
@@ -242,8 +242,8 @@ public class V2Session extends AbstractCTISession implements CTISession {
 		case V2ServerPackets.DATA: {
 			// 結果データ
 			assert this.builder != null;
-			if (this.builder instanceof Sequential) {
-				Sequential builder = (Sequential) this.builder;
+			if (this.builder instanceof SequentialOutput) {
+				SequentialOutput builder = (SequentialOutput) this.builder;
 				for (int len = this.producer.read(this.readBuff, 0,
 						this.readBuff.length); len != -1; len = this.producer.read(this.readBuff, 0,
 								this.readBuff.length)) {
@@ -251,7 +251,7 @@ public class V2Session extends AbstractCTISession implements CTISession {
 				}
 			} else {
 				if (!serial) {
-					this.builder.addBlock();
+					this.builder.addFragment();
 				}
 				for (int len = this.producer.read(this.readBuff, 0,
 						this.readBuff.length); len != -1; len = this.producer.read(this.readBuff, 0,
@@ -303,8 +303,8 @@ public class V2Session extends AbstractCTISession implements CTISession {
 
 		case V2ServerPackets.EOF:
 			if (this.builder != null) {
-				this.builder.finish();
-				this.builder.dispose();
+				this.builder.close();
+				this.builder = null;
 				this.builder = null;
 			}
 		case V2ServerPackets.NEXT: {
@@ -315,13 +315,13 @@ public class V2Session extends AbstractCTISession implements CTISession {
 		case V2ServerPackets.ABORT: {
 			byte state;
 			if (this.producer.getMode() == 0) {
-				this.builder.finish();
+				this.builder.close();
 				state = TranscoderException.STATE_READABLE;
 			} else {
 				state = TranscoderException.STATE_BROKEN;
 			}
 			if (this.builder != null) {
-				this.builder.dispose();
+				this.builder = null;
 				this.builder = null;
 			}
 			this.state = 1;
@@ -335,7 +335,7 @@ public class V2Session extends AbstractCTISession implements CTISession {
 		return true;
 	}
 
-	public OutputStream transcode(MetaSource metaSource) throws IOException, TranscoderException {
+	public OutputStream transcode(SourceMetadata metaSource) throws IOException, TranscoderException {
 		if (this.results == null) {
 			throw new IllegalStateException("Resultsが設定されていません。");
 		}
@@ -367,7 +367,6 @@ public class V2Session extends AbstractCTISession implements CTISession {
 		if (this.results == null) {
 			throw new IllegalStateException("Resultsが設定されていません。");
 		}
-		this.init();
 		this.request.serverMain(uri);
 		this.state = 2;
 		this.next();
@@ -378,7 +377,7 @@ public class V2Session extends AbstractCTISession implements CTISession {
 			throw new IllegalStateException("Resultsが設定されていません。");
 		}
 		this.init();
-		try (OutputStream out = this.transcode(new MetaSourceImpl(source))) {
+		try (OutputStream out = this.transcode(new SimpleSourceMetadata(source.getURI(), source.getMimeType(), source.getEncoding(), source.getLength()))) {
 			try (InputStream in = source.getInputStream()) {
 				for (int len = in.read(this.writeBuff); len != -1; len = in.read(this.writeBuff)) {
 					out.write(this.writeBuff, 0, len);
@@ -416,7 +415,7 @@ public class V2Session extends AbstractCTISession implements CTISession {
 
 	public void sendResource(Source source) throws IOException {
 		this.init();
-		try (OutputStream out = this.resource(new MetaSourceImpl(source))) {
+		try (OutputStream out = this.resource(new SimpleSourceMetadata(source.getURI(), source.getMimeType(), source.getEncoding(), source.getLength()))) {
 			try (InputStream in = source.getInputStream()) {
 				for (int len = in.read(this.writeBuff); len != -1; len = in.read(this.writeBuff)) {
 					out.write(this.writeBuff, 0, len);

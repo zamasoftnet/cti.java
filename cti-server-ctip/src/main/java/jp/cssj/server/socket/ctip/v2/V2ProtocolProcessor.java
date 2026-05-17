@@ -29,13 +29,13 @@ import jp.cssj.driver.ctip.common.ChannelIO;
 import jp.cssj.driver.ctip.v2.V2ClientPackets;
 import jp.cssj.driver.ctip.v2.V2ServerPackets;
 import jp.cssj.driver.ctip.v2.V2Session;
-import jp.cssj.resolver.MetaSource;
-import jp.cssj.resolver.Source;
-import jp.cssj.resolver.cache.CachedSourceResolver;
-import jp.cssj.resolver.helpers.URIHelper;
-import jp.cssj.resolver.stream.StreamSource;
-import jp.cssj.rsr.RandomBuilder;
-import jp.cssj.rsr.Sequential;
+import net.zamasoft.zstream.resolver.SourceMetadata;
+import net.zamasoft.zstream.resolver.Source;
+import net.zamasoft.zstream.resolver.cache.CachedSourceResolver;
+import net.zamasoft.zstream.resolver.util.URIHelper;
+import net.zamasoft.zstream.resolver.protocol.stream.StreamSource;
+import net.zamasoft.zstream.io.FragmentedOutput;
+import net.zamasoft.zstream.io.SequentialOutput;
 import jp.cssj.server.socket.ProtocolProcessor;
 import jp.cssj.server.socket.ctip.helpers.ResponseConsumer;
 import jp.cssj.server.socket.ctip.helpers.ServerMessageHandler;
@@ -44,7 +44,7 @@ import jp.cssj.server.socket.ctip.helpers.ServerMessageHandler;
  * @author MIYABE Tatsuhiko
  * @version $Id: V2ProtocolProcessor.java 1552 2018-04-26 01:43:24Z miyabe $
  */
-public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor, Sequential, Results, ProgressListener {
+public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor, SequentialOutput, Results, ProgressListener {
 	private static final Logger LOG = Logger.getLogger(V2ProtocolHandler.class.getName());
 
 	private final byte[] buff = new byte[V2Session.BUFFER_SIZE];
@@ -426,7 +426,7 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 		}
 	}
 
-	public void closeBlock(int id) throws IOException {
+	public void finishFragment(int id) throws IOException {
 		this.flush(this.cursorId);
 		this.out.writeInt(1 + 4);
 		this.out.writeByte(V2ServerPackets.CLOSE_BLOCK);
@@ -547,12 +547,12 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 		this.cursorId = -1;
 	}
 
-	public void addBlock() throws IOException {
+	public void addFragment() throws IOException {
 		this.out.writeInt(1);
 		this.out.writeByte(V2ServerPackets.ADD_BLOCK);
 	}
 
-	public void insertBlockBefore(int anchorId) throws IOException {
+	public void insertFragmentBefore(int anchorId) throws IOException {
 		this.out.writeInt(1 + 4);
 		this.out.writeByte(V2ServerPackets.INSERT_BLOCK);
 		this.out.writeInt(anchorId);
@@ -690,7 +690,7 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 		return true;
 	}
 
-	public RandomBuilder nextBuilder(MetaSource metaSource) throws IOException {
+	public FragmentedOutput nextBuilder(SourceMetadata metaSource) throws IOException {
 		this.cursorId = -1;
 		URI uri = metaSource.getURI();
 		String mimeType = metaSource.getMimeType();

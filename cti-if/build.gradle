@@ -1,6 +1,6 @@
 dependencies {
-    api project(':zs-rsr')
-    api project(':zs-resolver')
+    api 'net.zamasoft:zstream-io:1.0.0-SNAPSHOT'
+    api 'net.zamasoft:zstream-resolver:1.0.0-SNAPSHOT'
     api project(':zs-plugin')
     compileOnly 'javax.servlet:javax.servlet-api:4.0.1'
     compileOnly 'jakarta.servlet:jakarta.servlet-api:5.0.0'

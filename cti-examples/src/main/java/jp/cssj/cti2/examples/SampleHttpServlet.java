@@ -16,11 +16,11 @@ import javax.servlet.http.HttpServletResponse;
 import jp.cssj.cti2.CTIDriverManager;
 import jp.cssj.cti2.CTISession;
 import jp.cssj.cti2.helpers.ServletHelper;
-import jp.cssj.resolver.Source;
-import jp.cssj.resolver.SourceResolver;
-import jp.cssj.resolver.helpers.MetaSourceImpl;
-import jp.cssj.resolver.url.URLSource;
-import jp.cssj.resolver.url.URLSourceResolver;
+import net.zamasoft.zstream.resolver.Source;
+import net.zamasoft.zstream.resolver.SourceResolver;
+import net.zamasoft.zstream.resolver.util.SimpleSourceMetadata;
+import net.zamasoft.zstream.resolver.protocol.url.URLSource;
+import net.zamasoft.zstream.resolver.protocol.url.URLSourceResolver;
 
 public class SampleHttpServlet extends HttpServlet {
 	private static final long serialVersionUID = 0L;
@@ -46,7 +46,7 @@ public class SampleHttpServlet extends HttpServlet {
 
 			// ストリームを定義
 			try (OutputStreamWriter outHtmlStr = new OutputStreamWriter(
-					session.transcode(new MetaSourceImpl(URI.create("."), "text/html")), "UTF-8")) {
+					session.transcode(new SimpleSourceMetadata(URI.create("."), "text/html", null, -1)), "UTF-8")) {
 				// ストリームに文字列を出力
 				outHtmlStr.write("xxx<img id=\"arrow\" src=\"arrow.png\" alt=\"arror\" />yyy");
 			}

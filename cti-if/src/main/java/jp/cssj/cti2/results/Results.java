@@ -2,8 +2,8 @@ package jp.cssj.cti2.results;
 
 import java.io.IOException;
 
-import jp.cssj.resolver.MetaSource;
-import jp.cssj.rsr.RandomBuilder;
+import net.zamasoft.zstream.resolver.SourceMetadata;
+import net.zamasoft.zstream.io.FragmentedOutput;
 
 /**
  * 処理結果です。
@@ -22,12 +22,12 @@ public interface Results {
 	/**
 	 * 次の処理結果を構築するためのビルダを返します。
 	 * 
-	 * @param metaSource
+	 * @param SourceMetadata
 	 *            出力データのメタ情報。
 	 * @return データ構築オブジェクト。
 	 * @throws IOException
 	 */
-	public RandomBuilder nextBuilder(MetaSource metaSource) throws IOException;
+	public FragmentedOutput nextBuilder(SourceMetadata metaSource) throws IOException;
 
 	/**
 	 * 一連のデータ出力を完了します。

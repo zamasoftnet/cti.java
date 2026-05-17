@@ -20,9 +20,9 @@ import jp.cssj.cti2.CTIDriverManager;
 import jp.cssj.cti2.CTISession;
 import jp.cssj.cti2.helpers.CTIHttpServletResponseWrapper;
 import jp.cssj.cti2.helpers.ServletHelper;
-import jp.cssj.resolver.Source;
-import jp.cssj.resolver.SourceResolver;
-import jp.cssj.resolver.url.URLSource;
+import net.zamasoft.zstream.resolver.Source;
+import net.zamasoft.zstream.resolver.SourceResolver;
+import net.zamasoft.zstream.resolver.protocol.url.URLSource;
 
 public class SampleFilter implements Filter {
 	/** 接続先。 */

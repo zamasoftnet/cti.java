@@ -2,7 +2,7 @@ package jp.cssj.server.socket.ctip.helpers;
 
 import java.io.IOException;
 
-import jp.cssj.rsr.RandomBuilder;
+import net.zamasoft.zstream.io.FragmentedOutput;
 
 /**
  * サーバーからクライアントへデータを送るためのインターフェースです。
@@ -12,7 +12,7 @@ import jp.cssj.rsr.RandomBuilder;
  * @author MIYABE Tatsuhiko
  * @version $Id: ResponseConsumer.java 1554 2018-04-26 03:34:02Z miyabe $
  */
-public interface ResponseConsumer extends RandomBuilder {
+public interface ResponseConsumer extends FragmentedOutput {
 	/**
 	 * メッセージを送信します。
 	 * 

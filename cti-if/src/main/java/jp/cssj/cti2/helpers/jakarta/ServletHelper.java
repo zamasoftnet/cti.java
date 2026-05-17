@@ -5,7 +5,7 @@ import java.io.IOException;
 import jakarta.servlet.ServletResponse;
 
 import jp.cssj.cti2.CTISession;
-import jp.cssj.resolver.MetaSource;
+import net.zamasoft.zstream.resolver.SourceMetadata;
 
 /**
  * サーブレットからドキュメント変換サーバーを利用する際のユーティリティです。
@@ -34,11 +34,11 @@ public final class ServletHelper {
 	/**
 	 * charsetパラメータつきのContent-Typeヘッダ値を返します。
 	 * 
-	 * @param metaSource
+	 * @param SourceMetadata
 	 *            データのメタ情報。
 	 * @return charsetパラメータつきのContent-Typeヘッダ。
 	 */
-	public static String getContentType(MetaSource metaSource) {
+	public static String getContentType(SourceMetadata metaSource) {
 		String mimeType;
 		try {
 			mimeType = metaSource.getMimeType();

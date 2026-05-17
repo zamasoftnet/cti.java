@@ -9,9 +9,9 @@ import java.net.URI;
 import jp.cssj.cti2.message.MessageHandler;
 import jp.cssj.cti2.progress.ProgressListener;
 import jp.cssj.cti2.results.Results;
-import jp.cssj.resolver.MetaSource;
-import jp.cssj.resolver.Source;
-import jp.cssj.resolver.SourceResolver;
+import net.zamasoft.zstream.resolver.SourceMetadata;
+import net.zamasoft.zstream.resolver.Source;
+import net.zamasoft.zstream.resolver.SourceResolver;
 
 /**
  * ドキュメント変換処理を実行するためのサーバーとの接続です。
@@ -106,12 +106,12 @@ public interface CTISession extends Closeable {
 	 * このメソッドは各transcodeメソッドの前に呼ぶ必要があります。
 	 * </p>
 	 * 
-	 * @param metaSource
+	 * @param SourceMetadata
 	 *            リソースデータのメタ情報。
 	 * @return サーバーへの出力ストリーム。
 	 * @throws IOException
 	 */
-	public OutputStream resource(MetaSource metaSource) throws IOException;
+	public OutputStream resource(SourceMetadata metaSource) throws IOException;
 
 	/**
 	 * <p>
@@ -145,12 +145,12 @@ public interface CTISession extends Closeable {
 	 * <strong>本体を送信した後、出力ストリームは必ずクローズしてください。 </strong>
 	 * </p>
 	 * 
-	 * @param metaSource
+	 * @param SourceMetadata
 	 *            メインドキュメントのメタ情報。
 	 * @return サーバーへの出力ストリーム。
 	 * @throws IOException
 	 */
-	public OutputStream transcode(MetaSource metaSource) throws IOException;
+	public OutputStream transcode(SourceMetadata metaSource) throws IOException;
 
 	/**
 	 * <p>

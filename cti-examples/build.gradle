@@ -1,6 +1,7 @@
 dependencies {
     implementation project(':cti-driver-ctip')
     implementation project(':cti-driver-rest')
+    implementation 'commons-io:commons-io:2.11.0'
     compileOnly 'javax.servlet:javax.servlet-api:4.0.1'
     compileOnly 'jakarta.servlet:jakarta.servlet-api:5.0.0'
 }

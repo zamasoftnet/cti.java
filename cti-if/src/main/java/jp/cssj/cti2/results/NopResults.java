@@ -1,8 +1,8 @@
 package jp.cssj.cti2.results;
 
-import jp.cssj.resolver.MetaSource;
-import jp.cssj.rsr.RandomBuilder;
-import jp.cssj.rsr.impl.NopRandomBuilder;
+import net.zamasoft.zstream.resolver.SourceMetadata;
+import net.zamasoft.zstream.io.FragmentedOutput;
+import net.zamasoft.zstream.io.impl.NoOpFragmentedOutput;
 
 /**
  * 何も出力しないResultsです。
@@ -21,8 +21,8 @@ public class NopResults implements Results {
 		return true;
 	}
 
-	public RandomBuilder nextBuilder(MetaSource metaSource) {
-		return NopRandomBuilder.SHARED_INSTANCE;
+	public FragmentedOutput nextBuilder(SourceMetadata metaSource) {
+		return NoOpFragmentedOutput.INSTANCE;
 	}
 
 	public void end() {

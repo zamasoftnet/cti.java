@@ -11,7 +11,7 @@ import java.util.BitSet;
 /**
  * URI解析の補助クラスです。 JavaのURIクラスよりも柔軟に解析します。
  * 
- * @deprecated jp.cssj.resolver.helpers.URIHelperを使ってください。
+ * @deprecated net.zamasoft.zstream.resolver.util.URIHelperを使ってください。
  * @author MIYABE Tatsuhiko
  * @version $Id: URIHelper.java 1552 2018-04-26 01:43:24Z miyabe $
  */

@@ -15,9 +15,9 @@ import jp.cssj.cti2.CTISession;
 import jp.cssj.cti2.TranscoderException;
 import jp.cssj.cti2.results.Results;
 import jp.cssj.cti2.results.SingleResult;
-import jp.cssj.resolver.file.FileSource;
-import jp.cssj.resolver.stream.StreamSource;
-import jp.cssj.resolver.url.URLSource;
+import net.zamasoft.zstream.resolver.protocol.file.FileSource;
+import net.zamasoft.zstream.resolver.protocol.stream.StreamSource;
+import net.zamasoft.zstream.resolver.protocol.url.URLSource;
 
 /**
  * クライアント側のファイル、URL、ストリームを送るためのユーティリティです。
