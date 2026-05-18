@@ -1,8 +1,19 @@
 rootProject.name = 'cti-java'
 
-includeBuild 'F:/dev/zamasoftnet-public/zstream'
+// Related libraries: https://github.com/zamasoftnet/zstream
+// For local development, set -Pzstream.dir=/path/to/zstream or ZSTREAM_DIR.
+// A sibling checkout at ../zstream is picked up automatically.
+def zstreamPath = gradle.startParameter.projectProperties.get('zstream.dir') ?: System.getenv('ZSTREAM_DIR')
+if (!zstreamPath) {
+    def siblingZstream = file('../zstream')
+    if (siblingZstream.isDirectory()) {
+        zstreamPath = siblingZstream.absolutePath
+    }
+}
+if (zstreamPath) {
+    includeBuild zstreamPath
+}
 
-include 'zs-plugin'
 include 'cti-if'
 include 'cti-driver-ctip'
 include 'cti-driver-rest'

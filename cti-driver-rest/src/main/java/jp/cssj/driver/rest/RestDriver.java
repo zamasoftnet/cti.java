@@ -6,7 +6,6 @@ import java.util.Map;
 
 import jp.cssj.cti2.CTIDriver;
 import jp.cssj.cti2.CTISession;
-import jp.cssj.plugin.Plugin;
 
 /**
  * <p>
@@ -19,7 +18,7 @@ import jp.cssj.plugin.Plugin;
  * @author MIYABE Tatsuhiko
  * @version $Id: RestDriver.java 1552 2018-04-26 01:43:24Z miyabe $
  */
-public class RestDriver implements CTIDriver, Plugin<URI> {
+public class RestDriver implements CTIDriver {
 	public boolean match(URI uri) {
 		if (uri == null) {
 			return false;

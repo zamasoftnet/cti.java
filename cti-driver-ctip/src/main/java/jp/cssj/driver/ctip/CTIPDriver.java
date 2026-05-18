@@ -8,7 +8,6 @@ import jp.cssj.cti2.CTIDriver;
 import jp.cssj.cti2.CTISession;
 import jp.cssj.driver.ctip.v1.V1Session;
 import jp.cssj.driver.ctip.v2.V2Session;
-import jp.cssj.plugin.Plugin;
 
 /**
  * <p>
@@ -21,7 +20,7 @@ import jp.cssj.plugin.Plugin;
  * @author MIYABE Tatsuhiko
  * @version $Id: CTIPDriver.java 1552 2018-04-26 01:43:24Z miyabe $
  */
-public class CTIPDriver implements CTIDriver, Plugin<URI> {
+public class CTIPDriver implements CTIDriver {
 	public static final String ENCODING = "UTF-8";
 
 	public boolean match(URI uri) {

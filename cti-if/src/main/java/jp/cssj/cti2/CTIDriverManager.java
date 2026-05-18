@@ -4,8 +4,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
-
-import jp.cssj.plugin.PluginLoader;
+import java.util.ServiceLoader;
 
 /**
  * ドライバの窓口クラスです。
@@ -27,11 +26,12 @@ public class CTIDriverManager {
 	 * @return ドライバ。
 	 */
 	public static CTIDriver getDriver(URI uri) {
-		CTIDriver driver = (CTIDriver) PluginLoader.getPluginLoader().search(CTIDriver.class, uri);
-		if (driver == null) {
-			throw new RuntimeException(uri + " に接続するドライバがありません。");
+		for (CTIDriver driver : ServiceLoader.load(CTIDriver.class)) {
+			if (driver.match(uri)) {
+				return driver;
+			}
 		}
-		return driver;
+		throw new RuntimeException(uri + " に接続するドライバがありません。");
 	}
 
 	/**

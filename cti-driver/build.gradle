@@ -12,13 +12,30 @@ java {
     withSourcesJar()
     withJavadocJar()
 }
+def ctiDriverServiceFile = layout.buildDirectory.file('generated/services/jp.cssj.cti2.CTIDriver')
+
+tasks.register('generateCtiDriverService') {
+    outputs.file(ctiDriverServiceFile)
+    doLast {
+        def file = ctiDriverServiceFile.get().asFile
+        file.parentFile.mkdirs()
+        file.text = 'jp.cssj.driver.ctip.CTIPDriver\n' +
+                'jp.cssj.driver.rest.RestDriver\n'
+    }
+}
 
 // This is the "fat jar" equivalent to Maven's jar-with-dependencies
 jar {
     archiveClassifier = 'with-dependencies'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    from(ctiDriverServiceFile.map { it.asFile }) {
+        into 'META-INF/services'
+    }
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    } {
+        exclude 'META-INF/services/jp.cssj.cti2.CTIDriver'
     }
     
     // Explicitly declare dependencies on subproject jar tasks to satisfy Gradle 8+
@@ -27,7 +44,7 @@ jar {
     dependsOn(':cti-driver-ctip:jar')
     dependsOn(':cti-driver-rest:jar')
     dependsOn(':cti-if:jar')
-    dependsOn(':zs-plugin:jar')
+    dependsOn('generateCtiDriverService')
 }
 
 task fullJar(type: Jar) {
@@ -40,21 +57,20 @@ task fullJar(type: Jar) {
     
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     
-    // 1. From cti-driver-rest: only the plugin impl file
-    from(zipTree(project(':cti-driver-rest').jar.archiveFile)) {
-        include 'META-INF/plugin/jp.cssj.cti2.CTIDriver.impl'
+    from(ctiDriverServiceFile.map { it.asFile }) {
+        into 'META-INF/services'
     }
-    
     // 2. From all dependencies and subprojects (excluding what Ant excluded)
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     } {
         exclude 'javax/**'
         exclude 'jakarta/**'
-        exclude 'META-INF/plugin/jp.cssj.cti2.CTIDriver.impl'
+        exclude 'META-INF/services/jp.cssj.cti2.CTIDriver'
     }
     
     dependsOn ':cti-driver-rest:jar'
+    dependsOn 'generateCtiDriverService'
     dependsOn configurations.runtimeClasspath
 }
 
@@ -64,8 +80,8 @@ task minJar(type: Jar) {
     
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     
-    // Ant script: cti-driver-ctip, cti-if, zs-plugin
-    def minProjects = [':cti-driver-ctip', ':cti-if', ':zs-plugin']
+    // Ant script: cti-driver-ctip, cti-if
+    def minProjects = [':cti-driver-ctip', ':cti-if']
     minProjects.each { projectName ->
         from(zipTree(project(projectName).jar.archiveFile))
         dependsOn "${projectName}:jar"

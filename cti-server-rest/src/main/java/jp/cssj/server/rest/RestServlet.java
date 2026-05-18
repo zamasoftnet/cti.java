@@ -30,7 +30,6 @@ import jp.cssj.cti2.CTISession;
 import jp.cssj.cti2.TranscoderException;
 import jp.cssj.cti2.helpers.CTIMessageCodes;
 import jp.cssj.cti2.helpers.CTIMessageHelper;
-import jp.cssj.plugin.PluginLoader;
 import jp.cssj.server.acl.Acl;
 
 import org.apache.commons.fileupload.FileUploadException;
@@ -238,7 +237,7 @@ public class RestServlet extends HttpServlet {
 	protected void service(final HttpServletRequest req, final HttpServletResponse res)
 			throws ServletException, IOException {
 		InetAddress remoteHost = InetAddress.getByName(req.getRemoteAddr());
-		Acl acl = (Acl) PluginLoader.getPluginLoader().search(Acl.class, remoteHost);
+		Acl acl = Acl.find(remoteHost);
 		if (acl == null || !acl.checkAccess(remoteHost)) {
 			ACCESS.info(remoteHost + "からのアクセスを拒否しました");
 			return;

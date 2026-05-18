@@ -26,7 +26,6 @@ import javax.net.ServerSocketFactory;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 
-import jp.cssj.plugin.PluginLoader;
 import jp.cssj.server.acl.Acl;
 
 /**
@@ -87,7 +86,7 @@ public class CTIServer {
 					try {
 						// アクセス制御
 						try {
-							Acl acl = (Acl) PluginLoader.getPluginLoader().search(Acl.class, remoteHost);
+							Acl acl = Acl.find(remoteHost);
 							if (acl == null || !acl.checkAccess(remoteAddress)) {
 								ACCESS.info(remoteHost + "からのアクセスを拒否しました");
 								continue;

@@ -12,6 +12,14 @@ import java.util.Map;
  */
 public interface CTIDriver {
 	/**
+	 * 指定されたURIに対応するかどうかを返します。
+	 * 
+	 * @param uri
+	 *            接続先URI。
+	 * @return 対応していればtrue。
+	 */
+	public boolean match(URI uri);
+	/**
 	 * セッションを作成します。
 	 * <p>
 	 * URIの形式は、ドライバの種類に依存します。 現在、実装が提供されているのはCTIPとHTTP/RESTプロトコルに対応したドライバです。

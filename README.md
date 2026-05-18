@@ -13,6 +13,12 @@ http://dl.cssj.jp/docs/copper/3.2/html/3420_ctip2_java.html
 ソースコードはGitHubで公開しています。
 https://github.com/zamasoftnet/cti.java
 
+関連ライブラリのソースコードは以下のリポジトリで公開しています。
+
+- **zstream**: https://github.com/zamasoftnet/zstream
+  - `zstream-io`: 分割出力などのストリーム処理
+  - `zstream-resolver`: URI/ファイル/HTTPなどのリソース解決
+
 ## インストール
 
 ### Maven / Gradle（JitPack 経由）
@@ -163,6 +169,17 @@ Javadocを生成:
 
 ```bash
 ./gradlew build
+```
+
+CTI Java は `net.zamasoft:zstream-io` と `net.zamasoft:zstream-resolver` に依存しています。ローカルで zstream の未リリース版とあわせて開発する場合は、zstream を隣接ディレクトリに clone するか、`zstream.dir` プロパティまたは `ZSTREAM_DIR` 環境変数でチェックアウト先を指定してください。
+
+```bash
+git clone https://github.com/zamasoftnet/zstream.git ../zstream
+./gradlew build
+```
+
+```bash
+./gradlew build -Pzstream.dir=/path/to/zstream
 ```
 
 ## ライセンス
