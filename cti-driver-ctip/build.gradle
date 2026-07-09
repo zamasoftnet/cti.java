@@ -13,7 +13,7 @@ task generateNodejsPdfs(type: Exec) {
     workingDir new File(zamasoftRoot, 'cti.nodejs')
     commandLine 'node', 'test/generate-pdfs.js'
     ignoreExitValue = true
-    doFirst { new File(zamasoftRoot, 'test-output').mkdirs() }
+    doFirst { new File(zamasoftRoot, 'cti.nodejs/build/test-output').mkdirs() }
 }
 
 task generatePerlPdfs(type: Exec) {
@@ -22,7 +22,7 @@ task generatePerlPdfs(type: Exec) {
     workingDir new File(zamasoftRoot, 'cti.perl')
     commandLine 'bash', '-c', 'timeout 600 perl -Isrc/code src/test/generate-pdfs.pl'
     ignoreExitValue = true
-    doFirst { new File(zamasoftRoot, 'test-output').mkdirs() }
+    doFirst { new File(zamasoftRoot, 'cti.perl/build/test-output').mkdirs() }
 }
 
 task generatePhpPdfs(type: Exec) {
@@ -31,7 +31,7 @@ task generatePhpPdfs(type: Exec) {
     workingDir new File(zamasoftRoot, 'cti.php')
     commandLine 'php', 'examples/generate-pdfs.php'
     ignoreExitValue = true
-    doFirst { new File(zamasoftRoot, 'test-output').mkdirs() }
+    doFirst { new File(zamasoftRoot, 'cti.php/build/test-output').mkdirs() }
 }
 
 task generateRubyPdfs(type: Exec) {
@@ -40,7 +40,7 @@ task generateRubyPdfs(type: Exec) {
     workingDir new File(zamasoftRoot, 'cti.ruby')
     commandLine 'ruby', '-Isrc/code', 'src/test/generate-pdfs.rb'
     ignoreExitValue = true
-    doFirst { new File(zamasoftRoot, 'test-output').mkdirs() }
+    doFirst { new File(zamasoftRoot, 'cti.ruby/build/test-output').mkdirs() }
 }
 
 // Python2はEOL(2020年)のためテスト対象外。Python3のみ対応。
@@ -50,7 +50,7 @@ task generatePythonPdfs(type: Exec) {
     workingDir new File(zamasoftRoot, 'cti.python')
     commandLine 'python3', 'python3/src/test/python3/generate-pdfs.py'
     ignoreExitValue = true
-    doFirst { new File(zamasoftRoot, 'test-output').mkdirs() }
+    doFirst { new File(zamasoftRoot, 'cti.python/build/test-output').mkdirs() }
 }
 
 task generateDotNetPdfs(type: Exec) {
@@ -59,9 +59,9 @@ task generateDotNetPdfs(type: Exec) {
     workingDir new File(zamasoftRoot, 'cti.net')
     commandLine 'dotnet', 'run', '--project', 'src/test/generate-pdfs'
     ignoreExitValue = true
-    doFirst { new File(zamasoftRoot, 'test-output').mkdirs() }
+    doFirst { new File(zamasoftRoot, 'cti.net/build/test-output').mkdirs() }
 }
 
 // テスト実行前に全言語のPDF生成を行う
-// 生成済みPDFはPdfBoxTestで一括検証される
+// 各ドライバは自分の build/test-output/ にPDFを出力する
 test.dependsOn generateNodejsPdfs, generatePerlPdfs, generatePhpPdfs, generateRubyPdfs, generatePythonPdfs, generateDotNetPdfs
