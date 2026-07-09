@@ -108,13 +108,35 @@ task dist {
     }
 }
 
+def java8ClientProjects = [
+    'cti-if',
+    'cti-driver-ctip',
+    'cti-driver-rest',
+    'cti-cli',
+    'cti-ant',
+    'cti-examples',
+    'cti-driver',
+] as Set
+
 subprojects {
     apply plugin: 'java-library'
     apply plugin: 'java'
 
+    def clientCompatible = java8ClientProjects.contains(project.name)
+
     java {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        if (clientCompatible) {
+            // Client-side drivers and samples must remain usable on Java 8+.
+            sourceCompatibility = JavaVersion.VERSION_1_8
+            targetCompatibility = JavaVersion.VERSION_1_8
+        } else {
+            // Server-side modules are part of the CopperPDF 4 stack and may use Java 21.
+            sourceCompatibility = JavaVersion.VERSION_21
+            targetCompatibility = JavaVersion.VERSION_21
+            toolchain {
+                languageVersion = JavaLanguageVersion.of(21)
+            }
+        }
     }
 
     dependencies {
@@ -128,6 +150,7 @@ subprojects {
 
     tasks.withType(JavaCompile) {
         options.encoding = 'UTF-8'
+        options.release = clientCompatible ? 8 : 21
     }
 
     tasks.withType(Javadoc) {
