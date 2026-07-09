@@ -710,6 +710,50 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 		this.out.writeShort((short) encodingBytes.length);
 		this.out.write(encodingBytes);
 		this.out.writeLong(length);
-		return this;
+		return new ResultOutput();
+	}
+
+	/**
+	 * 結果1件分の出力です。FragmentedOutput.close()は結果構築の終了を意味するため、
+	 * 接続を閉じるV2ProtocolProcessor.close()と分離するために使います。
+	 */
+	private class ResultOutput implements SequentialOutput {
+		private boolean closed = false;
+
+		public void addFragment() throws IOException {
+			V2ProtocolProcessor.this.addFragment();
+		}
+
+		public void insertFragmentBefore(int anchorId) throws IOException {
+			V2ProtocolProcessor.this.insertFragmentBefore(anchorId);
+		}
+
+		public void write(int id, byte[] b, int off, int len) throws IOException {
+			V2ProtocolProcessor.this.write(id, b, off, len);
+		}
+
+		public void write(byte[] b, int off, int len) throws IOException {
+			V2ProtocolProcessor.this.write(b, off, len);
+		}
+
+		public void finishFragment(int id) throws IOException {
+			V2ProtocolProcessor.this.finishFragment(id);
+		}
+
+		public boolean supportsPositionInfo() {
+			return false;
+		}
+
+		public PositionInfo getPositionInfo() {
+			throw new UnsupportedOperationException();
+		}
+
+		public void close() throws IOException {
+			if (this.closed) {
+				return;
+			}
+			this.closed = true;
+			V2ProtocolProcessor.this.finish();
+		}
 	}
 }
