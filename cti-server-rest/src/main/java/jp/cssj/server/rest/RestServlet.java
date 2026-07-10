@@ -6,14 +6,13 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.ResourceBundle;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -45,9 +44,9 @@ public class RestServlet extends HttpServlet {
 	private static Logger LOG = Logger.getLogger(RestServlet.class.getName());
 	private static final Logger ACCESS = Logger.getLogger("jp.cssj.copper.access");
 
-	private Map<String, RestSession> idToSession = Collections.synchronizedMap(new HashMap<String, RestSession>());
+	private final ConcurrentMap<String, RestSession> idToSession = new ConcurrentHashMap<>();
 
-	private Random rnd = new SecureRandom();
+	private final Random rnd = new SecureRandom();
 
 	private CTIDriver driver;
 
@@ -59,7 +58,9 @@ public class RestServlet extends HttpServlet {
 
 	private boolean direct = false;
 
-	private volatile long accessCount;
+	private final LongAdder accessCount = new LongAdder();
+
+	private Thread cleaner = null;
 
 	private static final long MAX_SESSION_TIMEOUT = 60000L * 60L;
 
@@ -96,7 +97,7 @@ public class RestServlet extends HttpServlet {
 			this.ctiURI = URI.create(uri);
 		}
 		if (user != null || password != null) {
-			this.ctiProps = new HashMap<String, String>();
+			this.ctiProps = new HashMap<>();
 			if (user != null) {
 				this.ctiProps.put("user", user);
 			}
@@ -112,24 +113,31 @@ public class RestServlet extends HttpServlet {
 			this.restResolver = true;
 		}
 
-		Thread ticker = new Thread(RestServlet.class.getName()) {
-			public synchronized void run() {
-				for (;;) {
-					try {
-						this.wait(DEFAULT_SESSION_TIMEOUT);
-					} catch (InterruptedException e) {
-						// ignore
-					}
-					RestServlet.this.clean();
+		this.cleaner = Thread.ofVirtual().name(RestServlet.class.getName() + "-cleaner").start(() -> {
+			while (!Thread.currentThread().isInterrupted()) {
+				try {
+					Thread.sleep(DEFAULT_SESSION_TIMEOUT);
+				} catch (InterruptedException e) {
+					break;
 				}
+				this.clean();
 			}
-		};
-		ticker.setDaemon(true);
-		ticker.start();
+		});
+	}
+
+	@Override
+	public void destroy() {
+		Thread cleaner = this.cleaner;
+		if (cleaner != null) {
+			cleaner.interrupt();
+			this.cleaner = null;
+		}
+		this.clean(true);
+		super.destroy();
 	}
 
 	public long getAccessCount() {
-		return this.accessCount;
+		return this.accessCount.sum();
 	}
 
 	public URI getURI() {
@@ -155,23 +163,20 @@ public class RestServlet extends HttpServlet {
 	 * セッションの期限切れをチェックします。
 	 */
 	protected void clean() {
-		synchronized (this.idToSession) {
-			List<String> toRemove = new ArrayList<String>();
-			for (Iterator<Map.Entry<String, RestSession>> i = this.idToSession.entrySet().iterator(); i.hasNext();) {
-				Map.Entry<String, RestSession> e = i.next();
-				RestSession restSession = (RestSession) e.getValue();
-				long timeout = System.currentTimeMillis() - restSession.timeout;
-				if (restSession.getAccessed() < timeout) {
-					toRemove.add(e.getKey());
-					try {
-						restSession.close();
-					} catch (IOException ex) {
-						LOG.log(Level.WARNING, "", ex);
-					}
+		this.clean(false);
+	}
+
+	private void clean(boolean all) {
+		long now = System.currentTimeMillis();
+		for (Map.Entry<String, RestSession> e : this.idToSession.entrySet()) {
+			RestSession restSession = e.getValue();
+			if ((all || restSession.getAccessed() < now - restSession.timeout)
+					&& this.idToSession.remove(e.getKey(), restSession)) {
+				try {
+					restSession.close();
+				} catch (IOException ex) {
+					LOG.log(Level.WARNING, "", ex);
 				}
-			}
-			for (int i = 0; i < toRemove.size(); ++i) {
-				this.idToSession.remove(toRemove.get(i));
 			}
 		}
 	}
@@ -200,8 +205,8 @@ public class RestServlet extends HttpServlet {
 	 * @return
 	 */
 	protected RestSession loadSession(String id) {
-		RestSession restSession = (RestSession) this.idToSession.get(id);
-		return restSession;
+		// ConcurrentHashMap は null キーを許容しない
+		return id == null ? null : this.idToSession.get(id);
 	}
 
 	protected RestSession createSession(HttpServletRequest req, boolean messages, RestRequest restReq, long timeout)
@@ -211,16 +216,15 @@ public class RestServlet extends HttpServlet {
 			// Copper WEBAPP等認証を使わない場合
 			props = null;
 		} else {
-			props = new HashMap<String, String>();
+			props = new HashMap<>();
 			if (this.ctiProps != null) {
 				props.putAll(this.ctiProps);
 			}
 			props.put("user", restReq.getParameter("rest.user"));
 			props.put("password", restReq.getParameter("rest.password"));
-			String[] names = restReq.getParameterNames();
-			for (int i = 0; i < names.length; ++i) {
-				if (names[i].startsWith("rest.")) {
-					props.put(names[i].substring(5), restReq.getParameter(names[i]));
+			for (String name : restReq.getParameterNames()) {
+				if (name.startsWith("rest.")) {
+					props.put(name.substring(5), restReq.getParameter(name));
 				}
 			}
 			props.put("remote-addr", req.getRemoteAddr());
@@ -243,7 +247,7 @@ public class RestServlet extends HttpServlet {
 			return;
 		}
 
-		this.accessCount++;
+		this.accessCount.increment();
 		String method = req.getMethod();
 		if (!method.equalsIgnoreCase("GET") && !method.equalsIgnoreCase("POST")) {
 			return;
@@ -278,7 +282,8 @@ public class RestServlet extends HttpServlet {
 				}
 			}
 
-			if (action.equals("open")) {
+			switch (action) {
+			case "open" -> {
 				// セッション開始
 				if ("true".equals(restReq.getParameter("rest.httpSession"))) {
 					HttpSession httpSession = req.getSession(true);
@@ -295,7 +300,9 @@ public class RestServlet extends HttpServlet {
 				this.startSession(req, id, restReq, timeout);
 				RestServlet.sendMessage(req, res, INFO_NEW_SESSION, id);
 				return;
-			} else if (action.equals("info")) {
+			}
+
+			case "info" -> {
 				// サーバー情報
 				RestSession restSession = this.loadSession(id);
 				if (restSession == null) {
@@ -315,7 +322,9 @@ public class RestServlet extends HttpServlet {
 					}
 				}
 				return;
-			} else if (action.equals("properties")) {
+			}
+
+			case "properties" -> {
 				// プロパティ
 				RestSession restSession = this.loadSession(id);
 				if (restSession == null) {
@@ -323,7 +332,9 @@ public class RestServlet extends HttpServlet {
 					return;
 				}
 				restSession.properties(req);
-			} else if (action.equals("resources")) {
+			}
+
+			case "resources" -> {
 				// リソース
 				RestSession restSession = this.loadSession(id);
 				if (restSession == null) {
@@ -331,7 +342,9 @@ public class RestServlet extends HttpServlet {
 					return;
 				}
 				restSession.resources(req, res);
-			} else if (action.equals("transcode")) {
+			}
+
+			case "transcode" -> {
 				// 文書の変換
 				RestSession restSession = this.loadSession(id);
 				if (restSession == null) {
@@ -357,7 +370,9 @@ public class RestServlet extends HttpServlet {
 					}
 				}
 				return;
-			} else if (action.equals("noResource")) {
+			}
+
+			case "noResource" -> {
 				// リソースなし
 				RestSession restSession = this.loadSession(id);
 				if (restSession == null) {
@@ -365,7 +380,9 @@ public class RestServlet extends HttpServlet {
 					return;
 				}
 				restSession.noResource(req);
-			} else if (action.equals("messages")) {
+			}
+
+			case "messages" -> {
 				// メッセージ
 				RestSession restSession = this.loadSession(id);
 				if (restSession == null) {
@@ -374,7 +391,9 @@ public class RestServlet extends HttpServlet {
 				}
 				restSession.messages(req, res);
 				return;
-			} else if (action.equals("result")) {
+			}
+
+			case "result" -> {
 				// 処理結果
 				RestSession restSession = this.loadSession(id);
 				if (restSession == null) {
@@ -383,7 +402,9 @@ public class RestServlet extends HttpServlet {
 				}
 				restSession.result(req, res);
 				return;
-			} else if (action.equals("abort")) {
+			}
+
+			case "abort" -> {
 				// 中断
 				RestSession restSession = this.loadSession(id);
 				if (restSession == null) {
@@ -391,7 +412,9 @@ public class RestServlet extends HttpServlet {
 					return;
 				}
 				restSession.abort(req);
-			} else if (action.equals("join")) {
+			}
+
+			case "join" -> {
 				// 結合
 				RestSession restSession = this.loadSession(id);
 				if (restSession == null) {
@@ -399,7 +422,9 @@ public class RestServlet extends HttpServlet {
 					return;
 				}
 				restSession.join();
-			} else if (action.equals("reset")) {
+			}
+
+			case "reset" -> {
 				// リセット
 				RestSession restSession = this.loadSession(id);
 				if (restSession == null) {
@@ -407,7 +432,9 @@ public class RestServlet extends HttpServlet {
 					return;
 				}
 				restSession.reset();
-			} else if (action.equals("close")) {
+			}
+
+			case "close" -> {
 				// 終了
 				RestSession restSession = this.loadSession(id);
 				if (restSession == null) {
@@ -416,9 +443,12 @@ public class RestServlet extends HttpServlet {
 				}
 				this.idToSession.remove(id);
 				restSession.close();
-			} else {
+			}
+
+			default -> {
 				RestServlet.sendMessage(req, res, ERROR_BAD_ACTION);
 				return;
+			}
 			}
 			RestServlet.sendMessage(req, res, INFO_OK);
 		} catch (SecurityException e) {
@@ -459,14 +489,10 @@ public class RestServlet extends HttpServlet {
 			// HTMLレスポンス
 			res.setContentType("text/html");
 			res.setCharacterEncoding(CHARSET);
-			String level;
-			switch (CTIMessageHelper.getLevel(code)) {
-			case CTIMessageHelper.INFO:
-				level = "INFO";
-				break;
-			default:
-				level = "ERROR";
-			}
+			String level = switch (CTIMessageHelper.getLevel(code)) {
+			case CTIMessageHelper.INFO -> "INFO";
+			default -> "ERROR";
+			};
 			PrintWriter out = res.getWriter();
 			out.println("<html>");
 			out.println("<head>");

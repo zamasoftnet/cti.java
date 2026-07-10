@@ -71,7 +71,7 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 
 	private ClientSourceResolver clientResolver = null;
 
-	private List<MessageFilter> messageFilters = new ArrayList<MessageFilter>();
+	private final List<MessageFilter> messageFilters = new ArrayList<>();
 
 	private static class MessageFilter {
 		private final char[] pattern = new char[4];
@@ -176,7 +176,7 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 		if (colon == -1) {
 			throw new IOException("不正なリクエスト");
 		}
-		Map<String, String> props = new HashMap<String, String>();
+		Map<String, String> props = new HashMap<>();
 		String method = line.substring(0, colon);
 
 		if (method.equals("PLAIN")) {
@@ -211,9 +211,8 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 
 			request.next();
 			FOR: for (;;) {
-				// System.err.println(Integer.toHexString(request.getType()));
 				switch (request.getType()) {
-				case V2ClientPackets.PROPERTY:
+				case V2ClientPackets.PROPERTY -> {
 					// プロパティ受信
 					String name = request.getName();
 					if (name != null && name.length() > 0) {
@@ -227,11 +226,10 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 							}
 						}
 					}
-
 					request.next();
-					break;
+				}
 
-				case V2ClientPackets.START_MAIN: {
+				case V2ClientPackets.START_MAIN -> {
 					// パイプライン変換開始
 					URI uri;
 					String uriStr = request.getURI();
@@ -269,23 +267,12 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 						this.next();
 					} catch (TranscoderException e) {
 						// 中断
-						switch (e.getState()) {
-						case TranscoderException.STATE_BROKEN:
-							this.abort((byte) 1, e.getCode(), e.getArgs(), e.getMessage());
-							break;
-						case TranscoderException.STATE_READABLE:
-							this.eof();
-							this.abort((byte) 0, e.getCode(), e.getArgs(), e.getMessage());
-							break;
-						default:
-							throw new IllegalStateException();
-						}
+						this.abort(e);
 					}
 					request.next();
 				}
-					break;
 
-				case V2ClientPackets.SERVER_MAIN: {
+				case V2ClientPackets.SERVER_MAIN -> {
 					// サーバー側データ変換
 					URI uri;
 					String uriStr = request.getURI();
@@ -310,25 +297,14 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 						this.next();
 					} catch (TranscoderException e) {
 						// 中断
-						switch (e.getState()) {
-						case TranscoderException.STATE_BROKEN:
-							this.abort((byte) 1, e.getCode(), e.getArgs(), e.getMessage());
-							break;
-						case TranscoderException.STATE_READABLE:
-							this.eof();
-							this.abort((byte) 0, e.getCode(), e.getArgs(), e.getMessage());
-							break;
-						default:
-							throw new IllegalStateException();
-						}
+						this.abort(e);
 					} finally {
 						this.request = null;
 					}
 					request.next();
-					break;
 				}
 
-				case V2ClientPackets.CLIENT_RESOURCE: {
+				case V2ClientPackets.CLIENT_RESOURCE -> {
 					if (request.getMode() == 1) {
 						this.clientResolver = new ClientSourceResolver();
 					} else {
@@ -337,14 +313,13 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 					this.session.setSourceResolver(this.clientResolver);
 					request.next();
 				}
-					break;
 
-				case V2ClientPackets.CONTINUOUS:
+				case V2ClientPackets.CONTINUOUS -> {
 					this.session.setContinuous(request.getMode() == 1);
 					request.next();
-					break;
+				}
 
-				case V2ClientPackets.START_RESOURCE: {
+				case V2ClientPackets.START_RESOURCE -> {
 					URI uri;
 					String uriStr = request.getURI();
 					try {
@@ -363,22 +338,17 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 					this.session.resource(new StreamSource(uri, rin, mimeType, encoding, length));
 					request.next();
 				}
-					break;
 
-				case V2ClientPackets.DATA:
-					// ここでDATAチャンクが来るのは、
-					// 処理が中断されて残りのデータが送られている場合なので無視する。
-				case V2ClientPackets.MISSING_RESOURCE:
-				case V2ClientPackets.EOF:
+				// DATAチャンクが来るのは、処理が中断されて残りのデータが送られている場合なので無視する。
+				case V2ClientPackets.DATA, V2ClientPackets.MISSING_RESOURCE, V2ClientPackets.EOF ->
 					request.next();
-					break;
 
-				case V2ClientPackets.ABORT:
+				case V2ClientPackets.ABORT -> {
 					this.session.abort((byte) (this.request.getMode() + 1));
 					request.next();
-					break;
+				}
 
-				case V2ClientPackets.JOIN:
+				case V2ClientPackets.JOIN -> {
 					this.request = request;
 					try {
 						this.session.join();
@@ -386,19 +356,20 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 						this.request = null;
 					}
 					request.next();
-					break;
+				}
 
-				case V2ClientPackets.RESET:
+				case V2ClientPackets.RESET -> {
 					this.reset();
 					this.session.reset();
 					request.next();
-					break;
+				}
 
-				case V2ClientPackets.CLOSE:
+				case V2ClientPackets.CLOSE -> {
 					this.reset();
 					break FOR;
+				}
 
-				case V2ClientPackets.SERVER_INFO: {
+				case V2ClientPackets.SERVER_INFO -> {
 					URI uri;
 					String uriStr = request.getURI();
 					try {
@@ -416,9 +387,8 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 					this.eof();
 					request.next();
 				}
-					break;
-				default:
-					throw new IOException("不正なリクエストです: " + Integer.toHexString(request.getType()));
+
+				default -> throw new IOException("不正なリクエストです: " + Integer.toHexString(request.getType()));
 				}
 			}
 		} finally {
@@ -432,6 +402,20 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 		this.out.writeByte(V2ServerPackets.CLOSE_BLOCK);
 		this.out.writeInt(id);
 		this.out.flush();
+	}
+
+	/**
+	 * 変換の中断をクライアントに通知します。
+	 */
+	private void abort(TranscoderException e) throws IOException {
+		switch (e.getState()) {
+		case TranscoderException.STATE_BROKEN -> this.abort((byte) 1, e.getCode(), e.getArgs(), e.getMessage());
+		case TranscoderException.STATE_READABLE -> {
+			this.eof();
+			this.abort((byte) 0, e.getCode(), e.getArgs(), e.getMessage());
+		}
+		default -> throw new IllegalStateException();
+		}
 	}
 
 	protected void abort(byte mode, short code, String[] args, String message) throws IOException {
@@ -614,14 +598,12 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 		if (!this.messageFilters.isEmpty()) {
 			String codeStr = Integer.toHexString(code).toUpperCase();
 			if (codeStr.length() == 4) {
-				for (int i = 0; i < this.messageFilters.size(); ++i) {
-					MessageFilter filter = (MessageFilter) this.messageFilters.get(i);
+				for (MessageFilter filter : this.messageFilters) {
 					if (filter.match(codeStr)) {
 						if (filter.include) {
 							break;
-						} else {
-							return;
 						}
+						return;
 					}
 				}
 			}

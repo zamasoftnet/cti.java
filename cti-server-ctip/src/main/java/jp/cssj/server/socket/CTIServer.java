@@ -261,8 +261,9 @@ public class CTIServer {
 	 */
 	public synchronized void startup() throws BindException, IOException {
 		this.permits = new Semaphore(this.maxThreads);
-		this.executor = Executors.newCachedThreadPool(
-				Thread.ofPlatform().daemon().name("CopperServer worker-", 0).factory());
+		// 接続ごとに仮想スレッドを割り当てる。同時実行数の上限は permits で制御する。
+		this.executor = Executors.newThreadPerTaskExecutor(
+				Thread.ofVirtual().name("CopperServer worker-", 0).factory());
 
 		// サーバー開始
 		if (this.port != -1) {

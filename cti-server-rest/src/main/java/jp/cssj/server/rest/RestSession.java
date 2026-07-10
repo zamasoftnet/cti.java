@@ -13,7 +13,6 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -62,19 +61,10 @@ public class RestSession {
 
 	/**
 	 * 受信済みのメッセージです。
-	 * 
-	 * @author MIYABE Tatsuhiko
-	 * @version $Id: RestSession.java 1635 2023-04-03 08:16:41Z miyabe $
 	 */
-	protected static class Message {
-		public final short code;
-		public final String[] args;
-		public final String text;
-
-		public Message(short code, String[] args, String message) {
-			this.code = code;
-			this.args = (String[]) (args == null ? null : args.clone());
-			this.text = message;
+	protected record Message(short code, String[] args, String text) {
+		protected Message {
+			args = args == null ? null : args.clone();
 		}
 	}
 
@@ -85,7 +75,7 @@ public class RestSession {
 	 * @version $Id: RestSession.java 1635 2023-04-03 08:16:41Z miyabe $
 	 */
 	protected class Messages implements MessageHandler {
-		private final List<Message> messages = Collections.synchronizedList(new ArrayList<Message>());
+		private final List<Message> messages = Collections.synchronizedList(new ArrayList<>());
 
 		public void message(short code, String[] args, String mes) {
 			Message message = new Message(code, args, mes);
@@ -106,7 +96,7 @@ public class RestSession {
 		}
 
 		public Message remove() {
-			return (Message) this.messages.remove(0);
+			return this.messages.remove(0);
 		}
 
 		public int size() {
@@ -214,8 +204,7 @@ public class RestSession {
 			}
 			this.transcoding = true;
 			if (async) {
-				this.th = new Thread(this, RestServlet.class.getName());
-				this.th.start();
+				this.th = Thread.ofVirtual().name(RestServlet.class.getName()).start(this);
 				RestServlet.sendMessage(req, res, RestServlet.INFO_OK);
 			} else {
 				this.syncTranscode(res);
@@ -266,9 +255,9 @@ public class RestSession {
 		 */
 		public void run() {
 			try {
-				this.resultList = new ArrayList<URI>();
-				this.uriToResult = new HashMap<URI, File>();
-				this.uriToSourceMetadata = new HashMap<URI, SourceMetadata>();
+				this.resultList = new ArrayList<>();
+				this.uriToResult = new HashMap<>();
+				this.uriToSourceMetadata = new HashMap<>();
 				Results results = new Results() {
 					public boolean hasNext() {
 						return true;
@@ -330,8 +319,7 @@ public class RestSession {
 				}
 			}
 			if (this.uriToResult != null) {
-				for (Iterator<File> i = this.uriToResult.values().iterator(); i.hasNext();) {
-					File file = (File) i.next();
+				for (File file : this.uriToResult.values()) {
 					file.delete();
 				}
 				this.resultList = null;
@@ -885,11 +873,11 @@ public class RestSession {
 				out.println("<messages>");
 				do {
 					Message message = this.messages.remove();
-					String text = RestUtils.htmlEscape(message.text);
-					out.print("<message code=\"" + Integer.toHexString(message.code) + "\"");
-					if (message.args != null) {
-						for (int i = 0; i < message.args.length; ++i) {
-							out.print(" arg" + i + "=\"" + RestUtils.htmlEscape(message.args[i]) + "\"");
+					String text = RestUtils.htmlEscape(message.text());
+					out.print("<message code=\"" + Integer.toHexString(message.code()) + "\"");
+					if (message.args() != null) {
+						for (int i = 0; i < message.args().length; ++i) {
+							out.print(" arg" + i + "=\"" + RestUtils.htmlEscape(message.args()[i]) + "\"");
 						}
 					}
 					out.print(">");
@@ -931,8 +919,7 @@ public class RestSession {
 				// 変換結果
 				if (this.transcode.uriToResult != null && !this.transcode.uriToResult.isEmpty()) {
 					out.println("<results>");
-					for (Iterator<URI> i = this.transcode.resultList.iterator(); i.hasNext();) {
-						URI uri = (URI) i.next();
+					for (URI uri : this.transcode.resultList) {
 						out.print("<result uri=\"");
 						out.print(RestUtils.htmlEscape(uri.toString()));
 						out.println("\"/>");
@@ -977,11 +964,11 @@ public class RestSession {
 				uri = ".";
 			}
 			URI resultURI = URIHelper.create(RestServlet.CHARSET, uri);
-			File file = (File) this.transcode.uriToResult.get(resultURI);
+			File file = this.transcode.uriToResult.get(resultURI);
 			if (file == null) {
 				throw new FileNotFoundException(resultURI.toString());
 			}
-			SourceMetadata metaSource = (SourceMetadata) this.transcode.uriToSourceMetadata.get(resultURI);
+			SourceMetadata metaSource = this.transcode.uriToSourceMetadata.get(resultURI);
 			res.setContentLengthLong(file.length());
 			res.setContentType(ServletHelper.getContentType(metaSource));
 			try (InputStream in = new FileInputStream(file)) {
