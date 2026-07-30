@@ -92,7 +92,10 @@ public final class Main {
 
 		{
 			Option opt = new Option("p", true, "プロパティを指定する。");
-			opt.setArgs(Integer.MAX_VALUE);
+			// 無制限は UNLIMITED_VALUES(-2)。Integer.MAX_VALUE を渡すと
+			// DefaultParser が「まだ引数が足りない」と判定し、-p の使用が
+			// 常に MissingArgumentException になる(2026-07-30修正)
+			opt.setArgs(Option.UNLIMITED_VALUES);
 			opt.setArgName("プロパティ名=値");
 			opt.setValueSeparator('=');
 			OPTIONS.addOption(opt);
@@ -146,8 +149,10 @@ public final class Main {
 		try {
 			line = parser.parse(OPTIONS, args);
 		} catch (Exception e) {
+			// 失敗を成功(0)で返すと、呼び出し側のビルド・スクリプトが
+			// 「何も変換していないのに成功」と誤認する(2026-07-30修正)
 			System.err.println(e.getMessage());
-			System.exit(0);
+			System.exit(1);
 			return;
 		}
 
@@ -230,6 +235,12 @@ public final class Main {
 		}
 		if (line.hasOption("p")) {
 			String[] values = line.getOptionValues("p");
+			if (values.length % 2 != 0) {
+				// '=' を含まない -p 値があると対で崩れる。黙って続けない
+				System.err.println("-p はプロパティ名=値 の形式で指定してください: " + values[values.length - 1]);
+				System.exit(1);
+				return;
+			}
 			for (int i = 0; i < values.length; i += 2) {
 				props.setProperty(values[i], values[i + 1]);
 			}
