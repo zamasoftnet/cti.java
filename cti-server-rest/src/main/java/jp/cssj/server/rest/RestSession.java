@@ -364,6 +364,34 @@ public class RestSession {
 		}
 	}
 
+	/**
+	 * クライアントがリソースを見つけられなかったことを伝えます。
+	 *
+	 * <p>
+	 * CTIP2 の {@code MISSING_RESOURCE} パケットに相当します。待っている
+	 * {@link Transcode#resolve(URI)} を <b>見つからなかった</b>として
+	 * 終わらせます(要求を取り下げると {@code FileNotFoundException} に
+	 * なります)。
+	 * </p>
+	 *
+	 * @param uri 見つからなかったリソースのURI。nullなら要求中のもの。
+	 * @return 要求中のリソースと一致して取り下げたならtrue。
+	 */
+	private boolean resourceNotFound(final URI uri) {
+		if (this.transcode == null) {
+			return false;
+		}
+		synchronized (this.transcode) {
+			final URI required = this.transcode.requiredResource;
+			if (required == null || (uri != null && !required.equals(uri))) {
+				return false;
+			}
+			this.transcode.requiredResource = null;
+			this.transcode.notify();
+			return true;
+		}
+	}
+
 	private void resource(Source source) throws IOException {
 		if (this.transcode != null) {
 			synchronized (this.transcode) {
@@ -479,6 +507,24 @@ public class RestSession {
 		String uri = restReq.getParameter("rest.uri");
 		String mimeType = restReq.getParameter("rest.mimeType");
 		String encoding = restReq.getParameter("rest.encoding");
+
+		if ("yes".equals(restReq.getParameter("rest.notFound"))) {
+			// **クライアントがリソースを見つけられなかった。**
+			// これを読まないと、本体の無いこの要求が「0バイトのリソース」
+			// として扱われ、見つからなかったはずのCSSや画像が空の内容で
+			// 解決されてしまう(2026-08-03)。CTIP2の MISSING_RESOURCE と
+			// 同じ意味にする
+			URI missing = null;
+			if (uri != null) {
+				try {
+					missing = URIHelper.create(RestServlet.CHARSET, uri);
+				} catch (URISyntaxException e) {
+					this.messages.message(CTIMessageCodes.WARN_BAD_RESOURCE_URI, new String[] { uri }, null);
+				}
+			}
+			this.resourceNotFound(missing);
+			return;
+		}
 
 		// System.err.println(req.getContentType());
 		String charset = req.getCharacterEncoding();
