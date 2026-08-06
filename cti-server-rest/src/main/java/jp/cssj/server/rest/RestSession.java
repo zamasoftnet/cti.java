@@ -212,38 +212,129 @@ public class RestSession {
 		}
 
 		/**
+		 * 出力を一時ファイルへ受けてから応答へ流します(2026-08-06新設)。
+		 *
+		 * <p>
+		 * <b>なぜ直接応答へ書かないか。</b>以前は
+		 * {@link ServletResponseResults}でサーブレットの出力ストリームへ
+		 * 直接書いていた。ところが変換が<b>出力を始めたあとで中断</b>すると
+		 * ——{@code output.page-limit}(中断の既定は{@code force})・
+		 * {@code output.size-limit}・エンジン側の中断のいずれでも起こる——
+		 * 後始末の{@code builder.close()}が
+		 * <b>途中までの出力を「正しいContent-Lengthを持つ完結した応答」として
+		 * 確定させて</b>しまう。サーブレットが例外を受け取ったときには
+		 * {@code isCommitted()}が既に真で、訂正のしようがない。
+		 * 結果、クライアントには<b>HTTP 200 + application/pdf + 壊れた本文</b>
+		 * が返り、「エンジンが壊れたPDFを出した」としか見えなかった
+		 * (2026-08-06に実測で確認)。説明書
+		 * (CopperPDFの「動作の制限」)は「出力の制限が働いた場合…
+		 * エラーが通知されます」と書いており、実装がそれに反していた。
+		 * </p>
+		 *
+		 * <p>
+		 * <b>この変更で失うもの。</b>実測では失うものがない。同期経路は
+		 * 変換中クライアントへ1バイトも届いておらず(23MBの文書を1秒ごとに
+		 * 観測して確認、2026-08-06)、既に実質ストリーミングしていない。
+		 * 非同期経路は以前から一時ファイルを使っている。
+		 * </p>
+		 */
+		private class SpooledResults implements Results {
+			private final File file;
+			private final long time = System.currentTimeMillis();
+			private FragmentedOutput builder = null;
+			private SourceMetadata metaSource = null;
+
+			SpooledResults(File file) {
+				this.file = file;
+			}
+
+			public boolean hasNext() {
+				return this.builder == null;
+			}
+
+			public FragmentedOutput nextBuilder(SourceMetadata metaSource) throws IOException {
+				if (this.builder != null) {
+					throw new IllegalStateException();
+				}
+				this.metaSource = metaSource;
+				// **閉じるのは1回だけ**にする。中身が一時ファイルへ確定するのは
+				// close の時なので{@link #sendTo}が先に閉じるが、そのあとで
+				// エンジンの後始末({@code PDFUserAgent.dispose})がもう一度
+				// 閉じにくる。2度目に断片を組み直させない。
+				this.builder = new FileFragmentedOutput(this.file) {
+					private boolean closed = false;
+
+					public void close() throws IOException {
+						if (this.closed) {
+							return;
+						}
+						this.closed = true;
+						super.close();
+					}
+				};
+				return this.builder;
+			}
+
+			public void end() {
+				// NOP
+			}
+
+			/**
+			 * <b>変換が成功したときだけ</b>呼びます。ここで初めて応答へ触るので、
+			 * 失敗したときの応答は未確定のまま残り、エラーを返せます。
+			 */
+			void sendTo(HttpServletResponse res) throws IOException {
+				if (this.builder == null) {
+					// 出力が1つも作られなかった
+					return;
+				}
+				// **先に閉じる。**一時ファイルへ中身が確定するのは close の時で、
+				// エンジンは変換の完了時点ではまだ閉じていない(旧実装は応答へ
+				// 直接書いていたので閉じる前からバイトが出ていた)。
+				this.builder.close();
+				long length = this.file.length();
+				RestSession.this.done(length, System.currentTimeMillis() - this.time);
+				if (this.metaSource != null && this.metaSource.getMimeType() != null) {
+					res.setContentType(ServletHelper.getContentType(this.metaSource));
+				}
+				res.setContentLengthLong(length);
+				try (InputStream in = new FileInputStream(this.file)) {
+					IOUtils.copy(in, res.getOutputStream());
+				}
+			}
+		}
+
+		/**
 		 * 同期的な変換処理を実行します。
-		 * 
+		 *
 		 * @param res
 		 * @throws ServletException
 		 * @throws IOException
 		 */
 		private void syncTranscode(final HttpServletResponse res)
 				throws ServletException, IOException, TranscoderException {
+			final File spool = File.createTempFile("copper-rest-sync-", ".dat");
 			try {
 				RestSession.this.session.setProgressListener(this);
 				// １つだけ結果を取得する
-				ServletResponseResults results = new ServletResponseResults(res) {
-					long time = System.currentTimeMillis();
-
-					protected void finish() {
-						long length = this.builder.getLength();
-						RestSession.this.done(length, System.currentTimeMillis() - this.time);
-						super.finish();
-					}
-
-				};
+				SpooledResults results = new SpooledResults(spool);
 				RestSession.this.session.setResults(results);
 				if (this.uri != null) {
 					RestSession.this.session.transcode(this.uri);
 				} else {
 					RestSession.this.session.transcode(this.source);
 				}
+				// **ここまで来たら成功**。応答へ触るのはこの一点だけ
+				results.sendTo(res);
 			} catch (IOException e) {
 				this.ex = e;
 				throw e;
 			} finally {
 				this.transcoding = false;
+				// 一時ファイルは成功・失敗によらず必ず消す
+				if (!spool.delete()) {
+					spool.deleteOnExit();
+				}
 				synchronized (RestSession.this) {
 					RestSession.this.notifyAll();
 				}

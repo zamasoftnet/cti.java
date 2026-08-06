@@ -374,7 +374,7 @@ public class RestServlet extends HttpServlet {
 						}
 					} catch (TranscoderException e) {
 						if (e.getState() == TranscoderException.STATE_BROKEN) {
-							RestServlet.sendMessage(req, res, e.getCode(), e.getMessage());
+							RestServlet.sendBrokenTranscode(req, res, e);
 						}
 					}
 				} finally {
@@ -482,8 +482,12 @@ public class RestServlet extends HttpServlet {
 				RestServlet.sendMultipartFailure(req, res, e);
 			}
 		} catch (Exception e) {
-			RestServlet.sendMessage(req, res, CTIMessageCodes.FATAL_UNEXPECTED);
+			// **送信より先にログ**(2026-08-06)。逆順だと、応答が既に
+			// 開かれている状況で sendMessage 自身が
+			// IllegalStateException を投げ、**この記録が一度も残らない**。
+			// 失敗が無音になる経路をここで断つ。
 			LOG.log(Level.SEVERE, "Unexpected error.", e);
+			RestServlet.sendMessage(req, res, CTIMessageCodes.FATAL_UNEXPECTED);
 		}
 	}
 
@@ -549,6 +553,57 @@ public class RestServlet extends HttpServlet {
 
 	private static final ResourceBundle BUNDLE = ResourceBundle.getBundle(RestServlet.class.getName());
 	private static final ResourceBundle CTI_BUNDLE = ResourceBundle.getBundle(CTIMessageCodes.class.getName());
+
+	/**
+	 * <b>出力を始めたあとで変換が壊れたことを、クライアントへ必ず伝えます</b>
+	 * (2026-08-06新設)。
+	 *
+	 * <p>
+	 * <b>直した不具合。</b>ここは以前 {@link #sendMessage} を直接呼んでいた。
+	 * ところが変換の出力は{@code ServletResponseResults}が
+	 * {@code getOutputStream()}で開いているので、{@code sendMessage}の中の
+	 * {@code getWriter()}が
+	 * {@code IllegalStateException: getOutputStream() already called}
+	 * を投げる。それが外側の{@code catch (Exception)}へ落ち、そこでも
+	 * {@code sendMessage}を呼ぶので<b>同じ例外でもう一度死ぬ</b>。
+	 * しかも{@code LOG.log(SEVERE, ...)}はその後ろに置かれていたため
+	 * 一度も実行されず、<b>失敗が完全に無音になっていた</b>。
+	 * 最終的にコンテナがバッファ済みの部分PDFを
+	 * <b>HTTP 200・正しいContent-Length</b>で送ってしまい、クライアントには
+	 * 「エンジンが壊れたPDFを出した」としか見えなかった。
+	 * </p>
+	 *
+	 * <p>
+	 * <b>これは事故ではなく通常経路で踏める。</b>{@code output.page-limit}
+	 * (中断の既定は{@code force})と{@code output.size-limit}はどちらも
+	 * 出力の途中で変換を中断する。説明書は「出力の制限が働いた場合…
+	 * エラーが通知されます」と書いているが、実測では
+	 * {@code HTTP 200 + application/pdf + 壊れた本文}が返っていた
+	 * (2026-08-06、CopperPDF4の実地コーパスの調査中に判明)。
+	 * </p>
+	 *
+	 * <p>
+	 * <b>直し方。</b>まだ送信していなければ{@code reset()}で部分的な出力を
+	 * 捨ててからエラーを返す。Undertowの{@code reset()}は
+	 * {@code writer}と{@code responseState}を初期状態へ戻すので、
+	 * このあと{@code getWriter()}を呼べる(2.2.39のバイトコードで確認)。
+	 * 既に送信済みなら訂正はできないので、<b>成功に見せないこと</b>だけを
+	 * する——例外を送出して応答を壊し、クライアントに転送エラーとして
+	 * 見せる。<b>どちらの経路でも先にログを残す。</b>
+	 * </p>
+	 */
+	static void sendBrokenTranscode(final HttpServletRequest req, final HttpServletResponse res,
+			final TranscoderException e) throws ServletException, IOException {
+		// **まずログ**。この下の送信が何をしようと、失敗した事実は必ず残す。
+		// committed を出すのは、訂正できたのかどうかを事後に区別するため。
+		LOG.log(Level.WARNING, "Transcode broke after output had started (committed=" + res.isCommitted() + ").", e);
+		if (res.isCommitted()) {
+			// 応答は送信済み。訂正できないので、せめて成功に見せない
+			throw new IOException("Transcode broke after the response was committed: " + e.getMessage(), e);
+		}
+		res.reset();
+		RestServlet.sendMessage(req, res, e.getCode(), e.getMessage());
+	}
 
 	public static void sendMessage(final HttpServletRequest req, final HttpServletResponse res, short code)
 			throws ServletException, IOException {
