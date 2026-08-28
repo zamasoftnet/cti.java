@@ -31,6 +31,10 @@ public interface Results {
 
 	/**
 	 * 一連のデータ出力を完了します。
+	 * <p>
+	 * 通常の変換では全結果のビルダが閉じられた後に1回呼ばれます。連続変換では
+	 * 個々の{@code transcode}では呼ばれず、最終的な{@code join}で1回呼ばれます。
+	 * </p>
 	 * 
 	 * @throws IOException
 	 */

@@ -1057,9 +1057,31 @@ public class RestSession {
 				if (this.transcode.uriToResult != null && !this.transcode.uriToResult.isEmpty()) {
 					out.println("<results>");
 					for (URI uri : this.transcode.resultList) {
+						final SourceMetadata metaSource = this.transcode.uriToSourceMetadata.get(uri);
 						out.print("<result uri=\"");
 						out.print(RestUtils.htmlEscape(uri.toString()));
-						out.println("\"/>");
+						out.print("\"");
+						if (metaSource != null) {
+							final String mimeType = metaSource.getMimeType();
+							if (mimeType != null) {
+								out.print(" mimeType=\"");
+								out.print(RestUtils.htmlEscape(mimeType));
+								out.print("\"");
+							}
+							final String encoding = metaSource.getEncoding();
+							if (encoding != null) {
+								out.print(" encoding=\"");
+								out.print(RestUtils.htmlEscape(encoding));
+								out.print("\"");
+							}
+						}
+						final File resultFile = this.transcode.uriToResult.get(uri);
+						if (resultFile != null) {
+							out.print(" length=\"");
+							out.print(resultFile.length());
+							out.print("\"");
+						}
+						out.println("/>");
 					}
 					out.println("</results>");
 				}
@@ -1095,11 +1117,43 @@ public class RestSession {
 			return;
 		}
 		RestRequest restReq = RestRequest.getRestRequest(req);
+		String uri = restReq.getParameter("rest.uri");
+		if (uri == null) {
+			uri = ".";
+		}
+		this.writeResult(req, res, uri, false);
+	}
+
+	/**
+	 * パス形式({@code /result/<セッションID>/<相対URI>})で結果を返します
+	 * (2026-08-28)。
+	 *
+	 * <p>
+	 * 結果集合(ページ分割SVG等)は相対URIで互いを参照します。問い合わせ
+	 * 形式({@code ?rest.uri=…})では、受け取ったページの中の
+	 * {@code ../assets/…}をクライアントが自分で書き換えるしかありません。
+	 * パス形式なら<b>ブラウザの相対解決がそのまま当たる</b>ので、
+	 * 書き換えも資源の先読みも要りません。
+	 * </p>
+	 */
+	void resultByPath(HttpServletRequest req, HttpServletResponse res, String uri)
+			throws IOException, FileUploadException, ServletException {
+		this.accessed = System.currentTimeMillis();
+		if (this.transcode == null || this.transcode.uriToResult == null) {
+			RestServlet.sendMessage(req, res, RestServlet.ERROR_NO_RESULT);
+			return;
+		}
+		this.writeResult(req, res, uri, true);
+	}
+
+	/**
+	 * @param declareEncoding gzipで縮めた結果に{@code Content-Encoding}を
+	 *                        付けるか。パス形式だけで付ける——問い合わせ形式は
+	 *                        既存クライアントが生バイトを受け取る前提のため
+	 */
+	private void writeResult(HttpServletRequest req, HttpServletResponse res, String uri, boolean declareEncoding)
+			throws IOException, FileUploadException, ServletException {
 		try {
-			String uri = restReq.getParameter("rest.uri");
-			if (uri == null) {
-				uri = ".";
-			}
 			URI resultURI = URIHelper.create(RestServlet.CHARSET, uri);
 			File file = this.transcode.uriToResult.get(resultURI);
 			if (file == null) {
@@ -1108,6 +1162,13 @@ public class RestSession {
 			SourceMetadata metaSource = this.transcode.uriToSourceMetadata.get(resultURI);
 			res.setContentLengthLong(file.length());
 			res.setContentType(ServletHelper.getContentType(metaSource));
+			if (declareEncoding) {
+				final String name = resultURI.toString();
+				if (name.endsWith(".gz") || name.endsWith(".svgz")) {
+					// 中身はgzip。宣言しておけばブラウザが解いて渡す
+					res.setHeader("Content-Encoding", "gzip");
+				}
+			}
 			try (InputStream in = new FileInputStream(file)) {
 				IOUtils.copy(in, res.getOutputStream());
 			}

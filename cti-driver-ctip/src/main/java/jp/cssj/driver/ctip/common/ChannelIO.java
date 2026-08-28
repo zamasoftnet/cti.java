@@ -120,7 +120,8 @@ public final class ChannelIO {
 	 * @throws IOException
 	 */
 	public String readString(ByteBuffer destShort, String encoding) throws IOException {
-		short len = this.readShort(destShort);
+		// 長さは符号なし16bit(2026-08-28。V2RequestProducer.readStringと同じ理由)
+		int len = this.readShort(destShort) & 0xFFFF;
 		if (len == 0) {
 			return "";
 		}
@@ -205,10 +206,21 @@ public final class ChannelIO {
 	 * @return 変換後のバイト列。
 	 * @throws IOException
 	 */
+	/** 文字列1つの上限(長さは符号なし16bitで送るため)。 */
+	public static final int MAX_STRING_BYTES = 0xFFFF;
+
 	public static byte[] toBytes(String str, String encoding) throws IOException {
 		if (str == null) {
 			str = "";
 		}
-		return str.getBytes(encoding);
+		final byte[] bytes = str.getBytes(encoding);
+		// **収まらない値は送らない**(2026-08-28)。長さが16bitに入らないまま
+		// 送るとサーバー側で本体が読み飛ばされずストリームが崩れ、
+		// 「Bad request」で接続ごと落ちる。壊すより断る方が直せる
+		if (bytes.length > MAX_STRING_BYTES) {
+			throw new IOException(
+					"CTIP string too long: " + bytes.length + " bytes (max " + MAX_STRING_BYTES + ")");
+		}
+		return bytes;
 	}
 }

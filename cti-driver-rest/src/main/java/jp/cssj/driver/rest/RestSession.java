@@ -289,7 +289,7 @@ public class RestSession extends AbstractCTISession implements CTISession {
 		}
 	}
 
-	private void waitResults() throws IOException, TranscoderException {
+	private void waitResults(final boolean finishResults) throws IOException, TranscoderException {
 		for (;;) {
 			List<NameValuePair> list = new ArrayList<NameValuePair>();
 			list.add(new BasicNameValuePair("rest.id", this.sessionId));
@@ -393,8 +393,17 @@ public class RestSession extends AbstractCTISession implements CTISession {
 					}
 					args.add(arg.getValue());
 				}
+				// The terminal response decides whether the partial output is readable.
+				// Earlier poll responses can contain results even when the final failure
+				// is broken, so resultSet must not be used here.
+				final boolean readable = results.getLength() > 0;
+				if (readable) {
+					// The server has already finalized the readable result set. Mirror the
+					// local Results contract before reporting the interruption.
+					this.results.end();
+				}
 				throw new TranscoderException(
-						results.getLength() > 0 ? TranscoderException.STATE_READABLE : TranscoderException.STATE_BROKEN,
+						readable ? TranscoderException.STATE_READABLE : TranscoderException.STATE_BROKEN,
 						code, (String[]) args.toArray(new String[args.size()]),
 						text == null ? null : text.getNodeValue());
 			}
@@ -402,6 +411,9 @@ public class RestSession extends AbstractCTISession implements CTISession {
 				continue;
 			}
 			break;
+		}
+		if (finishResults) {
+			this.results.end();
 		}
 	}
 
@@ -415,11 +427,13 @@ public class RestSession extends AbstractCTISession implements CTISession {
 		List<NameValuePair> list = new ArrayList<NameValuePair>();
 		list.add(new BasicNameValuePair("rest.id", this.sessionId));
 		list.add(new BasicNameValuePair("rest.uri", uri.toString()));
-		HttpGet req = new HttpGet(this.uri + "result?" + URLEncodedUtils.format(list, CHARSET));
-		HttpResponse res = this.client.execute(req);
-		HttpEntity entity = res.getEntity();
-		try (InputStream in = entity.getContent()) {
-			IOUtils.copy(in, out);
+		try (OutputStream xout = out) {
+			HttpGet req = new HttpGet(this.uri + "result?" + URLEncodedUtils.format(list, CHARSET));
+			HttpResponse res = this.client.execute(req);
+			HttpEntity entity = res.getEntity();
+			try (InputStream in = entity.getContent()) {
+				IOUtils.copy(in, xout);
+			}
 		}
 	}
 
@@ -455,7 +469,7 @@ public class RestSession extends AbstractCTISession implements CTISession {
 				throw new IOException(message.getFirstChild().getNodeValue());
 			}
 			this.resultSet.clear();
-			this.waitResults();
+			this.waitResults(!this.continuous);
 		} finally {
 			this.state = 1;
 		}
@@ -520,7 +534,7 @@ public class RestSession extends AbstractCTISession implements CTISession {
 				throw new IOException(message.getFirstChild().getNodeValue());
 			}
 			this.resultSet.clear();
-			this.waitResults();
+			this.waitResults(!this.continuous);
 		} finally {
 			this.state = 1;
 		}
@@ -543,7 +557,7 @@ public class RestSession extends AbstractCTISession implements CTISession {
 			if (!"1011".equals(code)) {
 				throw new IOException(message.getFirstChild().getNodeValue());
 			}
-			this.waitResults();
+			this.waitResults(true);
 		} finally {
 			this.state = 1;
 		}

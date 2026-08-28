@@ -75,6 +75,9 @@ public class RestServlet extends HttpServlet {
 
 	private Thread cleaner = null;
 
+	/** パス形式の結果取得の接頭辞({@code /result/<セッションID>/<相対URI>})。 */
+	private static final String RESULT_PATH_PREFIX = "/result/";
+
 	private static final long MAX_SESSION_TIMEOUT = 60000L * 60L;
 
 	private static final long DEFAULT_SESSION_TIMEOUT = 60000L * 3L;
@@ -272,6 +275,21 @@ public class RestServlet extends HttpServlet {
 			if (path == null || !path.startsWith("/") || path.endsWith("/")) {
 				RestServlet.sendMessage(req, res, ERROR_BAD_ACTION);
 				return;
+			}
+			// パス形式の結果取得: /result/<セッションID>/<相対URI>
+			// (2026-08-28)。結果集合の相対参照がブラウザでそのまま解決する
+			if (path.startsWith(RESULT_PATH_PREFIX)) {
+				final String rest = path.substring(RESULT_PATH_PREFIX.length());
+				final int sep = rest.indexOf('/');
+				if (sep > 0 && sep + 1 < rest.length()) {
+					final RestSession restSession = this.loadSession(rest.substring(0, sep));
+					if (restSession == null) {
+						RestServlet.sendMessage(req, res, ERROR_NO_SESSION);
+						return;
+					}
+					restSession.resultByPath(req, res, rest.substring(sep + 1));
+					return;
+				}
 			}
 			int slash = path.lastIndexOf('/');
 			String action = path.substring(slash + 1);
