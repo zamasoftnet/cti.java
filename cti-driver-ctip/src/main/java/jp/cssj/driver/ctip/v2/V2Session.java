@@ -54,6 +54,14 @@ public class V2Session extends AbstractCTISession implements CTISession {
 
 	protected FragmentedOutput builder = null;
 
+	private void closeBuilder() throws IOException {
+		FragmentedOutput builder = this.builder;
+		this.builder = null;
+		if (builder != null) {
+			builder.close();
+		}
+	}
+
 	public V2Session(URI uri, String encoding, String user, String password) throws IOException {
 		this.uri = uri;
 		this.encoding = encoding;
@@ -164,11 +172,7 @@ public class V2Session extends AbstractCTISession implements CTISession {
 		boolean serial = false;
 		switch (this.producer.getType()) {
 		case V2ServerPackets.START_DATA: {
-			if (this.builder != null) {
-				this.builder.close();
-				this.builder = null;
-				this.builder = null;
-			}
+			this.closeBuilder();
 			URI uri = this.producer.getURI();
 			String mimeType = this.producer.getMimeType();
 			String encoding = this.producer.getEncoding();
@@ -302,11 +306,8 @@ public class V2Session extends AbstractCTISession implements CTISession {
 			break;
 
 		case V2ServerPackets.EOF:
-			if (this.builder != null) {
-				this.builder.close();
-				this.builder = null;
-				this.builder = null;
-			}
+			this.closeBuilder();
+			this.results.end();
 		case V2ServerPackets.NEXT: {
 			this.state = 1;
 		}
@@ -315,15 +316,13 @@ public class V2Session extends AbstractCTISession implements CTISession {
 		case V2ServerPackets.ABORT: {
 			byte state;
 			if (this.producer.getMode() == 0) {
-				this.builder.close();
+				this.closeBuilder();
+				this.results.end();
 				state = TranscoderException.STATE_READABLE;
 			} else {
 				state = TranscoderException.STATE_BROKEN;
 			}
-			if (this.builder != null) {
-				this.builder = null;
-				this.builder = null;
-			}
+			this.builder = null;
 			this.state = 1;
 			throw new TranscoderException(state, this.producer.getCode(), this.producer.getArgs(),
 					this.producer.getMessage());

@@ -80,6 +80,20 @@ dependencies {
 `copper`, `copper.bat`については、以下のドキュメントを参照して下さい。
 http://dl.cssj.jp/docs/copper/3.2/html/2100_tools.html#admin-copper
 
+複数の結果が相互参照する出力では、`-out`ではなく`-outdir`を使います。
+各結果に付いた相対URIを保ったまま、安全にディレクトリへ保存します。
+
+```bash
+copper -s ctip://localhost:8099/ -in book.epub \
+  -if application/epub+zip \
+  -p output.type=application/vnd.copper.paged-svg \
+  -outdir book-pages
+```
+
+出力先は存在しないディレクトリ、または空のディレクトリを指定してください。
+Paged SVGでは`manifest.json`、`pages/`、`assets/fonts/`、`assets/images/`が
+生成されます。
+
 ## サンプルプログラムについて
 `javac`コマンドが実行できるようにパスを設定しておいて下さい。
 Linuxでは`compile-examples.sh`、Windowsでは`compile-examples.bat`を実行するとコンパイルされます。
@@ -117,6 +131,7 @@ http://ホスト:ポート/コンテキスト/pdf/source.jsp
 | `Results` | 出力先の抽象化 |
 | `SingleResult` | 単一結果の出力 |
 | `DirectoryResults` | 複数ファイルの出力 |
+| `ResourceDirectoryResults` | 結果の相対URIを保つ、安全なディレクトリ出力 |
 | `MessageHandler` | メッセージ受信ハンドラ |
 | `ProgressListener` | 進捗リスナー |
 | `SourceResolver` | リソース解決 |
@@ -183,6 +198,9 @@ git clone https://github.com/zamasoftnet/zstream.git ../zstream
 ```
 
 ## ライセンス
+
+[Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt)
+（全文はリポジトリの [LICENSE](./LICENSE)）
 
 Copyright (c) 2012-2026 座間ソフト
 

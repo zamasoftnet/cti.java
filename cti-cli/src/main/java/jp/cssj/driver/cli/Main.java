@@ -25,6 +25,8 @@ import jp.cssj.cti2.CTIDriverManager;
 import jp.cssj.cti2.CTISession;
 import jp.cssj.cti2.helpers.CTIMessageHelper;
 import jp.cssj.cti2.helpers.CTISessionHelper;
+import jp.cssj.cti2.results.ResourceDirectoryResults;
+import jp.cssj.cti2.results.Results;
 import jp.cssj.cti2.results.SingleResult;
 import net.zamasoft.zstream.resolver.Source;
 import net.zamasoft.zstream.resolver.SourceResolver;
@@ -84,15 +86,29 @@ public final class Main {
 		}
 
 		{
-			Option opt = new Option("out", "output-file", true, "出力ファイルを指定する。");
-			opt.setArgs(1);
-			opt.setArgName("出力ファイル");
-			OPTIONS.addOption(opt);
+			OptionGroup optGroup = new OptionGroup();
+			{
+				Option opt = new Option("out", "output-file", true, "出力ファイルを指定する。");
+				opt.setArgs(1);
+				opt.setArgName("出力ファイル");
+				optGroup.addOption(opt);
+			}
+			{
+				Option opt = new Option("outdir", "output-directory", true,
+						"結果URIを保った複数ファイルの出力先ディレクトリを指定する。");
+				opt.setArgs(1);
+				opt.setArgName("出力ディレクトリ");
+				optGroup.addOption(opt);
+			}
+			OPTIONS.addOptionGroup(optGroup);
 		}
 
 		{
 			Option opt = new Option("p", true, "プロパティを指定する。");
-			opt.setArgs(Integer.MAX_VALUE);
+			// 無制限は UNLIMITED_VALUES(-2)。Integer.MAX_VALUE を渡すと
+			// DefaultParser が「まだ引数が足りない」と判定し、-p の使用が
+			// 常に MissingArgumentException になる(2026-07-30修正)
+			opt.setArgs(Option.UNLIMITED_VALUES);
 			opt.setArgName("プロパティ名=値");
 			opt.setValueSeparator('=');
 			OPTIONS.addOption(opt);
@@ -146,8 +162,10 @@ public final class Main {
 		try {
 			line = parser.parse(OPTIONS, args);
 		} catch (Exception e) {
+			// 失敗を成功(0)で返すと、呼び出し側のビルド・スクリプトが
+			// 「何も変換していないのに成功」と誤認する(2026-07-30修正)
 			System.err.println(e.getMessage());
-			System.exit(0);
+			System.exit(1);
 			return;
 		}
 
@@ -211,15 +229,6 @@ public final class Main {
 			source = new StreamSource(uri, System.in, inputType, encoding);
 		}
 
-		// 出力
-		OutputStream out;
-		if (line.hasOption("out")) {
-			File file = new File(line.getOptionValue("out"));
-			out = new FileOutputStream(file);
-		} else {
-			out = System.out;
-		}
-
 		// プロパティ
 		Properties props = new Properties();
 		if (line.hasOption("pf")) {
@@ -230,9 +239,35 @@ public final class Main {
 		}
 		if (line.hasOption("p")) {
 			String[] values = line.getOptionValues("p");
+			if (values.length % 2 != 0) {
+				// '=' を含まない -p 値があると対で崩れる。黙って続けない
+				System.err.println("-p はプロパティ名=値 の形式で指定してください: " + values[values.length - 1]);
+				System.exit(1);
+				return;
+			}
 			for (int i = 0; i < values.length; i += 2) {
 				props.setProperty(values[i], values[i + 1]);
 			}
+		}
+		if ("application/vnd.copper.paged-svg".equals(props.getProperty("output.type"))
+				&& !line.hasOption("outdir")) {
+			System.err.println("Paged SVG出力には -outdir を指定してください。");
+			System.exit(1);
+			return;
+		}
+
+		// 出力。-outdir は結果メタデータの相対URIをそのまま安全に保存する。
+		Results results;
+		if (line.hasOption("outdir")) {
+			results = new ResourceDirectoryResults(new File(line.getOptionValue("outdir")));
+		} else {
+			OutputStream out;
+			if (line.hasOption("out")) {
+				out = new FileOutputStream(new File(line.getOptionValue("out")));
+			} else {
+				out = System.out;
+			}
+			results = new SingleResult(out);
 		}
 
 		String server = "copper:direct:";
@@ -276,7 +311,7 @@ public final class Main {
 					}
 				}
 			} else {
-				session.setResults(new SingleResult(out));
+				session.setResults(results);
 				session.setMessageHandler(CTIMessageHelper.createStreamMessageHandler(System.err));
 				session.setSourceResolver(resolver);
 				CTISessionHelper.properties(session, props);

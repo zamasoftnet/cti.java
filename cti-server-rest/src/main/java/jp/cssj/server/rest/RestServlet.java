@@ -31,7 +31,10 @@ import jp.cssj.cti2.helpers.CTIMessageCodes;
 import jp.cssj.cti2.helpers.CTIMessageHelper;
 import jp.cssj.server.acl.Acl;
 
+import org.apache.commons.fileupload.FileCountLimitExceededException;
 import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.FileUploadBase;
+import org.apache.commons.fileupload.MultipartStream;
 
 /**
  * 
@@ -60,7 +63,20 @@ public class RestServlet extends HttpServlet {
 
 	private final LongAdder accessCount = new LongAdder();
 
+	enum MultipartFailure {
+		REQUEST_TOO_LARGE,
+		FILE_TOO_LARGE,
+		FORM_FIELD_TOO_LARGE,
+		PART_COUNT_TOO_LARGE,
+		PART_HEADERS_TOO_LARGE,
+		MALFORMED,
+		IO_ERROR
+	}
+
 	private Thread cleaner = null;
+
+	/** パス形式の結果取得の接頭辞({@code /result/<セッションID>/<相対URI>})。 */
+	private static final String RESULT_PATH_PREFIX = "/result/";
 
 	private static final long MAX_SESSION_TIMEOUT = 60000L * 60L;
 
@@ -260,6 +276,21 @@ public class RestServlet extends HttpServlet {
 				RestServlet.sendMessage(req, res, ERROR_BAD_ACTION);
 				return;
 			}
+			// パス形式の結果取得: /result/<セッションID>/<相対URI>
+			// (2026-08-28)。結果集合の相対参照がブラウザでそのまま解決する
+			if (path.startsWith(RESULT_PATH_PREFIX)) {
+				final String rest = path.substring(RESULT_PATH_PREFIX.length());
+				final int sep = rest.indexOf('/');
+				if (sep > 0 && sep + 1 < rest.length()) {
+					final RestSession restSession = this.loadSession(rest.substring(0, sep));
+					if (restSession == null) {
+						RestServlet.sendMessage(req, res, ERROR_NO_SESSION);
+						return;
+					}
+					restSession.resultByPath(req, res, rest.substring(sep + 1));
+					return;
+				}
+			}
 			int slash = path.lastIndexOf('/');
 			String action = path.substring(slash + 1);
 			RestRequest restReq = new RestRequest(req);
@@ -361,7 +392,7 @@ public class RestServlet extends HttpServlet {
 						}
 					} catch (TranscoderException e) {
 						if (e.getState() == TranscoderException.STATE_BROKEN) {
-							RestServlet.sendMessage(req, res, e.getCode(), e.getMessage());
+							RestServlet.sendBrokenTranscode(req, res, e);
 						}
 					}
 				} finally {
@@ -455,22 +486,142 @@ public class RestServlet extends HttpServlet {
 			RestServlet.sendMessage(req, res, ERROR_AUTHENTICATION_FAILURE);
 			LOG.log(Level.FINE, "Authentication failure.", e);
 		} catch (FileUploadException e) {
-			RestServlet.sendMessage(req, res, ERROR_BAD_REQUEST);
-			LOG.log(Level.WARNING, "Bad request.", e);
+			RestServlet.sendMultipartFailure(req, res, e);
 		} catch (URISyntaxException e) {
 			RestServlet.sendMessage(req, res, CTIMessageCodes.ERROR_BAD_DOCUMENT_URI);
 			LOG.log(Level.WARNING, "URI Syntax.", e);
 		} catch (IOException e) {
-			RestServlet.sendMessage(req, res, CTIMessageCodes.ERROR_IO);
-			LOG.log(Level.WARNING, "I/O error.", e);
+			MultipartFailure failure = classifyMultipartFailure(e);
+			if (failure == MultipartFailure.IO_ERROR) {
+				res.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+				RestServlet.sendMessage(req, res, CTIMessageCodes.ERROR_IO);
+				LOG.log(Level.WARNING, "I/O error.", e);
+			} else {
+				RestServlet.sendMultipartFailure(req, res, e);
+			}
 		} catch (Exception e) {
-			RestServlet.sendMessage(req, res, CTIMessageCodes.FATAL_UNEXPECTED);
+			// **送信より先にログ**(2026-08-06)。逆順だと、応答が既に
+			// 開かれている状況で sendMessage 自身が
+			// IllegalStateException を投げ、**この記録が一度も残らない**。
+			// 失敗が無音になる経路をここで断つ。
 			LOG.log(Level.SEVERE, "Unexpected error.", e);
+			RestServlet.sendMessage(req, res, CTIMessageCodes.FATAL_UNEXPECTED);
+		}
+	}
+
+	static MultipartFailure classifyMultipartFailure(Throwable exception) {
+		boolean fileUploadFailure = false;
+		boolean fileUploadIoFailure = false;
+		for (Throwable cause = exception; cause != null && cause != cause.getCause(); cause = cause.getCause()) {
+			if (cause instanceof RestRequest.FormFieldSizeLimitExceededException) {
+				return MultipartFailure.FORM_FIELD_TOO_LARGE;
+			}
+			if (cause instanceof RestRequest.FileSizeLimitIOException
+					|| cause instanceof FileUploadBase.FileSizeLimitExceededException) {
+				return MultipartFailure.FILE_TOO_LARGE;
+			}
+			if (cause instanceof FileCountLimitExceededException) {
+				return MultipartFailure.PART_COUNT_TOO_LARGE;
+			}
+			if (cause instanceof FileUploadBase.SizeLimitExceededException) {
+				String message = cause.getMessage();
+				if (message != null && message.startsWith("Header section has more than ")) {
+					return MultipartFailure.PART_HEADERS_TOO_LARGE;
+				}
+				return MultipartFailure.REQUEST_TOO_LARGE;
+			}
+			if (cause instanceof MultipartStream.MalformedStreamException) {
+				return MultipartFailure.MALFORMED;
+			}
+			if (cause instanceof FileUploadBase.IOFileUploadException) {
+				fileUploadIoFailure = true;
+			}
+			if (cause instanceof FileUploadException) {
+				fileUploadFailure = true;
+			}
+		}
+		if (fileUploadIoFailure) {
+			return MultipartFailure.IO_ERROR;
+		}
+		return fileUploadFailure ? MultipartFailure.MALFORMED : MultipartFailure.IO_ERROR;
+	}
+
+	static void sendMultipartFailure(HttpServletRequest req, HttpServletResponse res, Throwable exception)
+			throws ServletException, IOException {
+		MultipartFailure failure = classifyMultipartFailure(exception);
+		switch (failure) {
+		case REQUEST_TOO_LARGE, FILE_TOO_LARGE, FORM_FIELD_TOO_LARGE, PART_COUNT_TOO_LARGE,
+				PART_HEADERS_TOO_LARGE -> {
+			res.setStatus(HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE);
+			RestServlet.sendMessage(req, res, ERROR_BAD_REQUEST);
+			LOG.log(Level.FINE, "Multipart request rejected: {0}", failure);
+		}
+		case MALFORMED -> {
+			res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			RestServlet.sendMessage(req, res, ERROR_BAD_REQUEST);
+			LOG.log(Level.WARNING, "Malformed multipart request.", exception);
+		}
+		case IO_ERROR -> {
+			res.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			RestServlet.sendMessage(req, res, CTIMessageCodes.ERROR_IO);
+			LOG.log(Level.WARNING, "Multipart I/O error.", exception);
+		}
 		}
 	}
 
 	private static final ResourceBundle BUNDLE = ResourceBundle.getBundle(RestServlet.class.getName());
 	private static final ResourceBundle CTI_BUNDLE = ResourceBundle.getBundle(CTIMessageCodes.class.getName());
+
+	/**
+	 * <b>出力を始めたあとで変換が壊れたことを、クライアントへ必ず伝えます</b>
+	 * (2026-08-06新設)。
+	 *
+	 * <p>
+	 * <b>直した不具合。</b>ここは以前 {@link #sendMessage} を直接呼んでいた。
+	 * ところが変換の出力は{@code ServletResponseResults}が
+	 * {@code getOutputStream()}で開いているので、{@code sendMessage}の中の
+	 * {@code getWriter()}が
+	 * {@code IllegalStateException: getOutputStream() already called}
+	 * を投げる。それが外側の{@code catch (Exception)}へ落ち、そこでも
+	 * {@code sendMessage}を呼ぶので<b>同じ例外でもう一度死ぬ</b>。
+	 * しかも{@code LOG.log(SEVERE, ...)}はその後ろに置かれていたため
+	 * 一度も実行されず、<b>失敗が完全に無音になっていた</b>。
+	 * 最終的にコンテナがバッファ済みの部分PDFを
+	 * <b>HTTP 200・正しいContent-Length</b>で送ってしまい、クライアントには
+	 * 「エンジンが壊れたPDFを出した」としか見えなかった。
+	 * </p>
+	 *
+	 * <p>
+	 * <b>これは事故ではなく通常経路で踏める。</b>{@code output.page-limit}
+	 * (中断の既定は{@code force})と{@code output.size-limit}はどちらも
+	 * 出力の途中で変換を中断する。説明書は「出力の制限が働いた場合…
+	 * エラーが通知されます」と書いているが、実測では
+	 * {@code HTTP 200 + application/pdf + 壊れた本文}が返っていた
+	 * (2026-08-06、CopperPDF4の実地コーパスの調査中に判明)。
+	 * </p>
+	 *
+	 * <p>
+	 * <b>直し方。</b>まだ送信していなければ{@code reset()}で部分的な出力を
+	 * 捨ててからエラーを返す。Undertowの{@code reset()}は
+	 * {@code writer}と{@code responseState}を初期状態へ戻すので、
+	 * このあと{@code getWriter()}を呼べる(2.2.39のバイトコードで確認)。
+	 * 既に送信済みなら訂正はできないので、<b>成功に見せないこと</b>だけを
+	 * する——例外を送出して応答を壊し、クライアントに転送エラーとして
+	 * 見せる。<b>どちらの経路でも先にログを残す。</b>
+	 * </p>
+	 */
+	static void sendBrokenTranscode(final HttpServletRequest req, final HttpServletResponse res,
+			final TranscoderException e) throws ServletException, IOException {
+		// **まずログ**。この下の送信が何をしようと、失敗した事実は必ず残す。
+		// committed を出すのは、訂正できたのかどうかを事後に区別するため。
+		LOG.log(Level.WARNING, "Transcode broke after output had started (committed=" + res.isCommitted() + ").", e);
+		if (res.isCommitted()) {
+			// 応答は送信済み。訂正できないので、せめて成功に見せない
+			throw new IOException("Transcode broke after the response was committed: " + e.getMessage(), e);
+		}
+		res.reset();
+		RestServlet.sendMessage(req, res, e.getCode(), e.getMessage());
+	}
 
 	public static void sendMessage(final HttpServletRequest req, final HttpServletResponse res, short code)
 			throws ServletException, IOException {

@@ -89,7 +89,11 @@ public class V2RequestProducer {
 	}
 
 	private String readString() throws IOException {
-		short len = this.in.readShort();
+		// **長さは符号なし16bit**(2026-08-28)。符号付きで読むと32,767バイトを
+		// 超える値が負になり、本体を読み飛ばさないままストリームが崩れる——
+		// 48KBのinput.image-metrics(data:URI)を送ると、本文途中の':'を
+		// 次のパケット種別として読み"Bad request: type 3a"で接続が落ちていた
+		int len = this.in.readUnsignedShort();
 		if (len <= 0) {
 			return null;
 		}

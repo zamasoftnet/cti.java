@@ -411,7 +411,15 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 		switch (e.getState()) {
 		case TranscoderException.STATE_BROKEN -> this.abort((byte) 1, e.getCode(), e.getArgs(), e.getMessage());
 		case TranscoderException.STATE_READABLE -> {
-			this.eof();
+			if (this.cursorId == -2) {
+				// EOF is already a terminal packet and an older client stops reading at
+				// that point. Do not leave an unreachable ABORT in the next response.
+				return;
+			}
+			// ABORT(mode=0) itself terminates a readable result. Sending EOF first
+			// makes the client return before consuming ABORT and leaves the protocol
+			// stream out of sync for the next request.
+			this.finish();
 			this.abort((byte) 0, e.getCode(), e.getArgs(), e.getMessage());
 		}
 		default -> throw new IllegalStateException();

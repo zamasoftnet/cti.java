@@ -113,6 +113,19 @@ class StreamMessageHandler implements MessageHandler {
 	}
 
 	public void message(short code, String[] args, String mes) {
-		this.out.println(mes);
+		if (mes != null) {
+			this.out.println(mes);
+			return;
+		}
+		// リモート実装や独自ドライバが展開済み文言を渡さなくても、診断を
+		// 黙って "null" にしない。メッセージコードと生の引数は常に残す。
+		final StringBuilder fallback = new StringBuilder(32);
+		fallback.append('[').append(Integer.toHexString(code & 0xFFFF).toUpperCase()).append(']');
+		if (args != null) {
+			for (String arg : args) {
+				fallback.append(' ').append(String.valueOf(arg));
+			}
+		}
+		this.out.println(fallback.toString());
 	}
 }
