@@ -10,6 +10,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -35,6 +36,7 @@ import net.zamasoft.zstream.resolver.SourceResolver;
 import net.zamasoft.zstream.resolver.composite.CompositeSourceResolver;
 import net.zamasoft.zstream.resolver.util.SimpleSourceMetadata;
 import net.zamasoft.zstream.resolver.util.URIHelper;
+import net.zamasoft.zstream.resolver.protocol.file.FileSource;
 import net.zamasoft.zstream.resolver.protocol.stream.StreamSource;
 import net.zamasoft.zstream.io.FragmentedOutput;
 import net.zamasoft.zstream.io.impl.FileFragmentedOutput;
@@ -113,6 +115,8 @@ public class RestSession {
 		private URI uri = null;
 		/** クライアント側のメインドキュメントのソース。 */
 		private Source source = null;
+		/** Multipartのrest.mainを順序非依存にするための一時入力。 */
+		private File sourceFile = null;
 		/** 要求されたリソース。 */
 		private URI requiredResource = null;
 		private Source resolvedResource = null;
@@ -123,7 +127,7 @@ public class RestSession {
 		/** URIと結果SourceMetadataのマップ。 */
 		private Map<URI, SourceMetadata> uriToSourceMetadata = null;
 		private volatile boolean transcoding = false;
-		private IOException ex = null;
+		private Throwable ex = null;
 		private Thread th = null;
 
 		public void sourceLength(long srcLength) {
@@ -144,11 +148,27 @@ public class RestSession {
 		}
 
 		public void setSourceURI(URI uri) {
+			this.cleanupSourceFile();
+			this.source = null;
 			this.uri = uri;
 		}
 
 		public void setSource(Source source) {
+			this.setSource(source, null);
+		}
+		public void setSource(Source source, File sourceFile) {
+			this.cleanupSourceFile();
+			this.uri = null;
 			this.source = source;
+			this.sourceFile = sourceFile;
+		}
+		private void cleanupSourceFile() {
+			if (this.sourceFile != null) {
+				if (!this.sourceFile.delete()) {
+					this.sourceFile.deleteOnExit();
+				}
+				this.sourceFile = null;
+			}
 		}
 
 		public synchronized Source resolve(URI uri) throws IOException, FileNotFoundException {
@@ -333,6 +353,7 @@ public class RestSession {
 				this.ex = e;
 				throw e;
 			} finally {
+				this.cleanupSourceFile();
 				this.transcoding = false;
 				// 一時ファイルは成功・失敗によらず必ず消す
 				if (!spool.delete()) {
@@ -363,10 +384,26 @@ public class RestSession {
 						FragmentedOutput builder = new FileFragmentedOutput(file) {
 							public void close() throws IOException {
 								super.close();
+								File resultFile = null;
+								if (file.length() > 0L) {
+									resultFile = File.createTempFile("copper-rest-result-stable-", ".dat");
+									Files.copy(file.toPath(), resultFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+								}
 								synchronized (RestSession.this) {
-									resultList.add(uri);
-									uriToResult.put(uri, file);
-									uriToSourceMetadata.put(uri, metaSource);
+									File previous = uriToResult.get(uri);
+									if (resultFile != null) {
+										if (previous == null) {
+											resultList.add(uri);
+										} else {
+											previous.delete();
+										}
+										uriToResult.put(uri, resultFile);
+										uriToSourceMetadata.put(uri, metaSource);
+									} else {
+										if (previous == null) {
+											file.delete();
+										}
+									}
 									RestSession.this.notifyAll();
 								}
 							}
@@ -396,7 +433,12 @@ public class RestSession {
 				this.th = null;
 				this.dispose();
 				this.ex = e;
+			} catch (Throwable e) {
+				this.th = null;
+				this.dispose();
+				this.ex = e;
 			} finally {
+				this.cleanupSourceFile();
 				this.transcoding = false;
 				synchronized (RestSession.this) {
 					RestSession.this.notifyAll();
@@ -762,189 +804,199 @@ public class RestSession {
 		String encoding = restReq.getParameter("rest.encoding");
 		String mainURI = restReq.getParameter("rest.mainURI");
 
-		final boolean async = "true".equals(restReq.getParameter("rest.async"));
+		boolean async = "true".equals(restReq.getParameter("rest.async"));
 		boolean resolverMode = "true".equals(restReq.getParameter("rest.requestResource"));
 		boolean continuous = "true".equals(restReq.getParameter("rest.continuous"));
-		if (!async) {
-			resolverMode = continuous = false;
-		}
 
 		String charset = req.getCharacterEncoding();
 		if (charset == null) {
 			charset = RestServlet.CHARSET;
 		}
 
-		// フォームデータ
-		while (restReq.getType() != RestRequest.NONE) {
-			if (restReq.getType() == RestRequest.FIELD) {
-				FormField field = (FormField) restReq.getItem();
-				if (field.name.startsWith("rest.")) {
-					if (field.name.equals("rest.mainURI")) {
-						mainURI = field.value;
-					} else if (field.name.equals("rest.main")) {
-						if (this.transcode == null) {
-							this.transcode = new TranscodeTask();
-						}
-						byte[] data = field.data;
-						String enc = encoding;
-						if (data == null) {
-							data = field.value.getBytes(charset);
-							enc = charset;
-						}
-						URI rsrcURI;
-						if (uri == null) {
-							rsrcURI = URIHelper.CURRENT_URI;
-						} else {
-							try {
-								rsrcURI = URIHelper.create(RestServlet.CHARSET, uri);
-							} catch (URISyntaxException e) {
-								this.messages.message(CTIMessageCodes.WARN_BAD_RESOURCE_URI, new String[] { uri },
-										null);
+		Source mainSource = null;
+		File mainSourceFile = null;
+		boolean mainSourceTransferred = false;
+		try {
+			// Multipartの並び順は意味を持たない。rest.mainを先に受けても、
+			// 後続の通常プロパティを全て適用してから変換を開始する。
+			while (restReq.getType() != RestRequest.NONE) {
+				if (restReq.getType() == RestRequest.FIELD) {
+					FormField field = (FormField) restReq.getItem();
+					if (field.name.startsWith("rest.")) {
+						if (field.name.equals("rest.mainURI")) {
+							mainURI = field.value;
+						} else if (field.name.equals("rest.main")) {
+							if (mainSource != null) {
+								throw new ServletException("Duplicate rest.main part");
+							}
+							byte[] data = field.data;
+							String enc = encoding;
+							if (data == null) {
+								data = field.value.getBytes(charset);
+								enc = charset;
+							}
+							URI rsrcURI;
+							if (uri == null) {
 								rsrcURI = URIHelper.CURRENT_URI;
+							} else {
+								try {
+									rsrcURI = URIHelper.create(RestServlet.CHARSET, uri);
+								} catch (URISyntaxException e) {
+									this.messages.message(CTIMessageCodes.WARN_BAD_RESOURCE_URI,
+											new String[] { uri }, null);
+									rsrcURI = URIHelper.CURRENT_URI;
+								}
 							}
-						}
-						Source source = new StreamSource(rsrcURI, new ByteArrayInputStream(data), mimeType, enc,
-								data.length);
-						this.transcode.setSource(source);
-						this.transcode.transcode(req, res, async, resolverMode, continuous);
-						return true;
-					} else if (field.name.equals("rest.resource")) {
-						byte[] data = field.data;
-						String enc = encoding;
-						if (data == null) {
-							data = field.value.getBytes(charset);
-							enc = charset;
-						}
-						URI rsrcURI;
-						if (uri == null) {
-							rsrcURI = URIHelper.CURRENT_URI;
-						} else {
-							try {
-								rsrcURI = URIHelper.create(RestServlet.CHARSET, uri);
-							} catch (URISyntaxException e) {
-								this.messages.message(CTIMessageCodes.WARN_BAD_RESOURCE_URI, new String[] { uri },
-										null);
-								rsrcURI = URIHelper.CURRENT_URI;
-							}
-						}
-						SourceMetadata metaSource = new SimpleSourceMetadata(rsrcURI, mimeType, enc, data.length);
-						this.resource(metaSource, data);
-					} else if (field.name.equals("rest.uri")) {
-						uri = field.value;
-					} else if (field.name.equals("rest.mimeType")) {
-						mimeType = field.value;
-					} else if (field.name.equals("rest.encoding")) {
-						encoding = field.value;
-					}
-				} else {
-					this.property(req, field.name, field.value);
-				}
-			} else {
-				FileItemStream item = (FileItemStream) restReq.getItem();
-				String name = item.getFieldName();
-				if (name.equals("rest.resource") || name.equals("rest.main")) {
-					FileItemHeaders headers = item.getHeaders();
-					if (uri == null && headers != null) {
-						uri = headers.getHeader("X-URI");
-					}
-					if (uri == null) {
-						uri = item.getName();
-					}
-					if (mimeType == null) {
-						mimeType = item.getContentType();
-					}
-					if (encoding == null && mimeType != null) {
-						encoding = MimeTypeHelper.getParameter(mimeType, "charset");
-					}
-					mimeType = MimeTypeHelper.getTypePart(mimeType);
-					long length = -1L;
-					if (headers != null) {
-						String value = headers.getHeader("Content-Length");
-						if (value != null) {
-							length = Long.parseLong(value);
-						}
-					}
-					URI rsrcURI;
-					if (uri == null) {
-						rsrcURI = URIHelper.CURRENT_URI;
-					} else {
-						try {
-							rsrcURI = URIHelper.create(RestServlet.CHARSET, uri);
-						} catch (URISyntaxException e) {
-							this.messages.message(CTIMessageCodes.WARN_BAD_RESOURCE_URI, new String[] { uri }, null);
-							rsrcURI = URIHelper.CURRENT_URI;
-						}
-					}
-					try (InputStream in = item.openStream()) {
-						if (name.equals("rest.main")) {
-							if (this.transcode == null) {
-								this.transcode = new TranscodeTask();
-							}
-							Source source = new StreamSource(rsrcURI, in, mimeType, encoding, length);
-							this.transcode.setSource(source);
-							this.transcode.transcode(req, res, async, resolverMode, continuous);
-							return true;
-						} else {
-							StreamSource source = new StreamSource(rsrcURI, in, mimeType, encoding, length);
-							this.resource(source);
+							mainSource = new StreamSource(rsrcURI, new ByteArrayInputStream(data), mimeType, enc,
+									data.length);
 							uri = null;
 							mimeType = null;
 							encoding = null;
-							length = -1L;
+						} else if (field.name.equals("rest.resource")) {
+							byte[] data = field.data;
+							String enc = encoding;
+							if (data == null) {
+								data = field.value.getBytes(charset);
+								enc = charset;
+							}
+							URI rsrcURI;
+							if (uri == null) {
+								rsrcURI = URIHelper.CURRENT_URI;
+							} else {
+								try {
+									rsrcURI = URIHelper.create(RestServlet.CHARSET, uri);
+								} catch (URISyntaxException e) {
+									this.messages.message(CTIMessageCodes.WARN_BAD_RESOURCE_URI,
+											new String[] { uri }, null);
+									rsrcURI = URIHelper.CURRENT_URI;
+								}
+							}
+							SourceMetadata metaSource = new SimpleSourceMetadata(rsrcURI, mimeType, enc, data.length);
+							this.resource(metaSource, data);
+						} else if (field.name.equals("rest.uri")) {
+							uri = field.value;
+						} else if (field.name.equals("rest.mimeType")) {
+							mimeType = field.value;
+						} else if (field.name.equals("rest.encoding")) {
+							encoding = field.value;
+						} else if (field.name.equals("rest.async")) {
+							async = "true".equals(field.value);
+						} else if (field.name.equals("rest.requestResource")) {
+							resolverMode = "true".equals(field.value);
+						} else if (field.name.equals("rest.continuous")) {
+							continuous = "true".equals(field.value);
 						}
+					} else {
+						this.property(req, field.name, field.value);
+					}
+				} else {
+					FileItemStream item = (FileItemStream) restReq.getItem();
+					String name = item.getFieldName();
+					if (name.equals("rest.resource") || name.equals("rest.main")) {
+						FileItemHeaders headers = item.getHeaders();
+						if (uri == null && headers != null) {
+							uri = headers.getHeader("X-URI");
+						}
+						if (uri == null) {
+							uri = item.getName();
+						}
+						if (mimeType == null) {
+							mimeType = item.getContentType();
+						}
+						if (encoding == null && mimeType != null) {
+							encoding = MimeTypeHelper.getParameter(mimeType, "charset");
+						}
+						mimeType = MimeTypeHelper.getTypePart(mimeType);
+						URI rsrcURI;
+						if (uri == null) {
+							rsrcURI = URIHelper.CURRENT_URI;
+						} else {
+							try {
+								rsrcURI = URIHelper.create(RestServlet.CHARSET, uri);
+							} catch (URISyntaxException e) {
+								this.messages.message(CTIMessageCodes.WARN_BAD_RESOURCE_URI,
+										new String[] { uri }, null);
+								rsrcURI = URIHelper.CURRENT_URI;
+							}
+						}
+						if (name.equals("rest.main")) {
+							if (mainSource != null) {
+								throw new ServletException("Duplicate rest.main part");
+							}
+							mainSourceFile = File.createTempFile("copper-rest-main-", ".dat");
+							try (InputStream in = item.openStream()) {
+								Files.copy(in, mainSourceFile.toPath(),
+										java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+							}
+							mainSource = new FileSource(mainSourceFile, rsrcURI, mimeType, encoding);
+						} else {
+							try (InputStream in = item.openStream()) {
+								this.resource(new StreamSource(rsrcURI, in, mimeType, encoding, -1L));
+							}
+						}
+						uri = null;
+						mimeType = null;
+						encoding = null;
 					}
 				}
+				restReq.nextItem();
 			}
-			restReq.nextItem();
-		}
-		if (mainURI != null) {
-			if (this.transcode == null) {
-				this.transcode = new TranscodeTask();
-			}
-			URI mainURIParsed = URIHelper.create(RestServlet.CHARSET, mainURI);
-			this.transcode.setSourceURI(mainURIParsed);
-			this.transcode.transcode(req, res, async, resolverMode, continuous);
-			return true;
-		}
-		if (!RestUtils.isForm(req)) {
-			// 内容がメインドキュメント
-			if (uri == null) {
-				uri = req.getHeader("X-URI");
-			}
-			if (mimeType == null) {
-				mimeType = req.getContentType();
-			}
-			if (encoding == null && mimeType != null) {
-				encoding = MimeTypeHelper.getParameter(mimeType, "charset");
-			}
-			mimeType = MimeTypeHelper.getTypePart(mimeType);
-			long length = -1L;
-			String value = req.getHeader("Content-Length");
-			if (value != null) {
-				length = Long.parseLong(value);
-			}
-			URI rsrcURI;
-			if (uri == null) {
-				rsrcURI = URIHelper.CURRENT_URI;
-			} else {
-				try {
-					rsrcURI = URIHelper.create(RestServlet.CHARSET, uri);
-				} catch (URISyntaxException e) {
-					this.messages.message(CTIMessageCodes.WARN_BAD_RESOURCE_URI, new String[] { uri }, null);
-					rsrcURI = URIHelper.CURRENT_URI;
-				}
-			}
-			StreamSource source = new StreamSource(rsrcURI, req.getInputStream(), mimeType, encoding, length);
-			if (this.transcode == null) {
-				this.transcode = new TranscodeTask();
-			}
-			this.transcode.setSource(source);
-			this.transcode.transcode(req, res, async, resolverMode, continuous);
-			return true;
-		}
-		return false;
-	}
 
+			if (!async) {
+				resolverMode = false;
+				continuous = false;
+			}
+			if (mainSource != null) {
+				if (this.transcode == null) {
+					this.transcode = new TranscodeTask();
+				}
+				this.transcode.setSource(mainSource, mainSourceFile);
+				mainSourceTransferred = true;
+				this.transcode.transcode(req, res, async, resolverMode, continuous);
+				return true;
+			}
+			if (mainURI != null) {
+				if (this.transcode == null) {
+					this.transcode = new TranscodeTask();
+				}
+				URI mainURIParsed = URIHelper.create(RestServlet.CHARSET, mainURI);
+				this.transcode.setSourceURI(mainURIParsed);
+				this.transcode.transcode(req, res, async, resolverMode, continuous);
+				return true;
+			}
+			if (!RestUtils.isForm(req)) {
+				if (uri == null) {
+					uri = req.getHeader("X-URI");
+				}
+				if (mimeType == null) {
+					mimeType = req.getContentType();
+				}
+				if (encoding == null && mimeType != null) {
+					encoding = MimeTypeHelper.getParameter(mimeType, "charset");
+				}
+				mimeType = MimeTypeHelper.getTypePart(mimeType);
+				long length = -1L;
+				String value = req.getHeader("Content-Length");
+				if (value != null) {
+					length = Long.parseLong(value);
+				}
+				URI rsrcURI = uri == null ? URIHelper.CURRENT_URI
+						: URIHelper.create(RestServlet.CHARSET, uri);
+				Source source = new StreamSource(rsrcURI, req.getInputStream(), mimeType, encoding, length);
+				if (this.transcode == null) {
+					this.transcode = new TranscodeTask();
+				}
+				this.transcode.setSource(source);
+				this.transcode.transcode(req, res, async, resolverMode, continuous);
+				return true;
+			}
+			return false;
+		} finally {
+			if (!mainSourceTransferred && mainSourceFile != null && !mainSourceFile.delete()) {
+				mainSourceFile.deleteOnExit();
+			}
+		}
+	}
 	void noResource(HttpServletRequest req)
 			throws ServletException, IOException, TranscoderException, FileUploadException, URISyntaxException {
 		if (this.transcode != null) {
@@ -1112,7 +1164,7 @@ public class RestSession {
 	 * @throws IOException
 	 * @throws FileUploadException
 	 */
-	void result(HttpServletRequest req, HttpServletResponse res)
+	synchronized void result(HttpServletRequest req, HttpServletResponse res)
 			throws IOException, FileUploadException, ServletException {
 		this.accessed = System.currentTimeMillis();
 		if (this.transcode == null || this.transcode.uriToResult == null) {
