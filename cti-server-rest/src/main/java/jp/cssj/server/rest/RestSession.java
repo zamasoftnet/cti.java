@@ -1168,7 +1168,7 @@ public class RestSession {
 			throws IOException, FileUploadException, ServletException {
 		this.accessed = System.currentTimeMillis();
 		if (this.transcode == null || this.transcode.uriToResult == null) {
-			RestServlet.sendMessage(req, res, RestServlet.ERROR_NO_RESULT);
+			noResult(req, res);
 			return;
 		}
 		RestRequest restReq = RestRequest.getRestRequest(req);
@@ -1195,10 +1195,22 @@ public class RestSession {
 			throws IOException, FileUploadException, ServletException {
 		this.accessed = System.currentTimeMillis();
 		if (this.transcode == null || this.transcode.uriToResult == null) {
-			RestServlet.sendMessage(req, res, RestServlet.ERROR_NO_RESULT);
+			noResult(req, res);
 			return;
 		}
 		this.writeResult(req, res, uri, true);
+	}
+
+	/**
+	 * 無い結果は <b>404</b> で返します(2026-09-02、cti.li の要望)。以前は変換前が
+	 * 200+XML(3016)、変換後に無い URI が 500+XML(3002 I/O error)で、読み器は
+	 * 本文の形で「まだ」を判定し、500 は監視の誤検知になっていた。本文は
+	 * 今までどおり XML の 3016 なので、既存クライアントは本文でも判定できる。
+	 */
+	private static void noResult(HttpServletRequest req, HttpServletResponse res)
+			throws ServletException, IOException {
+		res.setStatus(HttpServletResponse.SC_NOT_FOUND);
+		RestServlet.sendMessage(req, res, RestServlet.ERROR_NO_RESULT);
 	}
 
 	/**
@@ -1212,7 +1224,8 @@ public class RestSession {
 			URI resultURI = URIHelper.create(RestServlet.CHARSET, uri);
 			File file = this.transcode.uriToResult.get(resultURI);
 			if (file == null) {
-				throw new FileNotFoundException(resultURI.toString());
+				noResult(req, res);
+				return;
 			}
 			SourceMetadata metaSource = this.transcode.uriToSourceMetadata.get(resultURI);
 			res.setContentLengthLong(file.length());
@@ -1228,7 +1241,7 @@ public class RestSession {
 				IOUtils.copy(in, res.getOutputStream());
 			}
 		} catch (URISyntaxException e) {
-			throw new FileNotFoundException();
+			noResult(req, res);
 		}
 	}
 

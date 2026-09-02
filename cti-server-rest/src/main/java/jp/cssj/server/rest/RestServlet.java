@@ -225,6 +225,28 @@ public class RestServlet extends HttpServlet {
 		return id == null ? null : this.idToSession.get(id);
 	}
 
+	/**
+	 * {@code Authorization: Basic …} を {user, password} に解きます。無い・壊れている
+	 * なら {@code null}(認証失敗として扱われる)。
+	 */
+	static String[] basicCredentials(final String authorization) {
+		if (authorization == null || !authorization.regionMatches(true, 0, "Basic ", 0, 6)) {
+			return null;
+		}
+		try {
+			final String decoded = new String(
+					java.util.Base64.getDecoder().decode(authorization.substring(6).trim()),
+					java.nio.charset.StandardCharsets.UTF_8);
+			final int colon = decoded.indexOf(':');
+			if (colon <= 0) {
+				return null;
+			}
+			return new String[] { decoded.substring(0, colon), decoded.substring(colon + 1) };
+		} catch (IllegalArgumentException e) {
+			return null;
+		}
+	}
+
 	protected RestSession createSession(HttpServletRequest req, boolean messages, RestRequest restReq, long timeout)
 			throws IOException, SecurityException, FileUploadException {
 		Map<String, String> props;
@@ -236,8 +258,20 @@ public class RestServlet extends HttpServlet {
 			if (this.ctiProps != null) {
 				props.putAll(this.ctiProps);
 			}
-			props.put("user", restReq.getParameter("rest.user"));
-			props.put("password", restReq.getParameter("rest.password"));
+			String user = restReq.getParameter("rest.user");
+			String password = restReq.getParameter("rest.password");
+			if (user == null && password == null) {
+				// rest.user / rest.password が無ければ Authorization: Basic を見る
+				// (2026-09-02、cti.li の要望——クエリ文字列の認証情報は前段の
+				// アクセスログに残る)。パラメータがあればそちらが勝つ
+				final String[] basic = basicCredentials(req.getHeader("Authorization"));
+				if (basic != null) {
+					user = basic[0];
+					password = basic[1];
+				}
+			}
+			props.put("user", user);
+			props.put("password", password);
 			for (String name : restReq.getParameterNames()) {
 				if (name.startsWith("rest.")) {
 					props.put(name.substring(5), restReq.getParameter(name));
