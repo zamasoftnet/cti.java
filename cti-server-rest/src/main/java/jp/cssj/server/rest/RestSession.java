@@ -122,7 +122,7 @@ public class RestSession {
 		private Map<URI, File> uriToResult = null;
 		/** URIと結果SourceMetadataのマップ。 */
 		private Map<URI, SourceMetadata> uriToSourceMetadata = null;
-		private boolean transcoding = false;
+		private volatile boolean transcoding = false;
 		private IOException ex = null;
 		private Thread th = null;
 
@@ -193,16 +193,19 @@ public class RestSession {
 			}
 			RestSession.this.session.setContinuous(continuous);
 
-			while (this.transcoding) {
-				synchronized (RestSession.this) {
+			// 検査と待機を同じ監視の中で行う(2026-09-02)。以前は検査が監視の外で、
+			// 完了側の finally が transcoding=false にしてから notifyAll するまでの
+			// 隙間に検査が通ると、通知を取り逃して次のメッセージまで眠っていた
+			synchronized (RestSession.this) {
+				while (this.transcoding) {
 					try {
-						RestSession.this.wait();
+						RestSession.this.wait(1000);
 					} catch (InterruptedException e) {
 						// ignore
 					}
 				}
+				this.transcoding = true;
 			}
-			this.transcoding = true;
 			if (async) {
 				this.th = Thread.ofVirtual().name(RestServlet.class.getName()).start(this);
 				RestServlet.sendMessage(req, res, RestServlet.INFO_OK);
