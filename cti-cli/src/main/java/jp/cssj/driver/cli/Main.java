@@ -147,7 +147,14 @@ public final class Main {
 			OPTIONS.addOption(opt);
 		}
 		{
-			Option opt = new Option("t", "trust", false, "SSL接続で常に証明書を信頼します。");
+			// 意味は「検証しない」。名前は互換のために残す
+			Option opt = new Option("t", "trust", false,
+					"サーバー証明書を検証しません(危険。自己署名の試験用)。--insecureと同じです。");
+			OPTIONS.addOption(opt);
+		}
+		{
+			Option opt = new Option(null, "insecure", false,
+					"サーバー証明書を検証しません(危険。自己署名の試験用)。");
 			OPTIONS.addOption(opt);
 		}
 	}
@@ -284,8 +291,9 @@ public final class Main {
 			password = line.getOptionValue("pw");
 		}
 		
-		if (line.hasOption("t")) {
-			System.setProperty("jp.cssj.driver.tls.trust", "true");
+		if (line.hasOption("t") || line.hasOption("insecure")) {
+			// **新しい名前へ設定する。** 旧名は指定されると警告が出る
+			System.setProperty(jp.cssj.cti2.TLSPolicy.INSECURE, "true");
 		}
 		
 		boolean sv = line.hasOption("sv");

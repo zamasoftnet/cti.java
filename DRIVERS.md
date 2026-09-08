@@ -54,6 +54,61 @@ GitHub Releases からダウンロードできます。
 | Perl | Perl 5.6.1 以降 |
 | Python | Python 3 以降 |
 
+## TLS（`ctips:` と `https:`）
+
+**4.0.0 から、サーバー証明書を検証するのが既定です。**
+
+それ以前は検証しないのが既定で、しかも設定の名前が意味と反転していました
+（`jp.cssj.driver.tls.trust` の既定が `true` で、その `true` は「何でも通す」
+という意味でした）。SNI も送らず、ホスト名も検証していませんでした。
+
+### 設定
+
+| 設定 | 既定 | 意味 |
+|---|---|---|
+| `jp.cssj.driver.tls.insecure` | `false` | `true` にするとサーバー証明書を検証しません |
+| `jp.cssj.driver.tls.trust` | （廃止予定） | 旧名。`true` は「検証しない」の意味 |
+
+新しい名前が指定されていれば**それだけ**を見ます。指定されていないときだけ
+旧名を見ます。`insecure=false` が旧名の `true` に負けることはありません。
+旧名を使うと JVM ごとに一度だけ警告が出ます。
+
+コマンドラインでは `--insecure`（`-t` / `--trust` も同じ意味で残しています）。
+
+```bash
+copper -s ctips://cti.example.jp:8499/ --insecure -in doc.html -out doc.pdf
+```
+
+### 自己署名の証明書を使うサーバーへ繋ぐ
+
+**`--insecure` は試験用の逃げ道**です。本番では証明書を信頼する側に登録してください。
+
+```bash
+java -Djavax.net.ssl.trustStore=/path/to/truststore.p12      -Djavax.net.ssl.trustStorePassword=... ...
+```
+
+`ctips:`（CTIP）と `https:`（REST）で `insecure=true` の意味は違います。
+
+| | `insecure=true` のとき |
+|---|---|
+| CTIP | **何でも通します** |
+| REST | 証明書チェーンが 1 つだけのものを信頼扱いにし、それ以外は通常の検証へ委ねます。ホスト名も検証しません |
+
+### 動かなくなったら
+
+自己署名の証明書や、名前の合わない証明書のサーバーへ繋いでいた場合は
+**失敗するようになります**。意図した変更です。上のいずれかで対処してください。
+
+### `ctips:` で `version=1` は使えません
+
+CTIP v1 は TLS に対応していません。以前は `ctips://…?version=1` を指定すると
+**平文で接続していました**。現在は接続前に拒否します。v2（既定）を使ってください。
+
+### Ant タスクを使う場合
+
+`cti-ant` の変換用 `<property>` と JVM のシステムプロパティは別物です。
+TLS の設定は JVM 側（`ANT_OPTS` など）で渡してください。
+
 ## リリース方法
 
 各ドライバとも `v*` タグを push することで GitHub Actions が自動実行されます。

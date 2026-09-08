@@ -43,6 +43,8 @@ public class CTIPDriver implements CTIDriver {
 			String[] params = query.split("&");
 			for (int i = 0; i < params.length; ++i) {
 				if (params[0].equals("version=1")) {
+					// ctips: は v2 だけが担う。v1 で受けると平文へ落ちる
+					V1Session.rejectSecureScheme(uri);
 					return new V1Session(uri, ENCODING, user, password);
 				}
 			}

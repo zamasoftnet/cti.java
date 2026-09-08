@@ -5,6 +5,8 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
+import java.nio.BufferUnderflowException;
+import java.io.EOFException;
 import java.nio.channels.ByteChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
@@ -23,7 +25,8 @@ public class V2ContentProducer {
 
 	protected final URI serverURI;
 
-	protected ChannelIO io;
+	protected volatile ChannelIO io;
+	protected long connectTimeout;
 
 	public V2ContentProducer(URI uri, String encoding) throws IOException {
 		this.charset = encoding;
@@ -49,14 +52,16 @@ public class V2ContentProducer {
 		if (query != null) {
 			String[] params = query.split("&");
 			for (int i = 0; i < params.length; ++i) {
-				if (params[0].startsWith("timeout=")) {
-					timeout = Long.parseLong(params[0].substring(8));
+				if (params[i].startsWith("timeout=")) {
+					timeout = Long.parseLong(params[i].substring(8));
 				}
 			}
 		}
 
+		this.connectTimeout = timeout;
 		InetSocketAddress address = new InetSocketAddress(host, port);
 		ByteChannel channel = this.createChannel(address);
+		try {
 		this.io = new ChannelIO(channel, timeout);
 
 		byte[] header = ("CTIP/2.0 " + this.charset + "\n").getBytes("ISO-8859-1");
@@ -77,13 +82,29 @@ public class V2ContentProducer {
 		}
 
 		return new V2RequestConsumer(this.io, this.charset);
+        } catch (IOException | RuntimeException failure) {
+            try {
+                if (this.io != null) { this.io.close(); } else { channel.close(); }
+            } catch (IOException close) { failure.addSuppressed(close); }
+            throw failure;
+        }
 	}
 
 	protected ByteChannel createChannel(InetSocketAddress address) throws IOException {
 		SocketChannel socketChannel = SelectorProvider.provider().openSocketChannel();
-		socketChannel.connect(address);
-		socketChannel.configureBlocking(false);
-		return socketChannel;
+        try {
+            socketChannel.configureBlocking(false);
+            long deadline = ChannelIO.deadline(connectTimeout);
+            if (!socketChannel.connect(address)) {
+                while (!socketChannel.finishConnect()) {
+                    ChannelIO.awaitReady(socketChannel, java.nio.channels.SelectionKey.OP_CONNECT, deadline);
+                }
+            }
+            return socketChannel;
+        } catch (IOException | RuntimeException failure) {
+            try { socketChannel.close(); } catch (IOException close) { failure.addSuppressed(close); }
+            throw failure;
+        }
 	}
 
 	private byte type, mode;
@@ -106,137 +127,117 @@ public class V2ContentProducer {
 
 	private ByteBuffer data;
 
-	private ByteBuffer destLong = ByteBuffer.allocate(8);
+	private final ByteBuffer packetHeader = ByteBuffer.allocate(4);
+    private ByteBuffer packet;
 
-	private ByteBuffer destInt = ByteBuffer.allocate(4);
+    protected void close() throws IOException {
+        ChannelIO current = this.io;
+        if (current != null) { current.close(); }
+    }
 
-	private ByteBuffer destShort = ByteBuffer.allocate(2);
+    /** Read a complete frame, retaining partial header/body across nonblocking polls. */
+    boolean pollNext() throws IOException {
+        return receiveNext(false);
+    }
 
-	private ByteBuffer destByte = ByteBuffer.allocate(1);
+    public void next() throws IOException {
+        receiveNext(true);
+    }
 
-	protected void close() throws IOException {
-		if (this.io != null) {
-			this.io.close();
-			this.io = null;
-		}
-	}
+    private boolean receiveNext(boolean wait) throws IOException {
+        long deadline = io.deadline();
+        while (true) {
+            ChannelIO.checkDeadline(deadline);
+            ByteBuffer target = packet == null ? packetHeader : packet;
+            if (target.hasRemaining()) {
+                int count = io.readSome(target);
+                if (count < 0) { throw new EOFException("EOF within CTIP response"); }
+                if (count == 0) {
+                    if (!wait) { return false; }
+                    io.await(io.readOps(), deadline);
+                    continue;
+                }
+                if (target.hasRemaining()) { continue; }
+            }
+            if (packet == null) {
+                int length = packetHeader.getInt(0);
+                if (length < 1) { throw new IOException("Invalid CTIP response length: " + length); }
+                packet = ByteBuffer.allocate(length);
+                continue;
+            }
+            ByteBuffer complete = packet;
+            complete.flip();
+            packet = null;
+            packetHeader.clear();
+            parse(complete);
+            return true;
+        }
+    }
 
-	/**
-	 * 次のパケットにカーソルを移します。
-	 * 
-	 * @throws IOException
-	 */
-	public void next() throws IOException {
-		int payload = this.io.readInt(this.destInt);
-		this.type = this.io.readByte(this.destByte);
-		// System.err.println(Integer.toHexString(this.type));
-		switch (this.type) {
-		case V2ServerPackets.START_DATA:
-			try {
-				this.uri = URIHelper.create(this.charset, this.io.readString(this.destShort, this.charset));
-			} catch (URISyntaxException e) {
-				throw new IOException(e.getMessage());
-			}
-			this.mimeType = this.io.readString(this.destShort, this.charset);
-			if (this.mimeType.length() == 0) {
-				this.mimeType = null;
-			}
-			this.encoding = this.io.readString(this.destShort, this.charset);
-			if (this.encoding.length() == 0) {
-				this.encoding = null;
-			}
-			this.length = this.io.readLong(this.destLong);
-			break;
+    private String string(ByteBuffer packet) throws IOException {
+        int length = packet.getShort() & 0xffff;
+        byte[] bytes = new byte[length];
+        packet.get(bytes);
+        return new String(bytes, charset);
+    }
 
-		case V2ServerPackets.BLOCK_DATA:
-			this.blockId = this.io.readInt(this.destInt);
-			payload -= 1 + 4;
-			this.data = ByteBuffer.allocate(payload);
-			this.io.readAll(this.data);
-			this.data.position(0);
-			break;
+    private URI uri(ByteBuffer packet) throws IOException {
+        try { return URIHelper.create(charset, string(packet)); }
+        catch (URISyntaxException e) { throw new IOException(e.getMessage(), e); }
+    }
 
-		case V2ServerPackets.ADD_BLOCK:
-			break;
-
-		case V2ServerPackets.INSERT_BLOCK:
-		case V2ServerPackets.CLOSE_BLOCK:
-			this.anchorId = this.io.readInt(this.destInt);
-			break;
-
-		case V2ServerPackets.MESSAGE:
-			this.code = this.io.readShort(this.destShort);
-			payload -= 1 + 2; {
-			short len = this.io.readShort(this.destShort);
-			byte[] buff = new byte[len];
-			ByteBuffer dest = ByteBuffer.wrap(buff);
-			this.io.readAll(dest);
-			this.message = new String(buff, this.charset);
-			payload -= 2 + len;
-		}
-			this.args.clear();
-			while (payload > 0) {
-				short len = this.io.readShort(this.destShort);
-				byte[] buff = new byte[len];
-				ByteBuffer dest = ByteBuffer.wrap(buff);
-				this.io.readAll(dest);
-				String arg = new String(buff, this.charset);
-				this.args.add(arg);
-				payload -= 2 + len;
-			}
-
-			break;
-		case V2ServerPackets.ABORT:
-			this.mode = this.io.readByte(this.destByte);
-			this.code = this.io.readShort(this.destShort);
-			payload -= 1 + 3; {
-			short len = this.io.readShort(this.destShort);
-			byte[] buff = new byte[len];
-			ByteBuffer dest = ByteBuffer.wrap(buff);
-			this.io.readAll(dest);
-			this.message = new String(buff, this.charset);
-			payload -= 2 + len;
-		}
-			while (payload > 0) {
-				short len = this.io.readShort(this.destShort);
-				byte[] buff = new byte[len];
-				ByteBuffer dest = ByteBuffer.wrap(buff);
-				this.io.readAll(dest);
-				String arg = new String(buff, this.charset);
-				this.args.add(arg);
-				payload -= 2 + len;
-			}
-
-			break;
-
-		case V2ServerPackets.MAIN_LENGTH:
-		case V2ServerPackets.MAIN_READ:
-			this.length = this.io.readLong(this.destLong);
-			break;
-
-		case V2ServerPackets.DATA:
-			payload -= 1;
-			this.data = ByteBuffer.allocate(payload);
-			this.io.readAll(this.data);
-			this.data.position(0);
-			break;
-
-		case V2ServerPackets.RESOURCE_REQUEST:
-			try {
-				this.uri = URIHelper.create(this.charset, this.io.readString(this.destShort, this.charset));
-			} catch (URISyntaxException e) {
-				throw new IOException(e.getMessage());
-			}
-			break;
-
-		case V2ServerPackets.EOF:
-		case V2ServerPackets.NEXT:
-			break;
-
-		default:
-			throw new IOException("Bad response: type " + Integer.toHexString(this.type));
-		}
-	}
+    private void parse(ByteBuffer packet) throws IOException {
+        try {
+            this.type = packet.get();
+            switch (this.type) {
+            case V2ServerPackets.START_DATA:
+                this.uri = uri(packet);
+                this.mimeType = string(packet);
+                if (mimeType.isEmpty()) { mimeType = null; }
+                this.encoding = string(packet);
+                if (encoding.isEmpty()) { encoding = null; }
+                this.length = packet.getLong();
+                break;
+            case V2ServerPackets.BLOCK_DATA:
+                this.blockId = packet.getInt();
+                this.data = packet.slice();
+                packet.position(packet.limit());
+                break;
+            case V2ServerPackets.DATA:
+                this.data = packet.slice();
+                packet.position(packet.limit());
+                break;
+            case V2ServerPackets.INSERT_BLOCK:
+            case V2ServerPackets.CLOSE_BLOCK:
+                this.anchorId = packet.getInt();
+                break;
+            case V2ServerPackets.MESSAGE:
+            case V2ServerPackets.ABORT:
+                if (type == V2ServerPackets.ABORT) { this.mode = packet.get(); }
+                this.code = packet.getShort();
+                this.message = string(packet);
+                this.args.clear();
+                while (packet.hasRemaining()) { this.args.add(string(packet)); }
+                break;
+            case V2ServerPackets.MAIN_LENGTH:
+            case V2ServerPackets.MAIN_READ:
+                this.length = packet.getLong();
+                break;
+            case V2ServerPackets.RESOURCE_REQUEST:
+                this.uri = uri(packet);
+                break;
+            case V2ServerPackets.ADD_BLOCK:
+            case V2ServerPackets.EOF:
+            case V2ServerPackets.NEXT:
+                break;
+            default:
+                throw new IOException("Bad response: type " + Integer.toHexString(type));
+            }
+            if (packet.hasRemaining()) { throw new IOException("Trailing bytes in CTIP response"); }
+        } catch (BufferUnderflowException e) {
+            throw new IOException("Incomplete CTIP response payload", e);
+        }
+    }
 
 	/**
 	 * 断片のIDを返します。

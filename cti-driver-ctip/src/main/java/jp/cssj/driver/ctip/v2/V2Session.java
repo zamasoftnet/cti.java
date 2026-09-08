@@ -37,9 +37,9 @@ public class V2Session extends AbstractCTISession implements CTISession {
 
 	protected final String user, password;
 
-	protected V2ContentProducer producer = null;
+	protected volatile V2ContentProducer producer = null;
 
-	protected V2RequestConsumer request = null;
+	protected volatile V2RequestConsumer request = null;
 
 	protected Results results = null;
 
@@ -50,7 +50,8 @@ public class V2Session extends AbstractCTISession implements CTISession {
 	protected ProgressListener progressListener = null;
 
 	// 1=変換準備OK, 2=変換中, 3=クローズ
-	protected int state = 1;
+	protected volatile int state = 1;
+	private final java.util.concurrent.locks.ReentrantLock responseLock = new java.util.concurrent.locks.ReentrantLock();
 
 	protected FragmentedOutput builder = null;
 
@@ -164,10 +165,30 @@ public class V2Session extends AbstractCTISession implements CTISession {
 	}
 
 	protected boolean buildNext() throws IOException, TranscoderException {
-		if (this.state <= 1) {
-			return false;
-		}
-		this.producer.next();
+        responseLock.lock();
+        try {
+            if (this.state != 2) { return false; }
+            this.producer.next();
+            return processResponse();
+        } finally { responseLock.unlock(); }
+    }
+
+    /** Upload polling never blocks on an incomplete frame or another response consumer. */
+    boolean canPollResponse() {
+        return state == 2 && !responseLock.isLocked();
+    }
+
+    boolean pollResponse() throws IOException {
+        if (state != 2 || responseLock.isHeldByCurrentThread() || !responseLock.tryLock()) { return false; }
+        try {
+            if (state != 2 || !producer.pollNext()) { return false; }
+            processResponse();
+            return true;
+        } finally { responseLock.unlock(); }
+    }
+
+    private boolean processResponse() throws IOException {
+        if (state != 2) { return false; }
 		// System.err.println("type="+Integer.toHexString(this.producer.getType()));
 		boolean serial = false;
 		switch (this.producer.getType()) {
@@ -270,7 +291,8 @@ public class V2Session extends AbstractCTISession implements CTISession {
 			break;
 
 		case V2ServerPackets.RESOURCE_REQUEST: {
-			// リソース要求
+			// リソース要求。再入したメイン送信の入力配列を上書きしない。
+            byte[] resourceBuffer = new byte[BUFFER_SIZE];
 			URI uri = this.producer.getURI();
 			if (this.resolver != null) {
 				Source source;
@@ -287,8 +309,8 @@ public class V2Session extends AbstractCTISession implements CTISession {
 									source.getLength());
 							try (InputStream in = source.getInputStream()) {
 								try (OutputStream out = new V2RequestConsumerOutputStream(this.request)) {
-									for (int len = in.read(this.writeBuff); len != -1; len = in.read(this.writeBuff)) {
-										out.write(this.writeBuff, 0, len);
+									for (int len = in.read(resourceBuffer); len != -1; len = in.read(resourceBuffer)) {
+										out.write(resourceBuffer, 0, len);
 									}
 								}
 							}
@@ -309,7 +331,7 @@ public class V2Session extends AbstractCTISession implements CTISession {
 			this.closeBuilder();
 			this.results.end();
 		case V2ServerPackets.NEXT: {
-			this.state = 1;
+			this.finishResponse();
 		}
 			return false;
 
@@ -323,7 +345,7 @@ public class V2Session extends AbstractCTISession implements CTISession {
 				state = TranscoderException.STATE_BROKEN;
 			}
 			this.builder = null;
-			this.state = 1;
+			this.finishResponse();
 			throw new TranscoderException(state, this.producer.getCode(), this.producer.getArgs(),
 					this.producer.getMessage());
 		}
@@ -344,7 +366,7 @@ public class V2Session extends AbstractCTISession implements CTISession {
 		this.init();
 		this.request.startMain(metaSource.getURI(), metaSource.getMimeType(), metaSource.getEncoding(),
 				metaSource.getLength());
-		this.state = 2;
+		this.beginResponse();
 		return new V2RequestConsumerOutputStream(this.request) {
 			boolean closed = false;
 
@@ -367,7 +389,7 @@ public class V2Session extends AbstractCTISession implements CTISession {
 			throw new IllegalStateException("Resultsが設定されていません。");
 		}
 		this.request.serverMain(uri);
-		this.state = 2;
+		this.beginResponse();
 		this.next();
 	}
 
@@ -391,7 +413,7 @@ public class V2Session extends AbstractCTISession implements CTISession {
 				// do nothing
 			}
 		} finally {
-			this.state = 1;
+			this.finishResponse();
 		}
 	}
 
@@ -402,7 +424,7 @@ public class V2Session extends AbstractCTISession implements CTISession {
 
 	public void join() throws IOException {
 		this.request.join();
-		this.state = 2;
+		this.beginResponse();
 		this.next();
 	}
 
@@ -433,14 +455,24 @@ public class V2Session extends AbstractCTISession implements CTISession {
 		}
 		this.resolver = null;
 		this.results = null;
-		this.state = 1;
+		this.finishResponse();
 		this.builder = null;
 	}
 
+    private synchronized void finishResponse() {
+        if (this.state != 3) { this.state = 1; }
+    }
+
+    private synchronized void beginResponse() throws IOException {
+        if (this.state == 3) { throw new java.nio.channels.ClosedChannelException(); }
+        this.state = 2;
+    }
+
 	public void close() throws IOException {
-		if (this.state >= 3) {
-			return;
-		}
+        synchronized (this) {
+            if (this.state == 3) { return; }
+            this.state = 3;
+        }
 		if (this.producer != null) {
 			try {
 				this.request.close();
@@ -448,6 +480,5 @@ public class V2Session extends AbstractCTISession implements CTISession {
 				this.producer.close();
 			}
 		}
-		this.state = 3;
 	}
 }

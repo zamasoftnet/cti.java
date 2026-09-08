@@ -110,7 +110,10 @@ public class RestSession extends AbstractCTISession implements CTISession {
 		HttpClientBuilder builder = HttpClientBuilder.create();
 		if (uri.getScheme().equals("https")) {
 			try {
-				if (System.getProperty("jp.cssj.driver.tls.trust", "true").equalsIgnoreCase("true")) {
+				if (jp.cssj.cti2.TLSPolicy.isInsecure()) {
+					// **試験用の逃げ道。** CTIPの insecure(何でも通す)とは意味が違い、
+					// ここは「証明書チェーンが1つだけのもの」を信頼扱いにする
+					// (それ以外は通常の検証へ委ねる)。ホスト名の検証もしない
 					SSLContext ssl = org.apache.http.ssl.SSLContextBuilder.create()
 							.loadTrustMaterial(new TrustSelfSignedStrategy()).build();
 					builder.setSSLContext(ssl);
@@ -122,7 +125,9 @@ public class RestSession extends AbstractCTISession implements CTISession {
 					builder.setSSLContext(ssl);
 				}
 			} catch (Exception e) {
-				IOException(e);
+				// **投げる。** かつては IOException を作るだけで投げておらず、
+				// TLS の初期化に失敗しても構築が続いていた
+				throw IOException(e);
 			}
 		}
 		this.client = builder.build();

@@ -65,3 +65,25 @@ task generateDotNetPdfs(type: Exec) {
 // テスト実行前に全言語のPDF生成を行う
 // 各ドライバは自分の build/test-output/ にPDFを出力する
 test.dependsOn generateNodejsPdfs, generatePerlPdfs, generatePhpPdfs, generateRubyPdfs, generatePythonPdfs, generateDotNetPdfs
+
+// Local TLS and v2 regressions. No PDF generators or external server required.
+tasks.register('tlsTest', Test) {
+    group = 'verification'
+    description = 'Local TLS state-machine and plain CTIP regression tests'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    include 'jp/cssj/driver/ctip/tls/**'
+    include 'jp/cssj/driver/ctip/v2/V2SessionResultsTest*'
+    maxParallelForks = 1
+    systemProperty 'tls.test.classpath', sourceSets.test.runtimeClasspath.asPath
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+        exceptionFormat = 'full'
+        showStandardStreams = true
+    }
+}
+
+// TLS probes belong to the independent task.
+test {
+    exclude 'jp/cssj/driver/ctip/tls/**'
+}

@@ -64,6 +64,8 @@ public class V1ContentProducer {
 	protected ChannelIO io;
 
 	public V1ContentProducer(URI uri, String encoding) throws IOException {
+		// ctips: を v1 で受けると平文で接続してしまう(V1Session#rejectSecureScheme)
+		V1Session.rejectSecureScheme(uri);
 		this.encoding = encoding;
 		this.uri = uri;
 	}

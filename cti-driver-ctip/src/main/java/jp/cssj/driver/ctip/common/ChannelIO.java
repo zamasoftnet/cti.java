@@ -2,65 +2,169 @@ package jp.cssj.driver.ctip.common;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import jp.cssj.driver.ctip.v2.TLSSocketChannel;
 
-/**
- * SocketChannelから各種データを取得します。
- * それぞれのメソッドは非ブロッキングI/Oに対して動作しますが、データの取得が完了するまでブロックします。
- * 
- * @author MIYABE Tatsuhiko
- * @version $Id: ChannelIO.java 1552 2018-04-26 01:43:24Z miyabe $
- */
+/** Nonblocking channel operations and deadline-based waits. */
 public final class ChannelIO {
-	private final ByteChannel channel;
-	private final long timeout;
-	private final Selector rwselector, rselector, wselector;
+    private final ByteChannel channel;
+    private final long timeout;
+    private Selector rwselector;
+    private volatile boolean closed;
+    private final Set<Selector> waiters = ConcurrentHashMap.newKeySet();
 
-	public ChannelIO(ByteChannel channel, long timeout) throws IOException {
-		this.channel = channel;
-		this.timeout = timeout;
+    public ChannelIO(ByteChannel channel, long timeout) throws IOException {
+        this.channel = channel;
+        this.timeout = timeout;
+        try { getSelectable().configureBlocking(false); }
+        catch (IOException | RuntimeException e) {
+            try { channel.close(); } catch (IOException close) { e.addSuppressed(close); }
+            throw e;
+        }
+    }
 
-		if (this.getSelectable().isBlocking()) {
-			this.rwselector = this.rselector = this.wselector = null;
-		} else {
-			this.rwselector = this.getSelectable().provider().openSelector();
-			this.getSelectable().register(this.rwselector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+    public ByteChannel getChannel() { return channel; }
+    public SelectableChannel getSelectable() { return (SelectableChannel) channel; }
 
-			this.rselector = this.getSelectable().provider().openSelector();
-			this.getSelectable().register(this.rselector, SelectionKey.OP_READ);
+    public void close() throws IOException {
+        closed = true;
+        wakeup();
+        try { channel.close(); }
+        finally {
+            wakeup();
+            if (rwselector != null) { rwselector.close(); }
+        }
+    }
 
-			this.wselector = this.getSelectable().provider().openSelector();
-			this.getSelectable().register(this.wselector, SelectionKey.OP_WRITE);
-		}
-	}
+    public void wakeup() {
+        for (Selector selector : waiters) { selector.wakeup(); }
+        if (rwselector != null) { rwselector.wakeup(); }
+    }
 
-	public ByteChannel getChannel() {
-		return this.channel;
-	}
+    private void checkOpen() throws ClosedChannelException {
+        if (closed || !channel.isOpen()) { throw new ClosedChannelException(); }
+    }
 
-	public SelectableChannel getSelectable() {
-		return (SelectableChannel) this.channel;
-	}
+    public static long deadline(long timeout) {
+        return timeout <= 0 ? Long.MAX_VALUE : System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeout);
+    }
 
-	public void close() throws IOException {
-		try {
-			if (this.rwselector != null) {
-				this.rwselector.close();
-			}
-			if (this.rselector != null) {
-				this.rselector.close();
-			}
-			if (this.wselector != null) {
-				this.wselector.close();
-			}
-		} finally {
-			this.channel.close();
-		}
-	}
+    public static void checkDeadline(long deadline) throws SocketTimeoutException {
+        if (deadline != Long.MAX_VALUE && deadline - System.nanoTime() <= 0) {
+            throw new SocketTimeoutException("Channel I/O timeout");
+        }
+    }
+
+    public long deadline() { return deadline(timeout); }
+
+    private static void select(SelectableChannel channel, Selector selector, long deadline) throws IOException {
+        if (!channel.isOpen()) { throw new ClosedChannelException(); }
+        checkDeadline(deadline);
+        long millis = deadline == Long.MAX_VALUE ? 0 : Math.max(1,
+                TimeUnit.NANOSECONDS.toMillis(deadline - System.nanoTime()));
+        selector.select(millis);
+        selector.selectedKeys().clear();
+        if (!channel.isOpen()) { throw new ClosedChannelException(); }
+        if (Thread.currentThread().isInterrupted()) { throw new IOException("Interrupted waiting for channel"); }
+        checkDeadline(deadline);
+    }
+
+    /** Also used before ChannelIO exists (TCP/TLS connect) and after it closes (TLS shutdown). */
+    public static void awaitReady(SelectableChannel channel, int ops, long deadline) throws IOException {
+        try (Selector selector = channel.provider().openSelector()) {
+            TLSSocketChannel tls = channel instanceof TLSSocketChannel ? (TLSSocketChannel) channel : null;
+            if (tls != null) { tls.addWaiter(selector); }
+            try {
+                channel.register(selector, ops);
+                select(channel, selector, deadline);
+            } finally { if (tls != null) { tls.removeWaiter(selector); } }
+        }
+    }
+
+    /** Each waiter owns its selector: a concurrent abort never waits for the reader's monitor. */
+    public void await(int ops, long deadline) throws IOException {
+        checkOpen();
+        try (Selector selector = getSelectable().provider().openSelector()) {
+            waiters.add(selector);
+            TLSSocketChannel tls = tls();
+            if (tls != null) { tls.addWaiter(selector); }
+            try {
+                checkOpen();
+                getSelectable().register(selector, ops);
+                select(getSelectable(), selector, deadline);
+                checkOpen();
+            } finally {
+                waiters.remove(selector);
+                if (tls != null) { tls.removeWaiter(selector); }
+            }
+        }
+    }
+
+    private TLSSocketChannel tls() {
+        return channel instanceof TLSSocketChannel ? (TLSSocketChannel) channel : null;
+    }
+    public int readSome(ByteBuffer dest) throws IOException { checkOpen(); return channel.read(dest); }
+    public int writeSome(ByteBuffer src) throws IOException { checkOpen(); return channel.write(src); }
+    public boolean flushOutbound() throws IOException {
+        checkOpen();
+        return tls() == null || tls().flushOutbound();
+    }
+    public boolean hasPendingOutbound() { return tls() != null && tls().hasPendingOutbound(); }
+    public boolean hasPlaintext() { return tls() != null && tls().hasPlaintext(); }
+    public int readOps() { return tls() == null ? SelectionKey.OP_READ : tls().requiredOps(); }
+    public int writeOps() { return tls() == null ? SelectionKey.OP_WRITE : tls().requiredWriteOps(); }
+
+    /** Legacy v1 readiness API. v2 uses internal progress before await(). */
+    public SelectionKey rwselect() throws IOException {
+        checkOpen();
+        if (rwselector == null) {
+            rwselector = getSelectable().provider().openSelector();
+            getSelectable().register(rwselector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+        }
+        long deadline = deadline();
+        while (true) {
+            checkDeadline(deadline);
+            long millis = deadline == Long.MAX_VALUE ? 0 : Math.max(1,
+                    TimeUnit.NANOSECONDS.toMillis(deadline - System.nanoTime()));
+            if (rwselector.select(millis) > 0) {
+                SelectionKey key = rwselector.selectedKeys().iterator().next();
+                rwselector.selectedKeys().clear();
+                return key;
+            }
+            checkOpen();
+        }
+    }
+
+    public void readAll(ByteBuffer dest) throws IOException {
+        dest.position(0);
+        long deadline = deadline();
+        while (dest.hasRemaining()) {
+            checkDeadline(deadline);
+            int count = readSome(dest);
+            if (count < 0) { throw new EOFException(); }
+            if (count == 0) { await(readOps(), deadline); }
+        }
+    }
+
+    public void writeAll(ByteBuffer src) throws IOException {
+        src.position(0);
+        long deadline = deadline();
+        while (src.hasRemaining() || hasPendingOutbound()) {
+            checkDeadline(deadline);
+            int count = writeSome(src);
+            if (!src.hasRemaining() && !hasPendingOutbound()) { return; }
+            if (count == 0) { await(writeOps(), deadline); }
+        }
+    }
 
 	/**
 	 * 1バイト整数を読み込みます。
@@ -143,69 +247,6 @@ public final class ChannelIO {
 		return buff;
 	}
 
-	/**
-	 * 読み込みまたは書き込みが可能になるまで待ちます。
-	 * 
-	 * @return チャンネルの状態のキー。
-	 * @throws IOException
-	 */
-	public SelectionKey rwselect() throws IOException {
-		if (this.rwselector.select(this.timeout) <= 0) {
-			throw new IOException("Read-write timeout");
-		}
-		SelectionKey key = this.rwselector.selectedKeys().iterator().next();
-		this.rwselector.selectedKeys().clear();
-		return key;
-	}
-
-	/**
-	 * バッファがいっぱいになるまでデータを読み込みます。
-	 * 
-	 * @param dest
-	 * @throws IOException
-	 */
-	public void readAll(ByteBuffer dest) throws IOException {
-		dest.position(0);
-		do {
-			if (this.rselector != null) {
-				if (this.rselector.select(this.timeout) <= 0) {
-					throw new IOException("Read timeout");
-				}
-				this.rselector.selectedKeys().clear();
-			}
-			if (this.channel.read(dest) == -1) {
-				throw new EOFException();
-			}
-		} while (dest.remaining() > 0);
-	}
-
-	/**
-	 * バッファが空になるまでデータを書き込みます。
-	 * 
-	 * @param src
-	 * @throws IOException
-	 */
-	public void writeAll(ByteBuffer src) throws IOException {
-		src.position(0);
-		do {
-			if (this.wselector != null) {
-				if (this.wselector.select(this.timeout) <= 0) {
-					throw new IOException("Write timeout");
-				}
-				this.wselector.selectedKeys().clear();
-			}
-			this.channel.write(src);
-		} while (src.remaining() > 0);
-	}
-
-	/**
-	 * 文字列をバイト列に変換します。 null文字列は空文字列として変換します。
-	 * 
-	 * @param str
-	 * @param encoding
-	 * @return 変換後のバイト列。
-	 * @throws IOException
-	 */
 	/** 文字列1つの上限(長さは符号なし16bitで送るため)。 */
 	public static final int MAX_STRING_BYTES = 0xFFFF;
 
