@@ -22,7 +22,7 @@ import net.zamasoft.zstream.resolver.util.SimpleSourceMetadata;
  */
 public class ClientResource {
 	/** 接続先。 */
-	private static final URI SERVER_URI = URI.create("ctip://192.168.10.21:8101/");
+	private static final URI SERVER_URI = URI.create("ctip://localhost:8101/");
 
 	/** ユーザー。 */
 	private static final String USER = "user";

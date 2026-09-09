@@ -335,7 +335,7 @@ KeyUpdate は JDK 21 で `jdk.tls.keyLimits` を小さくして誘発する。�
 **本番の TLS 1.2 固定の撤去は別工程。**まず隔離環境(ローカルに TLS を有効にした `copperd`、
 または `SSLServerSocket`)で TLS 1.3 の実変換を通す。そのうえで:
 
-- `rev-proxy/routes-itachi.yml` の `tls.options.copper-ctips-tls12` を外し、JVM 既定(TLS 1.3)で
+- 前段のリバースプロキシに置いた TLS 1.2 の固定を外し、JVM 既定(TLS 1.3)で
   `ctips://cti.li:8499/` が通ること。**外す前に戻せる状態にしておく**
 - `-sv` は短経路なので、**アップロードを伴う実変換**(`-in`/`-out`、数 MB とクライアント提供リソース)も通す
 - 無進捗ループに戻っていないこと。累積 CPU の比較だけでなく、**停止区間の CPU 増分・処理期限・
