@@ -1,5 +1,5 @@
 # CTI Java版
-バージョン 2.2.3
+バージョン 2.3.0
 
 Javaを使ってCopper PDFにアクセスするためのプログラムです。
 Copper PDF 2.1.0以降が必要です。
@@ -23,7 +23,7 @@ https://github.com/zamasoftnet/cti.java
 
 ### Maven / Gradle（JitPack 経由）
 
-JitPack リポジトリを追加した上で、`com.github.zamasoftnet:cti.java:v2.2.3` を利用してください。
+JitPack リポジトリを追加した上で、`com.github.zamasoftnet:cti.java:v2.3.0` を利用してください。
 
 #### Gradle
 
@@ -34,7 +34,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.github.zamasoftnet:cti.java:v2.2.3'
+    implementation 'com.github.zamasoftnet:cti.java:v2.3.0'
 }
 ```
 
@@ -51,7 +51,7 @@ dependencies {
 <dependency>
   <groupId>com.github.zamasoftnet</groupId>
   <artifactId>cti.java</artifactId>
-  <version>v2.2.3</version>
+  <version>v2.3.0</version>
 </dependency>
 ```
 
@@ -66,8 +66,8 @@ dependencies {
 
 ## 付属物
 
-- `cti-driver-2.2.3.jar` -- ドライバ本体（CTIP, REST, CLIが利用可能）
-- `cti-driver-min-2.2.3.jar` -- 最小構成のドライバ（REST, CLIは利用不可）
+- `cti-driver-2.3.0.jar` -- ドライバ本体（CTIP, REST, CLIが利用可能）
+- `cti-driver-min-2.3.0.jar` -- 最小構成のドライバ（REST, CLIは利用不可）
 - `apidoc` -- APIドキュメント(Javadoc)
 - `lib` -- サンプルのコンパイルに必要なライブラリ
 - `examples` -- サンプルプログラム
@@ -157,12 +157,12 @@ Linuxでは`compile-examples.sh`、Windowsでは`compile-examples.bat`を実行�
 
 ### Linux
 ```bash
-java -cp cti-driver-2.2.3.jar:classes クラス名
+java -cp cti-driver-2.3.0.jar:classes クラス名
 ```
 
 ### Windows
 ```cmd
-java -cp cti-driver-2.2.3.jar;classes クラス名
+java -cp cti-driver-2.3.0.jar;classes クラス名
 ```
 
 Servlet/JSPのサンプル実行する場合は、`examples/webapp`をサーブレットコンテナに配備して、以下のアドレスをブラウザで表示してください。
@@ -283,6 +283,37 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 ## 変更履歴
+
+### v2.3.0 2026-09-10
+
+CTIP over TLS(`ctips:`)を作り直しました。
+
+- **TLS 1.3 のハンドシェイクが完了しませんでした。**待ち合わせの状態を
+  エンジンではなく共有の結果オブジェクトから読んでおり、`FINISHED` が
+  現在の状態ではなく一度きりの通知であることも見ていなかったため、
+  CPU を 100% 使ったまま進みませんでした。送信側も、暗号文が残っているのに
+  平文を送り切った時点で終わっていたため取りこぼしていました。
+- **SNI を送るようになりました。**`createSSLEngine()` をホストとポート無しで
+  呼んでいたためです。IP で繋ぐときは RFC 6066 のとおり送りません。
+  ホスト名の照合も行います。
+- **サーバー証明書を既定で検証します。**従来は検証していませんでした。
+  設定名 `jp.cssj.driver.tls.trust` は意味が逆で、既定の `true` が
+  「何でも通す」でした。新しい名前は `jp.cssj.driver.tls.insecure`(既定 `false`)です。
+  旧名は新名が無いときだけ見て、使うと JVM ごとに一度警告します。
+  CLI には `--insecure` を足しました(`-t` / `--trust` も同じ意味で残ります)。
+- `ctips:` に `version=1` を指定した接続を、繋ぐ前に断るようにしました。
+  v1 に TLS は無く、黙って平文へ落ちていました。
+- **互換性に関する注意**: 自己署名や名前の違う証明書のサーバーへ繋いでいた場合、
+  このバージョンからは失敗します。逃げ道と、私設 CA を登録する方法は
+  README の「TLS」の節にあります。
+
+そのほか。
+
+- CTIP で 32KB を超える文字列を送ると接続が壊れる欠陥を修正しました。
+- REST: 出力開始後に中断した変換が、壊れた PDF を成功として返していたのを直しました。
+- REST: 結果が無いときに 404 を返し、`Authorization: Basic` を受け付けるようにしました。
+- `cti-cli` の `-p` オプションが全く効いていなかったのを直しました。
+- Apache License 2.0 の表示を追加しました。
 
 ### v2.2.3 2024-03-27
 - サーブレットでContent-Typeを出力する際に、空の charset= パラメータが追加されてしまうバグに対応しました。
