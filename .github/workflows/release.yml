@@ -12,6 +12,13 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+      # cti-if depends on zstream (net.zamasoft:zstream-io/-resolver, not on Maven
+      # Central). settings.gradle includes it as a composite build from
+      # -Pzstream.dir, so check the sibling repository out next to this one.
+      - uses: actions/checkout@v4
+        with:
+          repository: zamasoftnet/zstream
+          path: zstream
 
       - uses: actions/setup-java@v4
         with:
@@ -21,8 +28,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Build dist
-        run: ./gradlew dist
-
+        run: ./gradlew dist -Pzstream.dir=$GITHUB_WORKSPACE/zstream
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
