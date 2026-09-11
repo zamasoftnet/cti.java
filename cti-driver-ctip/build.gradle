@@ -76,6 +76,12 @@ tasks.register('tlsTest', Test) {
     include 'jp/cssj/driver/ctip/v2/V2SessionResultsTest*'
     maxParallelForks = 1
     systemProperty 'tls.test.classpath', sourceSets.test.runtimeClasspath.asPath
+    // RealServerIntegrationTest: -Dcti.integration.uri/user/password を試験 JVM へ渡す
+    ['cti.integration.uri', 'cti.integration.user', 'cti.integration.password'].each { name ->
+        if (System.getProperty(name) != null) {
+            systemProperty name, System.getProperty(name)
+        }
+    }
     testLogging {
         events 'passed', 'skipped', 'failed'
         exceptionFormat = 'full'
