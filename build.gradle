@@ -1,6 +1,6 @@
 allprojects {
     group = 'net.zamasoft'
-    version = '2.3.1'
+    version = '2.3.2'
 
     repositories {
         mavenCentral()
@@ -12,7 +12,7 @@ allprojects {
 // 割れて解決できない(401)。ルートの座標 com.github.zamasoftnet:cti.java:<tag> は
 // ルートプロジェクトが公開したものがそのまま置かれるので、依存を持たない太った jar
 // (cti-driver の fullJar。zstream も同梱)を artifactId "cti.java" で公開する。
-// 利用側: implementation 'com.github.zamasoftnet:cti.java:v2.3.1'
+// 利用側: implementation 'com.github.zamasoftnet:cti.java:v2.3.2'
 apply plugin: 'maven-publish'
 // サブプロジェクトの評価後(fullJar 等のタスクが定義された後)に公開物を組む
 gradle.projectsEvaluated {
