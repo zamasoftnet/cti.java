@@ -77,7 +77,10 @@ tasks.register('tlsTest', Test) {
     maxParallelForks = 1
     systemProperty 'tls.test.classpath', sourceSets.test.runtimeClasspath.asPath
     // RealServerIntegrationTest: -Dcti.integration.uri/user/password を試験 JVM へ渡す
-    ['cti.integration.uri', 'cti.integration.user', 'cti.integration.password'].each { name ->
+    ['cti.integration.uri', 'cti.integration.user', 'cti.integration.password',
+     // 接続試験マトリクスの共通契約(2026-09-20): 検証なし・拒否試験・信頼させる証明書
+     'cti.integration.insecure', 'cti.integration.expectReject',
+     'cti.integration.trustStore', 'cti.integration.trustStorePassword'].each { name ->
         if (System.getProperty(name) != null) {
             systemProperty name, System.getProperty(name)
         }
