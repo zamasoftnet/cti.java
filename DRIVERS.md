@@ -6,7 +6,7 @@ Copper PDF 文書変換サーバー向け CTI ドライバの一覧です。
 
 | 言語 | バージョン | リポジトリ | API ドキュメント |
 |------|-----------|-----------|----------------|
-| Java | 2.3.0 | [cti.java](https://github.com/zamasoftnet/cti.java) | [Javadoc](https://zamasoftnet.github.io/cti.java/) |
+| Java | 2.3.1 | [cti.java](https://github.com/zamasoftnet/cti.java) | [Javadoc](https://zamasoftnet.github.io/cti.java/) |
 | .NET | 2.2.0 | [cti.net](https://github.com/zamasoftnet/cti.net) | [DocFX](https://zamasoftnet.github.io/cti.net/) |
 | Node.js | 1.1.0 | [cti.nodejs](https://github.com/zamasoftnet/cti.nodejs) | [TypeDoc](https://zamasoftnet.github.io/cti.nodejs/) |
 | PHP | 2.1.5 | [cti.php](https://github.com/zamasoftnet/cti.php) | [phpDocumentor](https://zamasoftnet.github.io/cti.php/) |
@@ -20,7 +20,7 @@ GitHub Releases からダウンロードできます。
 
 | 言語 | zip | tar.gz |
 |------|-----|--------|
-| Java | [cti-java-2.3.0.zip](https://github.com/zamasoftnet/cti.java/releases/latest) | cti-java-2.3.0.tar.gz |
+| Java | [cti-java-2.3.1.zip](https://github.com/zamasoftnet/cti.java/releases/latest) | cti-java-2.3.1.tar.gz |
 | .NET | [cti-dotnet-2.2.0.zip](https://github.com/zamasoftnet/cti.net/releases/latest) | — |
 | Node.js | [cti-nodejs-1.1.0.zip](https://github.com/zamasoftnet/cti.nodejs/releases/latest) | cti-nodejs-1.1.0.tar.gz |
 | PHP | [cti-php-2.1.5.zip](https://github.com/zamasoftnet/cti.php/releases/latest) | cti-php-2.1.5.tar.gz |
@@ -32,7 +32,7 @@ GitHub Releases からダウンロードできます。
 
 | 言語 | パッケージマネージャー | 現在のインストール方法 |
 |------|---------------------|----------------------|
-| Java | Maven / Gradle（JitPack 経由） | `implementation 'com.github.zamasoftnet:cti.java:v2.3.0'`（要: JitPack リポジトリ追加） |
+| Java | Maven / Gradle（JitPack 経由） | `implementation 'com.github.zamasoftnet:cti.java:v2.3.1'`（要: JitPack リポジトリ追加） |
 | .NET | NuGet | `dotnet add package Zamasoft.CTI` |
 | Node.js | npm | `npm install https://github.com/zamasoftnet/cti.nodejs.git` |
 | PHP | Composer / Packagist | `composer require zamasoft/cti-php` |

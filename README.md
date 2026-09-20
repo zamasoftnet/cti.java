@@ -1,5 +1,5 @@
 # CTI Java版
-バージョン 2.3.0
+バージョン 2.3.1
 
 Javaを使ってCopper PDFにアクセスするためのプログラムです。
 Copper PDF 2.1.0以降が必要です。
@@ -23,7 +23,7 @@ https://github.com/zamasoftnet/cti.java
 
 ### Maven / Gradle（JitPack 経由）
 
-JitPack リポジトリを追加した上で、`com.github.zamasoftnet:cti.java:v2.3.0` を利用してください。
+JitPack リポジトリを追加した上で、`com.github.zamasoftnet:cti.java:v2.3.1` を利用してください。
 
 #### Gradle
 
@@ -34,7 +34,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.github.zamasoftnet:cti.java:v2.3.0'
+    implementation 'com.github.zamasoftnet:cti.java:v2.3.1'
 }
 ```
 
@@ -51,7 +51,7 @@ dependencies {
 <dependency>
   <groupId>com.github.zamasoftnet</groupId>
   <artifactId>cti.java</artifactId>
-  <version>v2.3.0</version>
+  <version>v2.3.1</version>
 </dependency>
 ```
 
@@ -66,8 +66,8 @@ dependencies {
 
 ## 付属物
 
-- `cti-driver-2.3.0.jar` -- ドライバ本体（CTIP, REST, CLIが利用可能）
-- `cti-driver-min-2.3.0.jar` -- 最小構成のドライバ（REST, CLIは利用不可）
+- `cti-driver-2.3.1.jar` -- ドライバ本体（CTIP, REST, CLIが利用可能）
+- `cti-driver-min-2.3.1.jar` -- 最小構成のドライバ（REST, CLIは利用不可）
 - `apidoc` -- APIドキュメント(Javadoc)
 - `lib` -- サンプルのコンパイルに必要なライブラリ
 - `examples` -- サンプルプログラム
@@ -157,12 +157,12 @@ Linuxでは`compile-examples.sh`、Windowsでは`compile-examples.bat`を実行�
 
 ### Linux
 ```bash
-java -cp cti-driver-2.3.0.jar:classes クラス名
+java -cp cti-driver-2.3.1.jar:classes クラス名
 ```
 
 ### Windows
 ```cmd
-java -cp cti-driver-2.3.0.jar;classes クラス名
+java -cp cti-driver-2.3.1.jar;classes クラス名
 ```
 
 Servlet/JSPのサンプル実行する場合は、`examples/webapp`をサーブレットコンテナに配備して、以下のアドレスをブラウザで表示してください。
@@ -283,6 +283,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 ## 変更履歴
+
+### v2.3.1 2026-09-20
+
+- **Maven / Gradle(JitPack)で入るようになりました。**`com.github.zamasoftnet:cti.java:<タグ>` は
+  v2.2.3 の時点から POM だけで jar が無く、一度も解決できていませんでした(ルートが何も
+  公開しておらず、モジュール座標はリポジトリ名のドットでパスが割れます)。v2.3.0 は
+  JitPack でのビルド自体が失敗していました(zstream 未チェックアウト)。ルートから
+  ドライバ本体(`cti-driver` の全部入り jar。zstream 同梱、依存なし)を公開します。
+  ライブラリ自体の変更はありません。
 
 ### v2.3.0 2026-09-10
 
