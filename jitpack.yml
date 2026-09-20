@@ -5,6 +5,9 @@ before_install:
   # settings.gradle includes a sibling checkout as a composite build.
   - git clone --depth 1 https://github.com/zamasoftnet/zstream ../zstream
 install:
-  # Only the client-side modules (Java 8) and the root artifact for
-  # com.github.zamasoftnet:cti.java:<tag>. The server modules need a JDK 21 toolchain.
-  - ./gradlew :cti-driver:publishToMavenLocal :publishToMavenLocal
+  # Publish only the root artifact (the cti-driver fat jar under artifactId cti.java).
+  # If more than one artifact is installed, JitPack treats the build as multi-module and
+  # replaces the root POM with one that depends on com.github.zamasoftnet.cti.java:*,
+  # which cannot be resolved because the dot in the repository name splits the path.
+  # The server modules are not built here either: they need a JDK 21 toolchain.
+  - ./gradlew :publishToMavenLocal
