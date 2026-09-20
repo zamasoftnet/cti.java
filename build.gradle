@@ -7,6 +7,45 @@ allprojects {
     }
 }
 
+// JitPack 向けのルート成果物。リポジトリ名にドットがある(cti.java)ため、JitPack の
+// 多モジュール座標 com.github.zamasoftnet.cti.java:cti-driver はパスが cti/java に
+// 割れて解決できない(401)。ルートの座標 com.github.zamasoftnet:cti.java:<tag> は
+// ルートプロジェクトが公開したものがそのまま置かれるので、依存を持たない太った jar
+// (cti-driver の fullJar。zstream も同梱)を artifactId "cti.java" で公開する。
+// 利用側: implementation 'com.github.zamasoftnet:cti.java:v2.3.0'
+apply plugin: 'maven-publish'
+// サブプロジェクトの評価後(fullJar 等のタスクが定義された後)に公開物を組む
+gradle.projectsEvaluated {
+publishing {
+    publications {
+        jitpackRoot(MavenPublication) {
+            artifactId = 'cti.java'
+            artifact(project(':cti-driver').tasks.named('fullJar'))
+            artifact(project(':cti-driver').tasks.named('minJar')) {
+                classifier = 'min'
+            }
+            artifact(project(':cti-driver').tasks.named('sourcesJar')) {
+                classifier = 'sources'
+            }
+            artifact(project(':cti-driver').tasks.named('javadocJar')) {
+                classifier = 'javadoc'
+            }
+            pom {
+                name = 'Copper PDF CTI driver for Java'
+                url = 'https://github.com/zamasoftnet/cti.java'
+                licenses {
+                    license {
+                        name = 'Apache 2'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        distribution = 'repo'
+                    }
+                }
+            }
+        }
+    }
+}
+}
+
 // 配布用アーカイブに同梱するサンプルコンパイル用ライブラリ
 configurations {
     exampleLibs

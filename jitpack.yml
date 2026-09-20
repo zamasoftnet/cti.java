@@ -1,4 +1,10 @@
 jdk:
-  - openjdk8
+  - openjdk17
+before_install:
+  # cti-if depends on zstream (net.zamasoft:zstream-io/-resolver, not on Maven Central).
+  # settings.gradle includes a sibling checkout as a composite build.
+  - git clone --depth 1 https://github.com/zamasoftnet/zstream ../zstream
 install:
-  - ./gradlew publishToMavenLocal
+  # Only the client-side modules (Java 8) and the root artifact for
+  # com.github.zamasoftnet:cti.java:<tag>. The server modules need a JDK 21 toolchain.
+  - ./gradlew :cti-driver:publishToMavenLocal :publishToMavenLocal
