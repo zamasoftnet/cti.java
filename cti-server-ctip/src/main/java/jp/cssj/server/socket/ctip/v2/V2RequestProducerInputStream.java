@@ -12,14 +12,33 @@ import jp.cssj.driver.ctip.v2.V2ClientPackets;
  *          harumanx Exp $
  */
 public class V2RequestProducerInputStream extends InputStream implements Progressive {
+	/**
+	 * 本文や資源を読んでいる途中で中断({@link V2ClientPackets#ABORT})が来たときの受け口です。
+	 *
+	 * <p>
+	 * 引数は {@link jp.cssj.cti2.CTISession#abort(byte)} に渡す値
+	 * ({@code ABORT_NORMAL} / {@code ABORT_FORCE})です。
+	 * </p>
+	 */
+	public interface AbortRequest {
+		void abort(byte mode) throws IOException;
+	}
+
 	private final V2RequestProducer request;
+
+	private final AbortRequest onAbort;
 
 	private final byte[] buff = new byte[1];
 
 	private int progress = 0;
 
 	public V2RequestProducerInputStream(V2RequestProducer producer) {
+		this(producer, null);
+	}
+
+	public V2RequestProducerInputStream(V2RequestProducer producer, AbortRequest onAbort) {
 		this.request = producer;
+		this.onAbort = onAbort;
 	}
 
 	public long getProgress() {
@@ -33,6 +52,18 @@ public class V2RequestProducerInputStream extends InputStream implements Progres
 
 		case V2ClientPackets.DATA:
 			return true;
+
+		case V2ClientPackets.ABORT:
+			// **本文・資源の途中で中断が来た**(2026-09-21)。従来はここが default に落ちて
+			// 「不正なリクエストです: 32」の IllegalStateException になっていた。client には
+			// 中断ではなく内部エラーとして届き、先読みを持つエンジンでは
+			// 「I/O error. I/O error. prefetch read-ahead terminated」にまで化けていた。
+			// 中断をセッションへ伝え、この入力はここで終端する。
+			if (this.onAbort != null) {
+				this.onAbort.abort((byte) (this.request.getMode() + 1));
+			}
+			return false;
+
 		default:
 			throw new IllegalStateException("不正なリクエストです: " + Integer.toHexString(this.request.getType()));
 		}

@@ -245,7 +245,8 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 					String encoding = request.getEncoding();
 					long length = request.getLength();
 					request.next();
-					V2RequestProducerInputStream min = new V2RequestProducerInputStream(request);
+					V2RequestProducerInputStream min = new V2RequestProducerInputStream(request,
+							mode -> this.session.abort(mode));
 					Source source = new StreamSource(uri, min, mimeType, encoding, length);
 					this.srcLength = this.srcRead = this.prevSrcRead = -1L;
 					this.session.setProgressListener(this);
@@ -334,7 +335,8 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 					String encoding = request.getEncoding();
 					long length = request.getLength();
 					request.next();
-					InputStream rin = new V2RequestProducerInputStream(request);
+					InputStream rin = new V2RequestProducerInputStream(request,
+							mode -> this.session.abort(mode));
 					this.session.resource(new StreamSource(uri, rin, mimeType, encoding, length));
 					request.next();
 				}
