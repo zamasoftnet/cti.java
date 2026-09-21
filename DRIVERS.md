@@ -7,12 +7,12 @@ Copper PDF 文書変換サーバー向け CTI ドライバの一覧です。
 | 言語 | バージョン | リポジトリ | API ドキュメント |
 |------|-----------|-----------|----------------|
 | Java | 2.3.2 | [cti.java](https://github.com/zamasoftnet/cti.java) | [Javadoc](https://zamasoftnet.github.io/cti.java/) |
-| .NET | 2.2.1 | [cti.net](https://github.com/zamasoftnet/cti.net) | [DocFX](https://zamasoftnet.github.io/cti.net/) |
+| .NET | 2.2.2 | [cti.net](https://github.com/zamasoftnet/cti.net) | [DocFX](https://zamasoftnet.github.io/cti.net/) |
 | Node.js | 1.1.0 | [cti.nodejs](https://github.com/zamasoftnet/cti.nodejs) | [TypeDoc](https://zamasoftnet.github.io/cti.nodejs/) |
-| PHP | 2.1.5 | [cti.php](https://github.com/zamasoftnet/cti.php) | [phpDocumentor](https://zamasoftnet.github.io/cti.php/) |
-| Ruby | 2.2.0 | [cti.ruby](https://github.com/zamasoftnet/cti.ruby) | [RDoc](https://zamasoftnet.github.io/cti.ruby/) |
-| Perl | 2.1.4 | [cti.perl](https://github.com/zamasoftnet/cti.perl) | [pod2html](https://zamasoftnet.github.io/cti.perl/) |
-| Python | 3.0.1 | [cti.python](https://github.com/zamasoftnet/cti.python) | [pydoc](https://zamasoftnet.github.io/cti.python/) |
+| PHP | 2.2.1 | [cti.php](https://github.com/zamasoftnet/cti.php) | [phpDocumentor](https://zamasoftnet.github.io/cti.php/) |
+| Ruby | 2.2.1 | [cti.ruby](https://github.com/zamasoftnet/cti.ruby) | [RDoc](https://zamasoftnet.github.io/cti.ruby/) |
+| Perl | 2.1.5 | [cti.perl](https://github.com/zamasoftnet/cti.perl) | [pod2html](https://zamasoftnet.github.io/cti.perl/) |
+| Python | 3.0.2 | [cti.python](https://github.com/zamasoftnet/cti.python) | [pydoc](https://zamasoftnet.github.io/cti.python/) |
 
 ## 配布アーカイブ
 
@@ -21,12 +21,12 @@ GitHub Releases からダウンロードできます。
 | 言語 | zip | tar.gz |
 |------|-----|--------|
 | Java | [cti-java-2.3.2.zip](https://github.com/zamasoftnet/cti.java/releases/latest) | cti-java-2.3.2.tar.gz |
-| .NET | [cti-dotnet-2.2.1.zip](https://github.com/zamasoftnet/cti.net/releases/latest) | — |
+| .NET | [cti-dotnet-2.2.2.zip](https://github.com/zamasoftnet/cti.net/releases/latest) | — |
 | Node.js | [cti-nodejs-1.1.0.zip](https://github.com/zamasoftnet/cti.nodejs/releases/latest) | cti-nodejs-1.1.0.tar.gz |
-| PHP | [cti-php-2.1.5.zip](https://github.com/zamasoftnet/cti.php/releases/latest) | cti-php-2.1.5.tar.gz |
-| Ruby | [cti-ruby-2.2.0.zip](https://github.com/zamasoftnet/cti.ruby/releases/latest) | cti-ruby-2.2.0.tar.gz |
-| Perl | [cti-perl-2.1.4.zip](https://github.com/zamasoftnet/cti.perl/releases/latest) | cti-perl-2.1.4.tar.gz |
-| Python | [cti-python-3.0.1.zip](https://github.com/zamasoftnet/cti.python/releases/latest) | cti-python-3.0.1.tar.gz |
+| PHP | [cti-php-2.2.1.zip](https://github.com/zamasoftnet/cti.php/releases/latest) | cti-php-2.2.1.tar.gz |
+| Ruby | [cti-ruby-2.2.1.zip](https://github.com/zamasoftnet/cti.ruby/releases/latest) | cti-ruby-2.2.1.tar.gz |
+| Perl | [cti-perl-2.1.5.zip](https://github.com/zamasoftnet/cti.perl/releases/latest) | cti-perl-2.1.5.tar.gz |
+| Python | [cti-python-3.0.2.zip](https://github.com/zamasoftnet/cti.python/releases/latest) | cti-python-3.0.2.tar.gz |
 
 ## インストール方法
 
@@ -36,7 +36,7 @@ GitHub Releases からダウンロードできます。
 | .NET | NuGet | `dotnet add package Zamasoft.CTI` |
 | Node.js | npm | `npm install https://github.com/zamasoftnet/cti.nodejs.git` |
 | PHP | Composer / Packagist | `composer require zamasoft/cti-php` |
-| Ruby | Bundler / RubyGems（GitHub ソース） | Gemfile に `gem 'copper-cti', git: 'https://github.com/zamasoftnet/cti.ruby.git'` を追加 |
+| Ruby | RubyGems / Bundler | `gem install copper-cti`（Gemfile なら `gem 'copper-cti', '~> 2.2'`） |
 | Perl | cpanm（GitHub archive） | `cpanm https://github.com/zamasoftnet/cti.perl/archive/refs/heads/main.tar.gz` |
 | Python | pip | `pip install "git+https://github.com/zamasoftnet/cti.python.git#subdirectory=python3"` |
 
@@ -86,6 +86,19 @@ copper -s ctips://cti.example.jp:8499/ --insecure -in doc.html -out doc.pdf
 ```bash
 java -Djavax.net.ssl.trustStore=/path/to/truststore.p12      -Djavax.net.ssl.trustStorePassword=... ...
 ```
+
+各言語の指定は次のとおりです（2026-09-21 に 7 本すべてで使えるようになりました）。
+**いずれも試験用**で、証明書もホスト名も確かめなくなります。
+
+| 言語 | 検証を省く指定 | 認証局を信頼させる指定 |
+|------|--------------|--------------------|
+| Java | `--insecure` / `jp.cssj.driver.tls.insecure=true` | `javax.net.ssl.trustStore` |
+| .NET | URI に `?insecure=1` | URI に `?cafile=証明書ファイル`（2.2.2 以降）または OS のストア |
+| Node.js | `get_session()` のオプション `rejectUnauthorized: false` | `NODE_EXTRA_CA_CERTS` |
+| PHP | `get_session()` のオプション `'insecure' => true`（2.2.1 以降） | `openssl.cafile` |
+| Ruby | `get_session()` のオプション `'insecure' => true`（2.2.1 以降） | `SSL_CERT_FILE` |
+| Perl | `get_session()` のオプション `insecure => 1`（2.1.5 以降） | `SSL_CERT_FILE` |
+| Python | `get_session()` のオプション `'insecure': True`（3.0.2 以降） | `SSL_CERT_FILE` |
 
 `ctips:`（CTIP）と `https:`（REST）で `insecure=true` の意味は違います。
 
