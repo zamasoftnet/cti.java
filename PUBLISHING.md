@@ -5,8 +5,8 @@
 `build.gradle` の `version` を更新し、バージョンタグを push します。
 
 ```bash
-git tag v2.3.2
-git push origin v2.3.2
+git tag v2.3.3
+git push origin v2.3.3
 ```
 
 GitHub Actions が以下を自動実行します：

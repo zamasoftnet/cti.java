@@ -1,5 +1,5 @@
 # CTI Java版
-バージョン 2.3.2
+バージョン 2.3.3
 
 Javaを使ってCopper PDFにアクセスするためのプログラムです。
 Copper PDF 2.1.0以降が必要です。
@@ -23,7 +23,7 @@ https://github.com/zamasoftnet/cti.java
 
 ### Maven / Gradle（JitPack 経由）
 
-JitPack リポジトリを追加した上で、`com.github.zamasoftnet:cti.java:v2.3.2` を利用してください。
+JitPack リポジトリを追加した上で、`com.github.zamasoftnet:cti.java:v2.3.3` を利用してください。
 
 #### Gradle
 
@@ -34,7 +34,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.github.zamasoftnet:cti.java:v2.3.2'
+    implementation 'com.github.zamasoftnet:cti.java:v2.3.3'
 }
 ```
 
@@ -51,7 +51,7 @@ dependencies {
 <dependency>
   <groupId>com.github.zamasoftnet</groupId>
   <artifactId>cti.java</artifactId>
-  <version>v2.3.2</version>
+  <version>v2.3.3</version>
 </dependency>
 ```
 
@@ -66,8 +66,8 @@ dependencies {
 
 ## 付属物
 
-- `cti-driver-2.3.2.jar` -- ドライバ本体（CTIP, REST, CLIが利用可能）
-- `cti-driver-min-2.3.2.jar` -- 最小構成のドライバ（REST, CLIは利用不可）
+- `cti-driver-2.3.3.jar` -- ドライバ本体（CTIP, REST, CLIが利用可能）
+- `cti-driver-min-2.3.3.jar` -- 最小構成のドライバ（REST, CLIは利用不可）
 - `apidoc` -- APIドキュメント(Javadoc)
 - `lib` -- サンプルのコンパイルに必要なライブラリ
 - `examples` -- サンプルプログラム
@@ -157,12 +157,12 @@ Linuxでは`compile-examples.sh`、Windowsでは`compile-examples.bat`を実行�
 
 ### Linux
 ```bash
-java -cp cti-driver-2.3.2.jar:classes クラス名
+java -cp cti-driver-2.3.3.jar:classes クラス名
 ```
 
 ### Windows
 ```cmd
-java -cp cti-driver-2.3.2.jar;classes クラス名
+java -cp cti-driver-2.3.3.jar;classes クラス名
 ```
 
 Servlet/JSPのサンプル実行する場合は、`examples/webapp`をサーブレットコンテナに配備して、以下のアドレスをブラウザで表示してください。
@@ -283,6 +283,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 ## 変更履歴
+
+### v2.3.3 2026-09-28
+
+- **本文を送っている途中でサーバーが中断を返したとき、そのあとの `close()`・`reset()` が同じ例外をもう一度投げていた**不具合を
+  直しました。中断は `TranscoderException`(`INFO_ABORT`)で 1 回だけ報告し、同じセッションはリセットして続けて使えます。
+  送信中に先読みした中断の応答を、送信の失敗として扱って接続を閉じていました(v2.3.0 から)。
+- **REST(`http:`/`https:`)で、本文を書いている途中の `abort()` が効かず、全文が変換されていた**不具合を直しました。
+  REST は本文を閉じたときに 1 回の要求で送るので、送る前の中断は、本文を閉じたときに中断として知らせます。
+- サーバー(`cti-server-ctip`。Copper PDF 4 の一部): 本文の途中で変換が終わったとき(中断・変換の失敗)は、
+  クライアントが本文を送り終えてから中断を知らせます。先に知らせると、各言語のドライバが待ち続けたり接続を捨てたりしていました。
 
 ### v2.3.2 2026-09-20
 
