@@ -267,7 +267,13 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 						}
 						this.next();
 					} catch (TranscoderException e) {
-						// 中断
+						// 中断。本文の途中で終わったときは、client が残りを送り終える(EOF)まで読み捨ててから
+						// 知らせる(2026-09-28)。先に知らせると、EOF の後に終端が来る前提のドライバが
+						// 待ち続けたり(Python・PHP・Perl)、接続を捨てたり(Java)していた。
+						// EOF を送らずに次の要求が来たら client は終端を待っていないので、知らせずにそのパケットを次の周回で扱う
+						if (!min.drain()) {
+							continue FOR;
+						}
 						this.abort(e);
 					}
 					request.next();

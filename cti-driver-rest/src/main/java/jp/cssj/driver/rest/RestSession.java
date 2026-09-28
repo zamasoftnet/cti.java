@@ -49,6 +49,8 @@ import org.xml.sax.SAXException;
 import jp.cssj.cti2.CTISession;
 import jp.cssj.cti2.TranscoderException;
 import jp.cssj.cti2.helpers.AbstractCTISession;
+import jp.cssj.cti2.helpers.CTIMessageCodes;
+import jp.cssj.cti2.helpers.CTIMessageHelper;
 import jp.cssj.cti2.message.MessageHandler;
 import jp.cssj.cti2.progress.ProgressListener;
 import jp.cssj.cti2.results.Results;
@@ -101,6 +103,13 @@ public class RestSession extends AbstractCTISession implements CTISession {
 	protected long srcLength = 0L;
 
 	protected Collection<URI> resultSet = new HashSet<URI>();
+
+	/**
+	 * {@link #transcode(SourceMetadata)} の本文を一時ファイルへ溜めている間と、その間に中断を求められたこと
+	 * (2026-09-28)。本文は閉じたときに 1 回の要求で送るので、溜めている間はサーバーに止める変換が無く、
+	 * abort は空振りして全文が変換されていた。
+	 */
+	protected volatile boolean buffering = false, abortWhileBuffering = false;
 
 	public RestSession(URI uri, String user, String password) throws IOException {
 		this.uri = uri.toString();
@@ -482,15 +491,25 @@ public class RestSession extends AbstractCTISession implements CTISession {
 
 	public OutputStream transcode(final SourceMetadata metaSource) throws IOException, TranscoderException {
 		final File file = File.createTempFile("copper-rest-main-", ".dat");
+		this.abortWhileBuffering = false;
+		this.buffering = true;
 		return new FilterOutputStream(new FileOutputStream(file)) {
 			public void close() throws IOException {
 				try {
 					super.close();
+					if (RestSession.this.abortWhileBuffering) {
+						// 送る前に中断された。CTIP と同じく、本文を閉じたところで中断として知らせる
+						final short code = CTIMessageCodes.INFO_ABORT;
+						throw new TranscoderException(TranscoderException.STATE_BROKEN, code, null,
+								CTIMessageHelper.toString(code, null));
+					}
 					try (FileSource source = new FileSource(file, metaSource.getURI(), metaSource.getMimeType(),
 							metaSource.getEncoding())) {
 						RestSession.this.transcode(source);
 					}
 				} finally {
+					RestSession.this.buffering = false;
+					RestSession.this.abortWhileBuffering = false;
 					file.delete();
 				}
 			}
@@ -569,6 +588,11 @@ public class RestSession extends AbstractCTISession implements CTISession {
 	}
 
 	public void abort(byte mode) throws IOException {
+		if (this.buffering && this.state < 2) {
+			// 本文はまだ送っていない。閉じたときに送らずに中断を知らせる
+			this.abortWhileBuffering = true;
+			return;
+		}
 		List<NameValuePair> list = new ArrayList<NameValuePair>();
 		list.add(new BasicNameValuePair("rest.id", this.sessionId));
 		list.add(new BasicNameValuePair("rest.mode", String.valueOf(mode)));

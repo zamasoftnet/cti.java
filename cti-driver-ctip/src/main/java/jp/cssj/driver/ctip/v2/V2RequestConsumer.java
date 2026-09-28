@@ -5,6 +5,7 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import jp.cssj.cti2.TranscoderException;
 import jp.cssj.driver.ctip.common.ChannelIO;
 
 /**
@@ -224,6 +225,13 @@ public class V2RequestConsumer {
                     io.await(ops, deadline);
                 }
             }
+        } catch (TranscoderException e) {
+            // The server's ABORT, read by pollResponse, is a complete response, not a
+            // transport failure: the inbound stream is in sync, and the queued packets
+            // (the rest of the body, possibly a partly written frame) are still sent in
+            // order by the next send and ignored by the server. Latching it here closed
+            // the connection and made close()/reset() rethrow the abort (2026-09-28).
+            throw e;
         } catch (IOException | RuntimeException e) {
             synchronized (packetLock) {
                 if (sendFailure == null) { sendFailure = e instanceof IOException ? (IOException) e : new IOException(e); }

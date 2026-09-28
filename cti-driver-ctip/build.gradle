@@ -74,6 +74,7 @@ tasks.register('tlsTest', Test) {
     classpath = sourceSets.test.runtimeClasspath
     include 'jp/cssj/driver/ctip/tls/**'
     include 'jp/cssj/driver/ctip/v2/V2SessionResultsTest*'
+    include 'jp/cssj/driver/ctip/v2/EarlyAbortTest*'
     maxParallelForks = 1
     systemProperty 'tls.test.classpath', sourceSets.test.runtimeClasspath.asPath
     // RealServerIntegrationTest: -Dcti.integration.uri/user/password を試験 JVM へ渡す
