@@ -45,6 +45,10 @@ jar {
     dependsOn(':cti-driver-rest:jar')
     dependsOn(':cti-if:jar')
     dependsOn('generateCtiDriverService')
+    // composite build の zstream の jar も先に作らせる(closure の中で集めると Gradle が
+    // 依存を読み取れず、zstream を一度もビルドしていない clone で
+    // "Cannot expand ZIP .../zstream-io-*.jar" になる。fullJar と同じ宣言)
+    dependsOn(configurations.runtimeClasspath)
 }
 
 task fullJar(type: Jar) {
