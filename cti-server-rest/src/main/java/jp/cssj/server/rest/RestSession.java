@@ -81,6 +81,11 @@ public class RestSession {
 		private final List<Message> messages = Collections.synchronizedList(new ArrayList<>());
 
 		public void message(short code, String[] args, String mes) {
+			if ((code & 0xF000) >= 0x3000) {
+				// エラー以上(2026-10-04)。この後に閉じられた結果は、変換が失敗すれば
+				// 途中までの出力として捨てる(TranscodeTask.run の失敗処理)
+				RestSession.this.errorMessages.incrementAndGet();
+			}
 			Message message = new Message(code, args, mes);
 			this.add(message);
 		}
@@ -137,6 +142,10 @@ public class RestSession {
 		private boolean continuous = false;
 		/** 中断・close で、クライアントの資源を待っている resolve を抜けさせる。 */
 		private volatile boolean aborted = false;
+		/** 変換の開始時のエラーの通知の数。 */
+		private int errorsAtStart = 0;
+		/** エラーの通知の後に閉じられた結果(失敗したら途中までの出力として捨てる)。 */
+		private java.util.Set<URI> resultsAfterError = null;
 
 		/**
 		 * 入力に触る前に、このセッションの変換を予約し、同時変換数の許可を取ります(2026-10-03)。
@@ -439,6 +448,8 @@ public class RestSession {
 				this.resultList = new ArrayList<>();
 				this.uriToResult = new HashMap<>();
 				this.uriToSourceMetadata = new HashMap<>();
+				this.resultsAfterError = new java.util.HashSet<>();
+				this.errorsAtStart = RestSession.this.errorMessages.get();
 				Results results = new Results() {
 					public boolean hasNext() {
 						return true;
@@ -465,6 +476,11 @@ public class RestSession {
 										}
 										uriToResult.put(uri, resultFile);
 										uriToSourceMetadata.put(uri, metaSource);
+										if (RestSession.this.errorMessages.get() > errorsAtStart) {
+											resultsAfterError.add(uri);
+										} else {
+											resultsAfterError.remove(uri);
+										}
 									} else {
 										if (previous == null) {
 											file.delete();
@@ -492,16 +508,16 @@ public class RestSession {
 			} catch (TranscoderException e) {
 				if (e.getState() == TranscoderException.STATE_BROKEN) {
 					this.th = null;
-					this.dispose();
+					this.discardFailedResults();
 				}
 				this.ex = e;
 			} catch (IOException e) {
 				this.th = null;
-				this.dispose();
+				this.discardFailedResults();
 				this.ex = e;
 			} catch (Throwable e) {
 				this.th = null;
-				this.dispose();
+				this.discardFailedResults();
 				this.ex = e;
 			} finally {
 				this.cleanupSourceFile();
@@ -513,6 +529,40 @@ public class RestSession {
 				if (!this.continuous) {
 					this.releasePermit();
 				}
+			}
+		}
+
+		/**
+		 * 失敗した変換の結果を始末します(2026-10-04、TECH-20261003-004 の⑦)。
+		 *
+		 * <p>
+		 * 以前は全部消していたので、{@code /messages}で通知済みの結果(画像出力の
+		 * 完成した頁など)まで{@code /result}が 404 になった。エラーの通知
+		 * ({@code output.page-limit}の 3805 等)より前に閉じられた結果は完成品
+		 * なので、セッションを閉じるまで残す。エラーの通知の後に閉じられた結果は
+		 * 中断で閉じられた途中までの出力(PDF なら途中までの PDF)なので捨てる。
+		 * エラーの通知が無いまま失敗したときは、どれが完成品か分からないので
+		 * 従来どおり全部捨てる。
+		 * </p>
+		 */
+		private void discardFailedResults() {
+			if (this.uriToResult == null) {
+				return;
+			}
+			synchronized (RestSession.this) {
+				if (RestSession.this.errorMessages.get() <= this.errorsAtStart) {
+					this.dispose();
+					return;
+				}
+				for (final URI uri : this.resultsAfterError) {
+					final File file = this.uriToResult.remove(uri);
+					if (file != null) {
+						file.delete();
+					}
+					this.uriToSourceMetadata.remove(uri);
+					this.resultList.remove(uri);
+				}
+				this.resultsAfterError.clear();
 			}
 		}
 
@@ -537,6 +587,9 @@ public class RestSession {
 
 	/** 同時変換数の上限(REST と CTIP が共有。2026-10-03)。 */
 	private final ConversionGate gate;
+
+	/** 受け取ったエラー以上の通知の数(2026-10-04。失敗した変換の結果の始末に使う)。 */
+	private final java.util.concurrent.atomic.AtomicInteger errorMessages = new java.util.concurrent.atomic.AtomicInteger();
 
 	RestSession(CTISession session, boolean messages, boolean restResolver, long timeout) throws IOException {
 		this(session, messages, restResolver, timeout, ConversionGate.UNLIMITED);
