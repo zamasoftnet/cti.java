@@ -33,6 +33,11 @@ public interface CTIMessageCodes {
 	public static final short ERROR_IO = 0x3002;
 
 	/**
+	 * 混雑していて変換を始められない(サーバーの同時変換数の上限。少し待ってからやり直す)。
+	 */
+	public static final short ERROR_BUSY = 0x3003;
+
+	/**
 	 * 予期しないエラー。
 	 */
 	public static final short FATAL_UNEXPECTED = 0x4001;

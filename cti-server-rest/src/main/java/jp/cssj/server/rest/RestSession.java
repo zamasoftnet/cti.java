@@ -40,6 +40,7 @@ import net.zamasoft.zstream.resolver.protocol.file.FileSource;
 import net.zamasoft.zstream.resolver.protocol.stream.StreamSource;
 import net.zamasoft.zstream.io.FragmentedOutput;
 import net.zamasoft.zstream.io.impl.FileFragmentedOutput;
+import jp.cssj.server.ConversionGate;
 import jp.cssj.server.rest.RestRequest.FormField;
 
 import org.apache.commons.fileupload.FileItemHeaders;
@@ -129,6 +130,67 @@ public class RestSession {
 		private volatile boolean transcoding = false;
 		private Throwable ex = null;
 		private Thread th = null;
+		/**
+		 * 同時変換数の許可(2026-10-03)。非 continuous は変換の終わり、continuous は join・reset・close で返す。
+		 */
+		private ConversionGate.Permit permit = null;
+		private boolean continuous = false;
+		/** 中断・close で、クライアントの資源を待っている resolve を抜けさせる。 */
+		private volatile boolean aborted = false;
+
+		/**
+		 * 入力に触る前に、このセッションの変換を予約し、同時変換数の許可を取ります(2026-10-03)。
+		 * 変換中のセッションや空きの無いサーバーでは待たずに断ります——以前は変換中のセッションへの
+		 * 2 本目を要求スレッドが待ち(XNIO のタスクスレッドを塞ぐ)、その前に入力を差し替えていた。
+		 */
+		void begin(final boolean continuous) throws ConversionRefusedException {
+			synchronized (RestSession.this) {
+				if (this.transcoding) {
+					throw new ConversionRefusedException(RestServlet.ERROR_SESSION_BUSY, null);
+				}
+				if (this.permit == null) {
+					this.permit = RestSession.this.gate.tryEnter();
+					if (this.permit == null) {
+						throw new ConversionRefusedException(CTIMessageCodes.ERROR_BUSY,
+								new String[] { String.valueOf(RestSession.this.gate.limit()) });
+					}
+				}
+				this.continuous = continuous;
+				this.aborted = false;
+				this.transcoding = true;
+			}
+		}
+
+		/** {@link #begin}の後、変換を始める前に失敗したときの後始末です。 */
+		void abandon() {
+			synchronized (RestSession.this) {
+				this.transcoding = false;
+				RestSession.this.notifyAll();
+			}
+			if (!this.continuous) {
+				this.releasePermit();
+			}
+		}
+
+		/** 許可を返します(2 回目以降は何もしない)。 */
+		void releasePermit() {
+			final ConversionGate.Permit p;
+			synchronized (RestSession.this) {
+				p = this.permit;
+				this.permit = null;
+			}
+			if (p != null) {
+				p.close();
+			}
+		}
+
+		/** クライアントの資源を待っている{@link #resolve}を抜けさせます。 */
+		void abortWaits() {
+			this.aborted = true;
+			synchronized (this) {
+				this.notifyAll();
+			}
+		}
 
 		public void sourceLength(long srcLength) {
 			// System.err.println("srcLength: "+srcLength);
@@ -181,13 +243,15 @@ public class RestSession {
 					if (this.resolvedResource != null) {
 						return this.resolvedResource;
 					}
-					if (this.requiredResource == null || !this.transcoding) {
+					// 中断・close では待ちを抜ける(2026-10-03)。以前は割り込みも無視して待ち続け、
+					// close が変換の終わりを待つ(join)と、どちらも終わらなかった
+					if (this.requiredResource == null || !this.transcoding || this.aborted) {
 						throw new FileNotFoundException(uri.toString());
 					}
 					try {
 						this.wait(1000);
 					} catch (InterruptedException e) {
-						// ignore
+						this.aborted = true;
 					}
 				}
 			} finally {
@@ -206,28 +270,27 @@ public class RestSession {
 
 		public void transcode(final HttpServletRequest req, final HttpServletResponse res, boolean async,
 				boolean resolverMode, boolean continuous) throws ServletException, IOException, TranscoderException {
-			if (resolverMode) {
-				RestSession.this.session.setSourceResolver(this);
-			} else if (RestSession.this.resolver != null) {
-				RestSession.this.session.setSourceResolver(RestSession.this.resolver);
-			}
-			RestSession.this.session.setContinuous(continuous);
-
-			// 検査と待機を同じ監視の中で行う(2026-09-02)。以前は検査が監視の外で、
-			// 完了側の finally が transcoding=false にしてから notifyAll するまでの
-			// 隙間に検査が通ると、通知を取り逃して次のメッセージまで眠っていた
-			synchronized (RestSession.this) {
-				while (this.transcoding) {
-					try {
-						RestSession.this.wait(1000);
-					} catch (InterruptedException e) {
-						// ignore
-					}
+			try {
+				if (resolverMode) {
+					RestSession.this.session.setSourceResolver(this);
+				} else if (RestSession.this.resolver != null) {
+					RestSession.this.session.setSourceResolver(RestSession.this.resolver);
 				}
-				this.transcoding = true;
+				RestSession.this.session.setContinuous(continuous);
+			} catch (RuntimeException | Error e) {
+				this.abandon();
+				throw e;
 			}
+
+			// セッションの予約と同時変換数の許可は begin() で済んでいる(2026-10-03)
 			if (async) {
-				this.th = Thread.ofVirtual().name(RestServlet.class.getName()).start(this);
+				try {
+					this.th = Thread.ofVirtual().name(RestServlet.class.getName()).start(this);
+				} catch (RuntimeException | Error e) {
+					this.th = null;
+					this.abandon();
+					throw e;
+				}
 				RestServlet.sendMessage(req, res, RestServlet.INFO_OK);
 			} else {
 				this.syncTranscode(res);
@@ -362,6 +425,9 @@ public class RestSession {
 				synchronized (RestSession.this) {
 					RestSession.this.notifyAll();
 				}
+				if (!this.continuous) {
+					this.releasePermit();
+				}
 			}
 		}
 
@@ -443,6 +509,10 @@ public class RestSession {
 				synchronized (RestSession.this) {
 					RestSession.this.notifyAll();
 				}
+				// エンジンは変換のスレッドを join し終えてから戻るので、ここで返してよい
+				if (!this.continuous) {
+					this.releasePermit();
+				}
 			}
 		}
 
@@ -465,7 +535,16 @@ public class RestSession {
 		}
 	}
 
+	/** 同時変換数の上限(REST と CTIP が共有。2026-10-03)。 */
+	private final ConversionGate gate;
+
 	RestSession(CTISession session, boolean messages, boolean restResolver, long timeout) throws IOException {
+		this(session, messages, restResolver, timeout, ConversionGate.UNLIMITED);
+	}
+
+	RestSession(CTISession session, boolean messages, boolean restResolver, long timeout, ConversionGate gate)
+			throws IOException {
+		this.gate = gate == null ? ConversionGate.UNLIMITED : gate;
 		this.session = session;
 		if (messages) {
 			this.messages = new Messages();
@@ -795,8 +874,8 @@ public class RestSession {
 	 * @throws FileUploadException
 	 * @throws URISyntaxException
 	 */
-	boolean transcode(final HttpServletRequest req, final HttpServletResponse res)
-			throws ServletException, IOException, TranscoderException, FileUploadException, URISyntaxException {
+	boolean transcode(final HttpServletRequest req, final HttpServletResponse res) throws ServletException,
+			IOException, TranscoderException, FileUploadException, URISyntaxException, ConversionRefusedException {
 		this.accessed = System.currentTimeMillis();
 		RestRequest restReq = RestRequest.getRestRequest(req);
 		String uri = restReq.getParameter("rest.uri");
@@ -950,6 +1029,7 @@ public class RestSession {
 				if (this.transcode == null) {
 					this.transcode = new TranscodeTask();
 				}
+				this.transcode.begin(continuous);
 				this.transcode.setSource(mainSource, mainSourceFile);
 				mainSourceTransferred = true;
 				this.transcode.transcode(req, res, async, resolverMode, continuous);
@@ -960,6 +1040,7 @@ public class RestSession {
 					this.transcode = new TranscodeTask();
 				}
 				URI mainURIParsed = URIHelper.create(RestServlet.CHARSET, mainURI);
+				this.transcode.begin(continuous);
 				this.transcode.setSourceURI(mainURIParsed);
 				this.transcode.transcode(req, res, async, resolverMode, continuous);
 				return true;
@@ -986,6 +1067,7 @@ public class RestSession {
 				if (this.transcode == null) {
 					this.transcode = new TranscodeTask();
 				}
+				this.transcode.begin(continuous);
 				this.transcode.setSource(source);
 				this.transcode.transcode(req, res, async, resolverMode, continuous);
 				return true;
@@ -1047,10 +1129,14 @@ public class RestSession {
 					} catch (NumberFormatException e1) {
 						// ignore
 					}
-					try {
-						this.wait(wait);
-					} catch (InterruptedException e) {
-						// ignore
+					// 0 以下・読めない値で無期限に待たない。上限は MAX_MESSAGES_WAIT(2026-10-03。
+					// 以前は wait(0)=無期限になり、重ねて XNIO のタスクスレッドを埋められた)
+					if (wait > 0) {
+						try {
+							this.wait(Math.min(wait, MAX_MESSAGES_WAIT));
+						} catch (InterruptedException e) {
+							// ignore
+						}
 					}
 				}
 			}
@@ -1260,6 +1346,9 @@ public class RestSession {
 		if (modeStr != null && modeStr.equals("force")) {
 			mode = CTISession.ABORT_FORCE;
 		}
+		if (this.transcode != null) {
+			this.transcode.abortWaits();
+		}
 		this.session.abort(mode);
 	}
 
@@ -1271,7 +1360,14 @@ public class RestSession {
 	 */
 	void join() throws IOException, FileUploadException {
 		this.accessed = System.currentTimeMillis();
-		this.session.join();
+		try {
+			this.session.join();
+		} finally {
+			// continuous はここで終わる(2026-10-03)
+			if (this.transcode != null && !this.transcode.transcoding) {
+				this.transcode.releasePermit();
+			}
+		}
 	}
 
 	/**
@@ -1281,10 +1377,7 @@ public class RestSession {
 	 */
 	void reset() throws IOException {
 		this.accessed = System.currentTimeMillis();
-		if (this.transcode != null) {
-			this.transcode.dispose();
-			this.transcode = null;
-		}
+		this.disposeTranscode();
 		this.session.reset();
 	}
 
@@ -1294,10 +1387,23 @@ public class RestSession {
 	 * @throws IOException
 	 */
 	void close() throws IOException {
-		if (this.transcode != null) {
-			this.transcode.dispose();
-			this.transcode = null;
-		}
+		this.disposeTranscode();
 		this.session.close();
 	}
+
+	/**
+	 * 変換を片付けます。クライアントの資源を待っている変換は待ちを抜けさせてから終わりを待ち(以前は
+	 * どちらも終わらなかった)、許可を返します(2026-10-03)。
+	 */
+	private void disposeTranscode() {
+		if (this.transcode != null) {
+			this.transcode.abortWaits();
+			this.transcode.dispose();
+			this.transcode.releasePermit();
+			this.transcode = null;
+		}
+	}
+
+	/** {@code /messages} の {@code rest.wait} の上限(ミリ秒)。 */
+	static final long MAX_MESSAGES_WAIT = 30000L;
 }

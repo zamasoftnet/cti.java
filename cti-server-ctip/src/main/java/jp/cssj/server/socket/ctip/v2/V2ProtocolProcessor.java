@@ -36,6 +36,7 @@ import net.zamasoft.zstream.resolver.util.URIHelper;
 import net.zamasoft.zstream.resolver.protocol.stream.StreamSource;
 import net.zamasoft.zstream.io.FragmentedOutput;
 import net.zamasoft.zstream.io.SequentialOutput;
+import jp.cssj.server.ConversionGate;
 import jp.cssj.server.socket.ProtocolProcessor;
 import jp.cssj.server.socket.ctip.helpers.ResponseConsumer;
 import jp.cssj.server.socket.ctip.helpers.ServerMessageHandler;
@@ -163,6 +164,43 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 		this.driver = driver;
 	}
 
+	/** 同時変換数の上限(REST と共有。2026-10-03)。 */
+	private ConversionGate gate = ConversionGate.UNLIMITED;
+
+	/** この接続が持っている許可。continuous の間は join・reset・接続の終わりまで持ち続ける。 */
+	private ConversionGate.Permit permit = null;
+
+	private boolean continuous = false;
+
+	public void setConversionGate(final ConversionGate gate) {
+		this.gate = gate == null ? ConversionGate.UNLIMITED : gate;
+	}
+
+	/**
+	 * 変換を始める前に許可を取ります。空きが無ければ、利用者に返す中断の例外を返します(待たない)。
+	 */
+	private TranscoderException enterGate() {
+		if (this.permit != null) {
+			return null;
+		}
+		this.permit = this.gate.tryEnter();
+		if (this.permit != null) {
+			return null;
+		}
+		final short code = CTIMessageCodes.ERROR_BUSY;
+		final String[] args = { String.valueOf(this.gate.limit()) };
+		return new TranscoderException(TranscoderException.STATE_BROKEN, code, args,
+				CTIMessageHelper.toString(code, args));
+	}
+
+	/** 許可を返します。 */
+	private void leaveGate() {
+		if (this.permit != null) {
+			this.permit.close();
+			this.permit = null;
+		}
+	}
+
 	public void process(Socket socket, InputStream in, OutputStream out, String firstLine) throws IOException {
 		this.in = in;
 		this.out = new DataOutputStream(out);
@@ -252,6 +290,12 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 					this.session.setProgressListener(this);
 					this.session.setResults(this);
 					try {
+						// 同時変換数の上限(2026-10-03)。断るときも、本文を読み捨ててから
+						// 中断を知らせる下の経路をそのまま使う
+						final TranscoderException busy = this.enterGate();
+						if (busy != null) {
+							throw busy;
+						}
 						if (this.clientResolver != null) {
 							this.clientResolver.putSource(source);
 							this.request = request;
@@ -275,6 +319,10 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 							continue FOR;
 						}
 						this.abort(e);
+					} finally {
+						if (!this.continuous) {
+							this.leaveGate();
+						}
 					}
 					request.next();
 				}
@@ -300,6 +348,10 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 					this.session.setResults(this);
 					this.request = request;
 					try {
+						final TranscoderException busy = this.enterGate();
+						if (busy != null) {
+							throw busy;
+						}
 						this.session.transcode(uri);
 						this.next();
 					} catch (TranscoderException e) {
@@ -307,6 +359,9 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 						this.abort(e);
 					} finally {
 						this.request = null;
+						if (!this.continuous) {
+							this.leaveGate();
+						}
 					}
 					request.next();
 				}
@@ -322,7 +377,8 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 				}
 
 				case V2ClientPackets.CONTINUOUS -> {
-					this.session.setContinuous(request.getMode() == 1);
+					this.continuous = request.getMode() == 1;
+					this.session.setContinuous(this.continuous);
 					request.next();
 				}
 
@@ -362,6 +418,7 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 						this.session.join();
 					} finally {
 						this.request = null;
+						this.leaveGate();
 					}
 					request.next();
 				}
@@ -369,6 +426,8 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 				case V2ClientPackets.RESET -> {
 					this.reset();
 					this.session.reset();
+					this.leaveGate();
+					this.continuous = false;
 					request.next();
 				}
 
@@ -400,7 +459,11 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 				}
 			}
 		} finally {
-			this.session.close();
+			try {
+				this.session.close();
+			} finally {
+				this.leaveGate();
+			}
 		}
 	}
 

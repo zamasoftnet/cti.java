@@ -29,6 +29,7 @@ import jp.cssj.cti2.CTISession;
 import jp.cssj.cti2.TranscoderException;
 import jp.cssj.cti2.helpers.CTIMessageCodes;
 import jp.cssj.cti2.helpers.CTIMessageHelper;
+import jp.cssj.server.ConversionGate;
 import jp.cssj.server.acl.Acl;
 
 import org.apache.commons.fileupload.FileCountLimitExceededException;
@@ -102,6 +103,24 @@ public class RestServlet extends HttpServlet {
 	public static final short ERROR_BAD_REQUEST = 0x3015;
 	/** 結果が存在しない。 */
 	public static final short ERROR_NO_RESULT = 0x3016;
+	/** このセッションは変換中(2026-10-03。以前は終わるまで待っていた)。 */
+	public static final short ERROR_SESSION_BUSY = 0x3017;
+
+	/** 断ったときに勧めるやり直しまでの秒数({@code Retry-After})。 */
+	private static final String RETRY_AFTER_SECONDS = "5";
+
+	/** 同時変換数の上限(CTIP と共有。2026-10-03)。 */
+	private ConversionGate gate = ConversionGate.UNLIMITED;
+
+	/** 同時変換数の上限を設定します。 */
+	public void setConversionGate(final ConversionGate gate) {
+		this.gate = gate == null ? ConversionGate.UNLIMITED : gate;
+	}
+
+	/** 同時変換数の上限(状態の報告用)。 */
+	public ConversionGate getConversionGate() {
+		return this.gate;
+	}
 
 	public void init(ServletConfig servletConfig) throws ServletException {
 		super.init(servletConfig);
@@ -284,7 +303,7 @@ public class RestServlet extends HttpServlet {
 		}
 		timeout = Math.min(timeout, MAX_SESSION_TIMEOUT);
 		CTISession session = this.getDriver().getSession(this.ctiURI, props);
-		RestSession restSession = new RestSession(session, messages, this.restResolver, timeout);
+		RestSession restSession = new RestSession(session, messages, this.restResolver, timeout, this.gate);
 		return restSession;
 	}
 
@@ -423,6 +442,17 @@ public class RestServlet extends HttpServlet {
 					try {
 						if (!restSession.transcode(req, res)) {
 							RestServlet.sendMessage(req, res, ERROR_NO_DOCUMENT);
+						}
+					} catch (ConversionRefusedException e) {
+						// 待たずに断った(2026-10-03)。状態コードを見るクライアント(cti.li の PHP)と
+						// XML のコードを見るクライアント(Java の REST ドライバ)の両方で失敗になる
+						res.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+						res.setHeader("Retry-After", RETRY_AFTER_SECONDS);
+						if (e.getArgs() == null) {
+							RestServlet.sendMessage(req, res, e.getCode());
+						} else {
+							RestServlet.sendMessage(req, res, e.getCode(),
+									CTIMessageHelper.toString(e.getCode(), e.getArgs()));
 						}
 					} catch (TranscoderException e) {
 						if (e.getState() == TranscoderException.STATE_BROKEN) {
