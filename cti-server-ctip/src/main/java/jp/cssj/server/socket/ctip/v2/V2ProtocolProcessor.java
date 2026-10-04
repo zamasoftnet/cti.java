@@ -467,7 +467,7 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 		}
 	}
 
-	public void finishFragment(int id) throws IOException {
+	public synchronized void finishFragment(int id) throws IOException {
 		this.flush(this.cursorId);
 		this.out.writeInt(1 + 4);
 		this.out.writeByte(V2ServerPackets.CLOSE_BLOCK);
@@ -478,7 +478,7 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 	/**
 	 * 変換の中断をクライアントに通知します。
 	 */
-	private void abort(TranscoderException e) throws IOException {
+	private synchronized void abort(TranscoderException e) throws IOException {
 		switch (e.getState()) {
 		case TranscoderException.STATE_BROKEN -> this.abort((byte) 1, e.getCode(), e.getArgs(), e.getMessage());
 		case TranscoderException.STATE_READABLE -> {
@@ -497,7 +497,7 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 		}
 	}
 
-	protected void abort(byte mode, short code, String[] args, String message) throws IOException {
+	protected synchronized void abort(byte mode, short code, String[] args, String message) throws IOException {
 		message = stringLimit(message);
 		byte[] messageBytes = ChannelIO.toBytes(message, this.charset);
 		int payload = 1 + 1 + 2 + 2 + messageBytes.length;
@@ -526,28 +526,28 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 		}
 	}
 
-	protected void mainLength(long srcLength) throws IOException {
+	protected synchronized void mainLength(long srcLength) throws IOException {
 		this.out.writeInt(1 + 8);
 		this.out.writeByte(V2ServerPackets.MAIN_LENGTH);
 		this.out.writeLong(srcLength);
 		this.out.flush();
 	}
 
-	protected void mainRead(long srcRead) throws IOException {
+	protected synchronized void mainRead(long srcRead) throws IOException {
 		this.out.writeInt(1 + 8);
 		this.out.writeByte(V2ServerPackets.MAIN_READ);
 		this.out.writeLong(srcRead);
 		this.out.flush();
 	}
 
-	protected void eof() throws IOException {
+	protected synchronized void eof() throws IOException {
 		this.out.writeInt(1);
 		this.out.writeByte(V2ServerPackets.EOF);
 		this.out.flush();
 		this.cursorId = -2;
 	}
 
-	protected void next() throws IOException {
+	protected synchronized void next() throws IOException {
 		if (this.cursorId == -2) {
 			return;
 		}
@@ -564,7 +564,7 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 		this.srcRead = serverRead;
 	}
 
-	public void finish() throws IOException {
+	public synchronized void finish() throws IOException {
 		if (this.cursorId == -1) {
 			this.flush();
 		} else {
@@ -572,7 +572,7 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 		}
 	}
 
-	public void end() throws IOException {
+	public synchronized void end() throws IOException {
 		this.eof();
 	}
 
@@ -610,18 +610,18 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 		this.cursorId = -1;
 	}
 
-	public void addFragment() throws IOException {
+	public synchronized void addFragment() throws IOException {
 		this.out.writeInt(1);
 		this.out.writeByte(V2ServerPackets.ADD_BLOCK);
 	}
 
-	public void insertFragmentBefore(int anchorId) throws IOException {
+	public synchronized void insertFragmentBefore(int anchorId) throws IOException {
 		this.out.writeInt(1 + 4);
 		this.out.writeByte(V2ServerPackets.INSERT_BLOCK);
 		this.out.writeInt(anchorId);
 	}
 
-	public void write(int id, byte[] b, int off, int len) throws IOException {
+	public synchronized void write(int id, byte[] b, int off, int len) throws IOException {
 		if (this.srcLength != -1L) {
 			this.mainLength(this.srcLength);
 			this.srcLength = -1L;
@@ -639,7 +639,7 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 		}
 	}
 
-	public void write(byte[] b, int off, int len) throws IOException {
+	public synchronized void write(byte[] b, int off, int len) throws IOException {
 		assert this.cursorId == -1;
 		if (this.srcLength != -1L) {
 			this.mainLength(this.srcLength);
@@ -658,7 +658,7 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 		}
 	}
 
-	protected void data(byte[] b, int off, int len) throws IOException {
+	protected synchronized void data(byte[] b, int off, int len) throws IOException {
 		int payload = 1 + len;
 		this.out.writeInt(payload);
 		this.out.writeByte(V2ServerPackets.DATA);
@@ -673,7 +673,7 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 		return str;
 	}
 
-	public void message(short code, String[] args, String message) throws IOException {
+	public synchronized void message(short code, String[] args, String message) throws IOException {
 		if (!this.messageFilters.isEmpty()) {
 			String codeStr = Integer.toHexString(code).toUpperCase();
 			if (codeStr.length() == 4) {
@@ -715,7 +715,7 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 		}
 	}
 
-	protected void flush(int newId) throws IOException {
+	protected synchronized void flush(int newId) throws IOException {
 		if (this.bufferLength > 0) {
 			int payload = 1 + 4 + this.bufferLength;
 			this.out.writeInt(payload);
@@ -727,7 +727,7 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 		this.cursorId = newId;
 	}
 
-	protected void flush() throws IOException {
+	protected synchronized void flush() throws IOException {
 		if (this.bufferLength > 0) {
 			int payload = 1 + this.bufferLength;
 			this.out.writeInt(payload);
@@ -751,7 +751,7 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 		return true;
 	}
 
-	public FragmentedOutput nextBuilder(SourceMetadata metaSource) throws IOException {
+	public synchronized FragmentedOutput nextBuilder(SourceMetadata metaSource) throws IOException {
 		this.cursorId = -1;
 		URI uri = metaSource.getURI();
 		String mimeType = metaSource.getMimeType();
