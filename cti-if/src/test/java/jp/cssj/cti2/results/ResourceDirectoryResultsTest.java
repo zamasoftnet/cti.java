@@ -49,6 +49,22 @@ class ResourceDirectoryResultsTest {
 		assertTrue(Files.notExists(this.temp.getParent().resolve("escape")));
 	}
 
+	/** 画像出力の頁ごとの結果({@code #1}, {@code #2}…)は page-0001.png などに書く(2026-10-04)。 */
+	@Test
+	void storesNumberedResultsAsPageFiles() throws Exception {
+		final ResourceDirectoryResults results = new ResourceDirectoryResults(this.temp.toFile());
+		write(results, "#1", "image/png", new byte[] { 1 });
+		write(results, "#2", "image/png", new byte[] { 2 });
+		write(results, "#12", "image/jpeg", new byte[] { 3 });
+
+		assertArrayEquals(new byte[] { 1 }, Files.readAllBytes(this.temp.resolve("page-0001.png")));
+		assertArrayEquals(new byte[] { 2 }, Files.readAllBytes(this.temp.resolve("page-0002.png")));
+		assertArrayEquals(new byte[] { 3 }, Files.readAllBytes(this.temp.resolve("page-0012.jpg")));
+		// 番号でない断片は従来どおり断る
+		assertThrows(IOException.class, () -> results.nextBuilder(
+				new SimpleSourceMetadata(URI.create("#x"), "image/png", null, -1)));
+	}
+
 	@Test
 	void rejectsDuplicateAndExistingTargets() throws Exception {
 		final ResourceDirectoryResults results = new ResourceDirectoryResults(this.temp.toFile());

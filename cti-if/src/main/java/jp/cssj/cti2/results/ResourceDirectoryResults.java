@@ -19,6 +19,11 @@ import net.zamasoft.zstream.resolver.SourceMetadata;
  * <p>The URI is treated as untrusted input. Absolute paths, traversal,
  * fragments, queries, duplicate names and existing targets are rejected.</p>
  *
+ * <p>A result numbered by the engine ({@code #1}, {@code #2}... — one page of
+ * PNG or JPEG output each) is stored as {@code page-0001.png} and so on, the
+ * extension taken from its media type (2026-10-04; the CLI's {@code -outdir}
+ * refused image output as an unsafe URI).</p>
+ *
  * @since 2.2
  */
 public class ResourceDirectoryResults implements Results {
@@ -55,7 +60,11 @@ public class ResourceDirectoryResults implements Results {
 		if (metadata == null || metadata.getURI() == null) {
 			throw new IOException("A relative result URI is required");
 		}
-		final URI uri = metadata.getURI();
+		URI uri = metadata.getURI();
+		final String numbered = numberedName(uri, metadata.getMimeType());
+		if (numbered != null) {
+			uri = URI.create(numbered);
+		}
 		if (uri.isAbsolute() || uri.isOpaque() || uri.getRawAuthority() != null || uri.getRawQuery() != null
 				|| uri.getRawFragment() != null) {
 			throw new IOException("Unsafe result URI: " + uri);
@@ -94,6 +103,35 @@ public class ResourceDirectoryResults implements Results {
 			throw new IOException("Duplicate result URI: " + uri);
 		}
 		return new FileFragmentedOutput(canonicalTarget);
+	}
+
+	private static final java.util.regex.Pattern NUMBERED = java.util.regex.Pattern.compile("[0-9]{1,9}");
+
+	/** {@code #N} only (an engine's result number) to {@code page-NNNN.ext}; otherwise null. */
+	private static String numberedName(final URI uri, final String mimeType) {
+		if (uri.isAbsolute() || uri.getRawSchemeSpecificPart() != null && !uri.getRawSchemeSpecificPart().isEmpty()
+				|| uri.getRawFragment() == null || !NUMBERED.matcher(uri.getRawFragment()).matches()) {
+			return null;
+		}
+		final String extension;
+		switch (mimeType == null ? "" : mimeType.toLowerCase(java.util.Locale.ROOT)) {
+		case "image/png":
+			extension = ".png";
+			break;
+		case "image/jpeg":
+			extension = ".jpg";
+			break;
+		case "image/svg+xml":
+			extension = ".svg";
+			break;
+		case "application/pdf":
+			extension = ".pdf";
+			break;
+		default:
+			extension = "";
+			break;
+		}
+		return String.format("page-%04d%s", Integer.valueOf(uri.getRawFragment()), extension);
 	}
 
 	@Override
