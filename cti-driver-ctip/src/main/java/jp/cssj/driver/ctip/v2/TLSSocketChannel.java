@@ -75,7 +75,7 @@ public class TLSSocketChannel extends SelectableChannel implements ByteChannel {
             boolean insecure = TLSPolicy.isInsecure();
             SSLContext context = SSLContext.getInstance("TLS");
             if (insecure) {
-                // 何でも通す。**試験用の逃げ道**であって既定ではない
+                // Accept everything. This is a **test-only escape hatch**, not the default.
                 context.init(null, new TrustManager[] { new X509TrustManager() {
                     public void checkClientTrusted(X509Certificate[] chain, String authType) { }
                     public void checkServerTrusted(X509Certificate[] chain, String authType) { }
@@ -84,17 +84,17 @@ public class TLSSocketChannel extends SelectableChannel implements ByteChannel {
             } else {
                 context.init(null, null, null);
             }
-            // **ホストと port を渡す。** 引数なしの createSSLEngine() では SNI を
-            // 送らないので、名前で振り分けているサーバーから正しい証明書が返らない
+            // **Pass the host and port.** The no-argument createSSLEngine() sends no SNI,
+            // so a server that routes by name does not return the correct certificate.
             engine = host != null ? context.createSSLEngine(host, port) : context.createSSLEngine();
             engine.setUseClientMode(true);
             if (!insecure && host != null) {
-                // **ホスト名の検証を有効にする。** 証明書チェーンが正しくても、
-                // 別のホストの証明書なら受け入れてはいけない
+                // **Enable hostname verification.** Even if the certificate chain is valid,
+                // do not accept a certificate for a different host.
                 SSLParameters params = engine.getSSLParameters();
                 params.setEndpointIdentificationAlgorithm("HTTPS");
                 if (!isIPAddress(host)) {
-                    // IP リテラルは SNI に載せられない(RFC 6066)
+                    // SNI cannot contain IP literals (RFC 6066).
                     params.setServerNames(Collections
                             .<SNIServerName> singletonList(new SNIHostName(host)));
                 }
@@ -388,11 +388,11 @@ public class TLSSocketChannel extends SelectableChannel implements ByteChannel {
     }
 
     /**
-     * ホストが IP リテラルかどうかです。
+     * Returns whether the host is an IP literal.
      *
      * <p>
-     * SNI には IP アドレスを載せられません(RFC 6066)。載せると JDK が
-     * {@code IllegalArgumentException} を投げます。
+     * SNI cannot contain IP addresses (RFC 6066). If you include one, the JDK throws
+     * {@code IllegalArgumentException}.
      * </p>
      */
     static boolean isIPAddress(String host) {
@@ -406,7 +406,7 @@ public class TLSSocketChannel extends SelectableChannel implements ByteChannel {
         if (first < '0' || first > '9') {
             return false;
         }
-        // 先頭が数字で、数字とドットだけなら IPv4 リテラルとみなす
+        // Treat a host that starts with a digit and contains only digits and dots as an IPv4 literal.
         for (int i = 0; i < host.length(); ++i) {
             char c = host.charAt(i);
             if ((c < '0' || c > '9') && c != '.') {

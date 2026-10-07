@@ -1,7 +1,7 @@
 package jp.cssj.cti2.progress;
 
 /**
- * ProgressListenterの実装を容易にするためのアダプタです。
+ * An adapter that simplifies implementing ProgressListenter.
  * 
  * @author MIYABE Tatsuhiko
  * @version $Id: ProgressAdapter.java 1552 2018-04-26 01:43:24Z miyabe $

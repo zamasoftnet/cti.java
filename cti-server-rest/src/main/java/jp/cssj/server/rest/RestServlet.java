@@ -76,48 +76,48 @@ public class RestServlet extends HttpServlet {
 
 	private Thread cleaner = null;
 
-	/** パス形式の結果取得の接頭辞({@code /result/<セッションID>/<相対URI>})。 */
+	/** Prefix for retrieving results by path ({@code /result/<sessionID>/<relativeURI>}). */
 	private static final String RESULT_PATH_PREFIX = "/result/";
 
 	private static final long MAX_SESSION_TIMEOUT = 60000L * 60L;
 
 	private static final long DEFAULT_SESSION_TIMEOUT = 60000L * 3L;
 
-	/** 正常に処理された。 */
+	/** Successfully processed. */
 	public static final short INFO_OK = 0x1011;
-	/** 新しいセッションが作られた。 */
+	/** A new session has been created. */
 	public static final short INFO_NEW_SESSION = 0x1012;
-	/** 変換処理を実行中。 */
+	/** Conversion is in progress. */
 	public static final short INFO_TRANSCODING = 0x1013;
-	/** 変換処理が完了済み。 */
+	/** Conversion has completed. */
 	public static final short INFO_TRANDCODED = 0x1014;
-	/** 不正なアクション。 */
+	/** Invalid action. */
 	public static final short ERROR_BAD_ACTION = 0x3011;
-	/** セッションが存在しない。 */
+	/** The session does not exist. */
 	public static final short ERROR_NO_SESSION = 0x3012;
-	/** 変換対象文書が存在しない */
+	/** The document to convert does not exist. */
 	public static final short ERROR_NO_DOCUMENT = 0x3013;
-	/** 認証に失敗した。 */
+	/** Authentication failed. */
 	public static final short ERROR_AUTHENTICATION_FAILURE = 0x3014;
-	/** 不正なリクエスト。 */
+	/** Invalid request. */
 	public static final short ERROR_BAD_REQUEST = 0x3015;
-	/** 結果が存在しない。 */
+	/** The result does not exist. */
 	public static final short ERROR_NO_RESULT = 0x3016;
-	/** このセッションは変換中(2026-10-03。以前は終わるまで待っていた)。 */
+	/** This session is converting (2026-10-03; previously, the request waited for it to finish). */
 	public static final short ERROR_SESSION_BUSY = 0x3017;
 
-	/** 断ったときに勧めるやり直しまでの秒数({@code Retry-After})。 */
+	/** Recommended delay in seconds before retrying a refused request ({@code Retry-After}). */
 	private static final String RETRY_AFTER_SECONDS = "5";
 
-	/** 同時変換数の上限(CTIP と共有。2026-10-03)。 */
+	/** Concurrent conversion limit (shared with CTIP; 2026-10-03). */
 	private ConversionGate gate = ConversionGate.UNLIMITED;
 
-	/** 同時変換数の上限を設定します。 */
+	/** Sets the concurrent conversion limit. */
 	public void setConversionGate(final ConversionGate gate) {
 		this.gate = gate == null ? ConversionGate.UNLIMITED : gate;
 	}
 
-	/** 同時変換数の上限(状態の報告用)。 */
+	/** Concurrent conversion limit (for status reporting). */
 	public ConversionGate getConversionGate() {
 		return this.gate;
 	}
@@ -195,7 +195,7 @@ public class RestServlet extends HttpServlet {
 	}
 
 	/**
-	 * セッションの期限切れをチェックします。
+	 * Checks for expired sessions.
 	 */
 	protected void clean() {
 		this.clean(false);
@@ -217,7 +217,7 @@ public class RestServlet extends HttpServlet {
 	}
 
 	/**
-	 * セッションを開始します。
+	 * Starts a session.
 	 * 
 	 * @param req
 	 * @param id
@@ -234,19 +234,19 @@ public class RestServlet extends HttpServlet {
 	}
 
 	/**
-	 * セッションを取得します。
+	 * Returns a session.
 	 * 
 	 * @param id
 	 * @return
 	 */
 	protected RestSession loadSession(String id) {
-		// ConcurrentHashMap は null キーを許容しない
+		// ConcurrentHashMap does not allow null keys
 		return id == null ? null : this.idToSession.get(id);
 	}
 
 	/**
-	 * {@code Authorization: Basic …} を {user, password} に解きます。無い・壊れている
-	 * なら {@code null}(認証失敗として扱われる)。
+	 * Decodes {@code Authorization: Basic …} into {user, password}. Returns {@code null}
+	 * if the header is missing or malformed (treated as an authentication failure).
 	 */
 	static String[] basicCredentials(final String authorization) {
 		if (authorization == null || !authorization.regionMatches(true, 0, "Basic ", 0, 6)) {
@@ -270,7 +270,7 @@ public class RestServlet extends HttpServlet {
 			throws IOException, SecurityException, FileUploadException {
 		Map<String, String> props;
 		if (this.direct) {
-			// Copper WEBAPP等認証を使わない場合
+			// When authentication is not used, as in Copper WEBAPP
 			props = null;
 		} else {
 			props = new HashMap<>();
@@ -280,9 +280,9 @@ public class RestServlet extends HttpServlet {
 			String user = restReq.getParameter("rest.user");
 			String password = restReq.getParameter("rest.password");
 			if (user == null && password == null) {
-				// rest.user / rest.password が無ければ Authorization: Basic を見る
-				// (2026-09-02、cti.li の要望——クエリ文字列の認証情報は前段の
-				// アクセスログに残る)。パラメータがあればそちらが勝つ
+				// Check Authorization: Basic if rest.user / rest.password are absent.
+				// (2026-09-02, requested by cti.li: credentials in the query string remain in upstream
+				// access logs.) Parameters take precedence if present.
 				final String[] basic = basicCredentials(req.getHeader("Authorization"));
 				if (basic != null) {
 					user = basic[0];
@@ -329,8 +329,8 @@ public class RestServlet extends HttpServlet {
 				RestServlet.sendMessage(req, res, ERROR_BAD_ACTION);
 				return;
 			}
-			// パス形式の結果取得: /result/<セッションID>/<相対URI>
-			// (2026-08-28)。結果集合の相対参照がブラウザでそのまま解決する
+			// Retrieve results by path: /result/<sessionID>/<relativeURI>
+			// (2026-08-28). Browsers resolve relative references within the result set directly.
 			if (path.startsWith(RESULT_PATH_PREFIX)) {
 				final String rest = path.substring(RESULT_PATH_PREFIX.length());
 				final int sep = rest.indexOf('/');
@@ -368,7 +368,7 @@ public class RestServlet extends HttpServlet {
 
 			switch (action) {
 			case "open" -> {
-				// セッション開始
+				// Start a session
 				if ("true".equals(restReq.getParameter("rest.httpSession"))) {
 					HttpSession httpSession = req.getSession(true);
 					id = httpSession.getId();
@@ -387,7 +387,7 @@ public class RestServlet extends HttpServlet {
 			}
 
 			case "info" -> {
-				// サーバー情報
+				// Server information
 				RestSession restSession = this.loadSession(id);
 				if (restSession == null) {
 					if (restId != null) {
@@ -409,7 +409,7 @@ public class RestServlet extends HttpServlet {
 			}
 
 			case "properties" -> {
-				// プロパティ
+				// Properties
 				RestSession restSession = this.loadSession(id);
 				if (restSession == null) {
 					RestServlet.sendMessage(req, res, ERROR_NO_SESSION);
@@ -419,7 +419,7 @@ public class RestServlet extends HttpServlet {
 			}
 
 			case "resources" -> {
-				// リソース
+				// Resources
 				RestSession restSession = this.loadSession(id);
 				if (restSession == null) {
 					RestServlet.sendMessage(req, res, ERROR_NO_SESSION);
@@ -429,7 +429,7 @@ public class RestServlet extends HttpServlet {
 			}
 
 			case "transcode" -> {
-				// 文書の変換
+				// Convert a document
 				RestSession restSession = this.loadSession(id);
 				if (restSession == null) {
 					if (restId != null) {
@@ -444,8 +444,8 @@ public class RestServlet extends HttpServlet {
 							RestServlet.sendMessage(req, res, ERROR_NO_DOCUMENT);
 						}
 					} catch (ConversionRefusedException e) {
-						// 待たずに断った(2026-10-03)。状態コードを見るクライアント(cti.li の PHP)と
-						// XML のコードを見るクライアント(Java の REST ドライバ)の両方で失敗になる
+						// Refused without waiting (2026-10-03). Both clients that check the status code (cti.li's PHP)
+						// and those that check the XML code (the Java REST driver) recognize the failure.
 						res.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
 						res.setHeader("Retry-After", RETRY_AFTER_SECONDS);
 						if (e.getArgs() == null) {
@@ -468,7 +468,7 @@ public class RestServlet extends HttpServlet {
 			}
 
 			case "noResource" -> {
-				// リソースなし
+				// Missing resource
 				RestSession restSession = this.loadSession(id);
 				if (restSession == null) {
 					RestServlet.sendMessage(req, res, ERROR_NO_SESSION);
@@ -478,7 +478,7 @@ public class RestServlet extends HttpServlet {
 			}
 
 			case "messages" -> {
-				// メッセージ
+				// Messages
 				RestSession restSession = this.loadSession(id);
 				if (restSession == null) {
 					RestServlet.sendMessage(req, res, ERROR_NO_SESSION);
@@ -489,7 +489,7 @@ public class RestServlet extends HttpServlet {
 			}
 
 			case "result" -> {
-				// 処理結果
+				// Processing results
 				RestSession restSession = this.loadSession(id);
 				if (restSession == null) {
 					RestServlet.sendMessage(req, res, ERROR_NO_SESSION);
@@ -500,7 +500,7 @@ public class RestServlet extends HttpServlet {
 			}
 
 			case "abort" -> {
-				// 中断
+				// Abort
 				RestSession restSession = this.loadSession(id);
 				if (restSession == null) {
 					RestServlet.sendMessage(req, res, ERROR_NO_SESSION);
@@ -510,7 +510,7 @@ public class RestServlet extends HttpServlet {
 			}
 
 			case "join" -> {
-				// 結合
+				// Join
 				RestSession restSession = this.loadSession(id);
 				if (restSession == null) {
 					RestServlet.sendMessage(req, res, ERROR_NO_SESSION);
@@ -520,7 +520,7 @@ public class RestServlet extends HttpServlet {
 			}
 
 			case "reset" -> {
-				// リセット
+				// Reset
 				RestSession restSession = this.loadSession(id);
 				if (restSession == null) {
 					RestServlet.sendMessage(req, res, ERROR_NO_SESSION);
@@ -530,7 +530,7 @@ public class RestServlet extends HttpServlet {
 			}
 
 			case "close" -> {
-				// 終了
+				// Close
 				RestSession restSession = this.loadSession(id);
 				if (restSession == null) {
 					sendMessage(req, res, ERROR_NO_SESSION);
@@ -564,10 +564,10 @@ public class RestServlet extends HttpServlet {
 				RestServlet.sendMultipartFailure(req, res, e);
 			}
 		} catch (Exception e) {
-			// **送信より先にログ**(2026-08-06)。逆順だと、応答が既に
-			// 開かれている状況で sendMessage 自身が
-			// IllegalStateException を投げ、**この記録が一度も残らない**。
-			// 失敗が無音になる経路をここで断つ。
+			// **Log before sending** (2026-08-06). In the reverse order, sendMessage itself
+			// throws IllegalStateException when the response is already open,
+			// and **this log entry is never written**.
+			// Prevent failures from going unreported here.
 			LOG.log(Level.SEVERE, "Unexpected error.", e);
 			RestServlet.sendMessage(req, res, CTIMessageCodes.FATAL_UNEXPECTED);
 		}
@@ -637,50 +637,47 @@ public class RestServlet extends HttpServlet {
 	private static final ResourceBundle CTI_BUNDLE = ResourceBundle.getBundle(CTIMessageCodes.class.getName());
 
 	/**
-	 * <b>出力を始めたあとで変換が壊れたことを、クライアントへ必ず伝えます</b>
-	 * (2026-08-06新設)。
+	 * <b>Always informs the client that conversion failed after output started</b>
+	 * (added on 2026-08-06).
 	 *
 	 * <p>
-	 * <b>直した不具合。</b>ここは以前 {@link #sendMessage} を直接呼んでいた。
-	 * ところが変換の出力は{@code ServletResponseResults}が
-	 * {@code getOutputStream()}で開いているので、{@code sendMessage}の中の
-	 * {@code getWriter()}が
-	 * {@code IllegalStateException: getOutputStream() already called}
-	 * を投げる。それが外側の{@code catch (Exception)}へ落ち、そこでも
-	 * {@code sendMessage}を呼ぶので<b>同じ例外でもう一度死ぬ</b>。
-	 * しかも{@code LOG.log(SEVERE, ...)}はその後ろに置かれていたため
-	 * 一度も実行されず、<b>失敗が完全に無音になっていた</b>。
-	 * 最終的にコンテナがバッファ済みの部分PDFを
-	 * <b>HTTP 200・正しいContent-Length</b>で送ってしまい、クライアントには
-	 * 「エンジンが壊れたPDFを出した」としか見えなかった。
+	 * <b>The bug fixed here.</b> This code previously called {@link #sendMessage} directly.
+	 * However, {@code ServletResponseResults} had opened the conversion output with
+	 * {@code getOutputStream()}, so {@code getWriter()} inside {@code sendMessage} threw
+	 * {@code IllegalStateException: getOutputStream() already called}.
+	 * The outer {@code catch (Exception)} caught it and also called {@code sendMessage},
+	 * <b>failing again with the same exception</b>. Moreover, {@code LOG.log(SEVERE, ...)}
+	 * came after that call, so it never ran, and <b>the failure went completely unreported</b>.
+	 * The container ultimately sent the buffered partial PDF with
+	 * <b>HTTP 200 and a correct Content-Length</b>. To the client, it simply looked as though
+	 * "the engine produced a broken PDF."
 	 * </p>
 	 *
 	 * <p>
-	 * <b>これは事故ではなく通常経路で踏める。</b>{@code output.page-limit}
-	 * (中断の既定は{@code force})と{@code output.size-limit}はどちらも
-	 * 出力の途中で変換を中断する。説明書は「出力の制限が働いた場合…
-	 * エラーが通知されます」と書いているが、実測では
-	 * {@code HTTP 200 + application/pdf + 壊れた本文}が返っていた
-	 * (2026-08-06、CopperPDF4の実地コーパスの調査中に判明)。
+	 * <b>This can occur through normal operation, not just by accident.</b> Both {@code output.page-limit}
+	 * (whose default abort mode is {@code force}) and {@code output.size-limit} abort conversion
+	 * during output. The manual says, "When an output limit takes effect … an error is reported,"
+	 * but measurements showed a response of {@code HTTP 200 + application/pdf + broken body}
+	 * (discovered on 2026-08-06 while investigating the CopperPDF4 real-world corpus).
 	 * </p>
 	 *
 	 * <p>
-	 * <b>直し方。</b>まだ送信していなければ{@code reset()}で部分的な出力を
-	 * 捨ててからエラーを返す。Undertowの{@code reset()}は
-	 * {@code writer}と{@code responseState}を初期状態へ戻すので、
-	 * このあと{@code getWriter()}を呼べる(2.2.39のバイトコードで確認)。
-	 * 既に送信済みなら訂正はできないので、<b>成功に見せないこと</b>だけを
-	 * する——例外を送出して応答を壊し、クライアントに転送エラーとして
-	 * 見せる。<b>どちらの経路でも先にログを残す。</b>
+	 * <b>The fix.</b> If the response has not been sent yet, discard the partial output with
+	 * {@code reset()} before returning an error. Undertow's {@code reset()} restores
+	 * {@code writer} and {@code responseState} to their initial states, so {@code getWriter()}
+	 * can be called afterward (verified in the 2.2.39 bytecode). If the response has already
+	 * been sent, it cannot be corrected, so the only action is to <b>avoid presenting it as a success</b>:
+	 * throw an exception to break the response and expose a transfer error to the client.
+	 * <b>Log first in both paths.</b>
 	 * </p>
 	 */
 	static void sendBrokenTranscode(final HttpServletRequest req, final HttpServletResponse res,
 			final TranscoderException e) throws ServletException, IOException {
-		// **まずログ**。この下の送信が何をしようと、失敗した事実は必ず残す。
-		// committed を出すのは、訂正できたのかどうかを事後に区別するため。
+		// **Log first**. Always record the failure, regardless of what the send operation below does.
+		// Log committed so we can tell afterward whether the response could be corrected.
 		LOG.log(Level.WARNING, "Transcode broke after output had started (committed=" + res.isCommitted() + ").", e);
 		if (res.isCommitted()) {
-			// 応答は送信済み。訂正できないので、せめて成功に見せない
+			// The response has already been sent. It cannot be corrected, so at least avoid presenting it as a success.
 			throw new IOException("Transcode broke after the response was committed: " + e.getMessage(), e);
 		}
 		res.reset();
@@ -701,7 +698,7 @@ public class RestServlet extends HttpServlet {
 	public static void sendMessage(final HttpServletRequest req, final HttpServletResponse res, short code,
 			String message) throws ServletException, IOException {
 		if ("html".equals(req.getParameter("rest.response"))) {
-			// HTMLレスポンス
+			// HTML response
 			res.setContentType("text/html");
 			res.setCharacterEncoding(CHARSET);
 			String level = switch (CTIMessageHelper.getLevel(code)) {
@@ -734,7 +731,7 @@ public class RestServlet extends HttpServlet {
 			out.println("</body>");
 			out.println("</html>");
 		} else {
-			// XMLレスポンス
+			// XML response
 			res.setContentType("text/xml");
 			res.setCharacterEncoding(CHARSET);
 			PrintWriter out = res.getWriter();

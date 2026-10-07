@@ -49,7 +49,7 @@ import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.io.IOUtils;
 
 /**
- * RESTインターフェースのセッション情報です。
+ * Session information for the REST interface.
  * 
  * @author MIYABE Tatsuhiko
  * @version $Id: RestSession.java 1635 2023-04-03 08:16:41Z miyabe $
@@ -63,7 +63,7 @@ public class RestSession {
 	private volatile TranscodeTask transcode = null;
 
 	/**
-	 * 受信済みのメッセージです。
+	 * Messages already received.
 	 */
 	protected record Message(short code, String[] args, String text) {
 		protected Message {
@@ -72,7 +72,7 @@ public class RestSession {
 	}
 
 	/**
-	 * メッセージを受信します。
+	 * Receives messages.
 	 * 
 	 * @author MIYABE Tatsuhiko
 	 * @version $Id: RestSession.java 1635 2023-04-03 08:16:41Z miyabe $
@@ -82,8 +82,8 @@ public class RestSession {
 
 		public void message(short code, String[] args, String mes) {
 			if ((code & 0xF000) >= 0x3000) {
-				// エラー以上(2026-10-04)。この後に閉じられた結果は、変換が失敗すれば
-				// 途中までの出力として捨てる(TranscodeTask.run の失敗処理)
+				// Error level or higher (2026-10-04). If conversion fails, discard results closed after this point
+				// as partial output (failure handling in TranscodeTask.run).
 				RestSession.this.errorMessages.incrementAndGet();
 			}
 			Message message = new Message(code, args, mes);
@@ -113,44 +113,46 @@ public class RestSession {
 	}
 
 	protected class TranscodeTask implements SourceResolver, ProgressListener, Runnable {
-		/** メインドキュメントの長さ。 **/
+		/** Length of the main document. **/
 		private long srcLength = -1L;
-		/** 読み込み済みメインドキュメント。 */
+		/** Main document data already read. */
 		private long srcRead = -1L;
-		/** サーバー側のメインドキュメントのURI。 */
+		/** URI of the main document on the server. */
 		private URI uri = null;
-		/** クライアント側のメインドキュメントのソース。 */
+		/** Source of the main document on the client. */
 		private Source source = null;
-		/** Multipartのrest.mainを順序非依存にするための一時入力。 */
+		/** Temporary input that makes multipart rest.main independent of part order. */
 		private File sourceFile = null;
-		/** 要求されたリソース。 */
+		/** Requested resource. */
 		private URI requiredResource = null;
 		private Source resolvedResource = null;
-		/** 結果のURIのリスト。 */
+		/** List of result URIs. */
 		private List<URI> resultList = null;
-		/** URIと結果ファイルのマップ。 */
+		/** Map from URIs to result files. */
 		private Map<URI, File> uriToResult = null;
-		/** URIと結果SourceMetadataのマップ。 */
+		/** Map from URIs to result SourceMetadata. */
 		private Map<URI, SourceMetadata> uriToSourceMetadata = null;
 		private volatile boolean transcoding = false;
 		private Throwable ex = null;
 		private Thread th = null;
 		/**
-		 * 同時変換数の許可(2026-10-03)。非 continuous は変換の終わり、continuous は join・reset・close で返す。
+		 * Concurrent conversion permit (2026-10-03). Returned when conversion ends in non-continuous mode,
+		 * or on join, reset, or close in continuous mode.
 		 */
 		private ConversionGate.Permit permit = null;
 		private boolean continuous = false;
-		/** 中断・close で、クライアントの資源を待っている resolve を抜けさせる。 */
+		/** Makes resolve stop waiting for a client resource on abort or close. */
 		private volatile boolean aborted = false;
-		/** 変換の開始時のエラーの通知の数。 */
+		/** Number of error notifications at the start of conversion. */
 		private int errorsAtStart = 0;
-		/** エラーの通知の後に閉じられた結果(失敗したら途中までの出力として捨てる)。 */
+		/** Results closed after an error notification (discarded as partial output on failure). */
 		private java.util.Set<URI> resultsAfterError = null;
 
 		/**
-		 * 入力に触る前に、このセッションの変換を予約し、同時変換数の許可を取ります(2026-10-03)。
-		 * 変換中のセッションや空きの無いサーバーでは待たずに断ります——以前は変換中のセッションへの
-		 * 2 本目を要求スレッドが待ち(XNIO のタスクスレッドを塞ぐ)、その前に入力を差し替えていた。
+		 * Reserves this session for conversion and acquires a concurrent conversion permit before touching input
+		 * (2026-10-03). Refuses without waiting if the session is converting or the server has no free slots.
+		 * Previously, the request thread for a second conversion on a busy session waited (blocking an XNIO task
+		 * thread), after replacing the input.
 		 */
 		void begin(final boolean continuous) throws ConversionRefusedException {
 			synchronized (RestSession.this) {
@@ -170,7 +172,7 @@ public class RestSession {
 			}
 		}
 
-		/** {@link #begin}の後、変換を始める前に失敗したときの後始末です。 */
+		/** Cleans up after failure following {@link #begin}, before conversion starts. */
 		void abandon() {
 			synchronized (RestSession.this) {
 				this.transcoding = false;
@@ -181,7 +183,7 @@ public class RestSession {
 			}
 		}
 
-		/** 許可を返します(2 回目以降は何もしない)。 */
+		/** Returns the permit (subsequent calls do nothing). */
 		void releasePermit() {
 			final ConversionGate.Permit p;
 			synchronized (RestSession.this) {
@@ -193,7 +195,7 @@ public class RestSession {
 			}
 		}
 
-		/** クライアントの資源を待っている{@link #resolve}を抜けさせます。 */
+		/** Makes {@link #resolve} stop waiting for a client resource. */
 		void abortWaits() {
 			this.aborted = true;
 			synchronized (this) {
@@ -252,8 +254,8 @@ public class RestSession {
 					if (this.resolvedResource != null) {
 						return this.resolvedResource;
 					}
-					// 中断・close では待ちを抜ける(2026-10-03)。以前は割り込みも無視して待ち続け、
-					// close が変換の終わりを待つ(join)と、どちらも終わらなかった
+					// Stop waiting on abort or close (2026-10-03). Previously, interrupts did not end the wait;
+					// when close waited for conversion to finish (join), neither finished.
 					if (this.requiredResource == null || !this.transcoding || this.aborted) {
 						throw new FileNotFoundException(uri.toString());
 					}
@@ -291,7 +293,7 @@ public class RestSession {
 				throw e;
 			}
 
-			// セッションの予約と同時変換数の許可は begin() で済んでいる(2026-10-03)
+			// begin() has already reserved the session and acquired a concurrent conversion permit (2026-10-03).
 			if (async) {
 				try {
 					this.th = Thread.ofVirtual().name(RestServlet.class.getName()).start(this);
@@ -307,30 +309,27 @@ public class RestSession {
 		}
 
 		/**
-		 * 出力を一時ファイルへ受けてから応答へ流します(2026-08-06新設)。
+		 * Receives output in a temporary file, then streams it to the response (added on 2026-08-06).
 		 *
 		 * <p>
-		 * <b>なぜ直接応答へ書かないか。</b>以前は
-		 * {@link ServletResponseResults}でサーブレットの出力ストリームへ
-		 * 直接書いていた。ところが変換が<b>出力を始めたあとで中断</b>すると
-		 * ——{@code output.page-limit}(中断の既定は{@code force})・
-		 * {@code output.size-limit}・エンジン側の中断のいずれでも起こる——
-		 * 後始末の{@code builder.close()}が
-		 * <b>途中までの出力を「正しいContent-Lengthを持つ完結した応答」として
-		 * 確定させて</b>しまう。サーブレットが例外を受け取ったときには
-		 * {@code isCommitted()}が既に真で、訂正のしようがない。
-		 * 結果、クライアントには<b>HTTP 200 + application/pdf + 壊れた本文</b>
-		 * が返り、「エンジンが壊れたPDFを出した」としか見えなかった
-		 * (2026-08-06に実測で確認)。説明書
-		 * (CopperPDFの「動作の制限」)は「出力の制限が働いた場合…
-		 * エラーが通知されます」と書いており、実装がそれに反していた。
+		 * <b>Why not write directly to the response.</b> Previously, {@link ServletResponseResults} wrote directly
+		 * to the servlet's output stream. However, if conversion <b>aborted after output started</b>
+		 * (whether due to {@code output.page-limit}, whose default abort mode is {@code force},
+		 * {@code output.size-limit}, or an engine-side abort), cleanup via {@code builder.close()}
+		 * <b>committed the partial output as a "complete response with a correct Content-Length"</b>.
+		 * By the time the servlet received the exception, {@code isCommitted()} was already true,
+		 * leaving no way to correct the response. The client therefore received
+		 * <b>HTTP 200 + application/pdf + a broken body</b>, which simply looked as though
+		 * "the engine produced a broken PDF" (confirmed by measurement on 2026-08-06).
+		 * The manual (CopperPDF's "Operating limits") says, "When an output limit takes effect …
+		 * an error is reported," and the implementation contradicted it.
 		 * </p>
 		 *
 		 * <p>
-		 * <b>この変更で失うもの。</b>実測では失うものがない。同期経路は
-		 * 変換中クライアントへ1バイトも届いておらず(23MBの文書を1秒ごとに
-		 * 観測して確認、2026-08-06)、既に実質ストリーミングしていない。
-		 * 非同期経路は以前から一時ファイルを使っている。
+		 * <b>What this change sacrifices.</b> Measurements show no loss. The synchronous path sent
+		 * no bytes to the client during conversion (confirmed by observing a 23 MB document every second
+		 * on 2026-08-06), so it was already effectively not streaming. The asynchronous path
+		 * has always used temporary files.
 		 * </p>
 		 */
 		private class SpooledResults implements Results {
@@ -352,10 +351,10 @@ public class RestSession {
 					throw new IllegalStateException();
 				}
 				this.metaSource = metaSource;
-				// **閉じるのは1回だけ**にする。中身が一時ファイルへ確定するのは
-				// close の時なので{@link #sendTo}が先に閉じるが、そのあとで
-				// エンジンの後始末({@code PDFUserAgent.dispose})がもう一度
-				// 閉じにくる。2度目に断片を組み直させない。
+				// **Close only once.** Contents are finalized in the temporary file
+				// on close, so {@link #sendTo} closes it first. Engine cleanup
+				// ({@code PDFUserAgent.dispose}) then tries to close it again.
+				// Do not let the second close reassemble the fragments.
 				this.builder = new FileFragmentedOutput(this.file) {
 					private boolean closed = false;
 
@@ -375,17 +374,17 @@ public class RestSession {
 			}
 
 			/**
-			 * <b>変換が成功したときだけ</b>呼びます。ここで初めて応答へ触るので、
-			 * 失敗したときの応答は未確定のまま残り、エラーを返せます。
+			 * Called <b>only when conversion succeeds</b>. This is the first access to the response,
+			 * so on failure it remains uncommitted and can return an error.
 			 */
 			void sendTo(HttpServletResponse res) throws IOException {
 				if (this.builder == null) {
-					// 出力が1つも作られなかった
+					// No output was created
 					return;
 				}
-				// **先に閉じる。**一時ファイルへ中身が確定するのは close の時で、
-				// エンジンは変換の完了時点ではまだ閉じていない(旧実装は応答へ
-				// 直接書いていたので閉じる前からバイトが出ていた)。
+				// **Close first.** close finalizes the contents in the temporary file, and the engine
+				// has not yet closed it when conversion finishes (the old implementation wrote
+				// directly to the response, so it emitted bytes even before close).
 				this.builder.close();
 				long length = this.file.length();
 				RestSession.this.done(length, System.currentTimeMillis() - this.time);
@@ -400,7 +399,7 @@ public class RestSession {
 		}
 
 		/**
-		 * 同期的な変換処理を実行します。
+		 * Performs synchronous conversion.
 		 *
 		 * @param res
 		 * @throws ServletException
@@ -411,7 +410,7 @@ public class RestSession {
 			final File spool = File.createTempFile("copper-rest-sync-", ".dat");
 			try {
 				RestSession.this.session.setProgressListener(this);
-				// １つだけ結果を取得する
+				// Retrieve only one result
 				SpooledResults results = new SpooledResults(spool);
 				RestSession.this.session.setResults(results);
 				if (this.uri != null) {
@@ -419,7 +418,7 @@ public class RestSession {
 				} else {
 					RestSession.this.session.transcode(this.source);
 				}
-				// **ここまで来たら成功**。応答へ触るのはこの一点だけ
+				// **Reaching this point means success.** This is the only point that touches the response.
 				results.sendTo(res);
 			} catch (IOException e) {
 				this.ex = e;
@@ -427,7 +426,7 @@ public class RestSession {
 			} finally {
 				this.cleanupSourceFile();
 				this.transcoding = false;
-				// 一時ファイルは成功・失敗によらず必ず消す
+				// Always delete the temporary file, whether conversion succeeds or fails.
 				if (!spool.delete()) {
 					spool.deleteOnExit();
 				}
@@ -441,7 +440,7 @@ public class RestSession {
 		}
 
 		/**
-		 * 非同期の変換処理を実行します。
+		 * Performs asynchronous conversion.
 		 */
 		public void run() {
 			try {
@@ -525,7 +524,7 @@ public class RestSession {
 				synchronized (RestSession.this) {
 					RestSession.this.notifyAll();
 				}
-				// エンジンは変換のスレッドを join し終えてから戻るので、ここで返してよい
+				// The engine returns only after joining the conversion thread, so the permit can be returned here.
 				if (!this.continuous) {
 					this.releasePermit();
 				}
@@ -533,16 +532,16 @@ public class RestSession {
 		}
 
 		/**
-		 * 失敗した変換の結果を始末します(2026-10-04、TECH-20261003-004 の⑦)。
+		 * Cleans up results from a failed conversion (2026-10-04, TECH-20261003-004, item ⑦).
 		 *
 		 * <p>
-		 * 以前は全部消していたので、{@code /messages}で通知済みの結果(画像出力の
-		 * 完成した頁など)まで{@code /result}が 404 になった。エラーの通知
-		 * ({@code output.page-limit}の 3805 等)より前に閉じられた結果は完成品
-		 * なので、セッションを閉じるまで残す。エラーの通知の後に閉じられた結果は
-		 * 中断で閉じられた途中までの出力(PDF なら途中までの PDF)なので捨てる。
-		 * エラーの通知が無いまま失敗したときは、どれが完成品か分からないので
-		 * 従来どおり全部捨てる。
+		 * Previously, all results were deleted, so {@code /result} returned 404 even for results
+		 * already announced by {@code /messages} (such as completed pages in image output).
+		 * Results closed before an error notification (such as 3805 for {@code output.page-limit})
+		 * are complete, so keep them until the session closes. Results closed after the error notification
+		 * are partial output closed during the abort (a partial PDF in the case of PDF output), so discard them.
+		 * If conversion fails without an error notification, there is no way to tell which results are complete,
+		 * so discard them all as before.
 		 * </p>
 		 */
 		private void discardFailedResults() {
@@ -585,10 +584,10 @@ public class RestSession {
 		}
 	}
 
-	/** 同時変換数の上限(REST と CTIP が共有。2026-10-03)。 */
+	/** Concurrent conversion limit (shared by REST and CTIP; 2026-10-03). */
 	private final ConversionGate gate;
 
-	/** 受け取ったエラー以上の通知の数(2026-10-04。失敗した変換の結果の始末に使う)。 */
+	/** Number of notifications received at error level or higher (2026-10-04; used to clean up failed conversion results). */
 	private final java.util.concurrent.atomic.AtomicInteger errorMessages = new java.util.concurrent.atomic.AtomicInteger();
 
 	RestSession(CTISession session, boolean messages, boolean restResolver, long timeout) throws IOException {
@@ -633,17 +632,16 @@ public class RestSession {
 	}
 
 	/**
-	 * クライアントがリソースを見つけられなかったことを伝えます。
+	 * Reports that the client could not find a resource.
 	 *
 	 * <p>
-	 * CTIP2 の {@code MISSING_RESOURCE} パケットに相当します。待っている
-	 * {@link Transcode#resolve(URI)} を <b>見つからなかった</b>として
-	 * 終わらせます(要求を取り下げると {@code FileNotFoundException} に
-	 * なります)。
+	 * Corresponds to the CTIP2 {@code MISSING_RESOURCE} packet. Ends the waiting
+	 * {@link Transcode#resolve(URI)} with <b>not found</b> (withdrawing the request
+	 * results in {@code FileNotFoundException}).
 	 * </p>
 	 *
-	 * @param uri 見つからなかったリソースのURI。nullなら要求中のもの。
-	 * @return 要求中のリソースと一致して取り下げたならtrue。
+	 * @param uri URI of the resource that was not found; null means the currently requested resource.
+	 * @return true if the URI matches the currently requested resource and the request is withdrawn.
 	 */
 	private boolean resourceNotFound(final URI uri) {
 		if (this.transcode == null) {
@@ -674,7 +672,7 @@ public class RestSession {
 	}
 
 	/**
-	 * 処理を完了します。
+	 * Completes processing.
 	 * 
 	 * @param length
 	 * @param time
@@ -695,7 +693,7 @@ public class RestSession {
 	}
 
 	/**
-	 * 直前のアクセス時刻を返します。
+	 * Returns the time of the last access.
 	 * 
 	 * @return
 	 */
@@ -718,7 +716,7 @@ public class RestSession {
 	}
 
 	/**
-	 * プロパティを設定します。
+	 * Sets properties.
 	 * 
 	 * @param req
 	 * @throws ServletException
@@ -759,7 +757,7 @@ public class RestSession {
 	}
 
 	/**
-	 * リソースを送信します。
+	 * Sends a resource.
 	 * 
 	 * @param req
 	 * @param res
@@ -777,11 +775,11 @@ public class RestSession {
 		String encoding = restReq.getParameter("rest.encoding");
 
 		if ("yes".equals(restReq.getParameter("rest.notFound"))) {
-			// **クライアントがリソースを見つけられなかった。**
-			// これを読まないと、本体の無いこの要求が「0バイトのリソース」
-			// として扱われ、見つからなかったはずのCSSや画像が空の内容で
-			// 解決されてしまう(2026-08-03)。CTIP2の MISSING_RESOURCE と
-			// 同じ意味にする
+			// **The client could not find the resource.**
+			// Without reading this, the request with no body would be treated
+			// as a "0-byte resource," and the missing CSS or image would
+			// resolve to empty content (2026-08-03). Give this the same
+			// meaning as CTIP2's MISSING_RESOURCE.
 			URI missing = null;
 			if (uri != null) {
 				try {
@@ -803,7 +801,7 @@ public class RestSession {
 		// System.err.println("resources");
 		while (restReq.getType() != RestRequest.NONE) {
 			if (restReq.getType() == RestRequest.FIELD) {
-				// フォームの値
+				// Form value
 				FormField field = (FormField) restReq.getItem();
 				// System.err.println("form: "+field.name);
 				if (field.name.startsWith("rest.")) {
@@ -838,7 +836,7 @@ public class RestSession {
 					this.property(req, field.name, field.value);
 				}
 			} else {
-				// ファイル
+				// File
 				FileItemStream item = (FileItemStream) restReq.getItem();
 				String name = item.getFieldName();
 				// System.err.println("file: "+name+"/"+item);
@@ -883,7 +881,7 @@ public class RestSession {
 			restReq.nextItem();
 		}
 		if (!RestUtils.isForm(req)) {
-			// 内容がリソース
+			// The body is a resource
 			if (uri == null) {
 				uri = req.getHeader("X-URI");
 			}
@@ -916,7 +914,7 @@ public class RestSession {
 	}
 
 	/**
-	 * メインドキュメントを送信します。
+	 * Sends the main document.
 	 * 
 	 * @param req
 	 * @param res
@@ -949,8 +947,8 @@ public class RestSession {
 		File mainSourceFile = null;
 		boolean mainSourceTransferred = false;
 		try {
-			// Multipartの並び順は意味を持たない。rest.mainを先に受けても、
-			// 後続の通常プロパティを全て適用してから変換を開始する。
+			// Multipart order has no significance. Even if rest.main arrives first, apply all subsequent
+			// regular properties before starting conversion.
 			while (restReq.getType() != RestRequest.NONE) {
 				if (restReq.getType() == RestRequest.FIELD) {
 					FormField field = (FormField) restReq.getItem();
@@ -1152,7 +1150,7 @@ public class RestSession {
 	}
 
 	/**
-	 * メッセージを返します。
+	 * Returns messages.
 	 * 
 	 * @param req
 	 * @param res
@@ -1175,15 +1173,15 @@ public class RestSession {
 				RestRequest restReq = RestRequest.getRestRequest(req);
 				String waitStr = restReq.getParameter("rest.wait");
 				if (waitStr != null) {
-					// メッセージが溜まるまで待つ。
+					// Wait for messages to accumulate.
 					int wait = 0;
 					try {
 						wait = Integer.parseInt(waitStr);
 					} catch (NumberFormatException e1) {
 						// ignore
 					}
-					// 0 以下・読めない値で無期限に待たない。上限は MAX_MESSAGES_WAIT(2026-10-03。
-					// 以前は wait(0)=無期限になり、重ねて XNIO のタスクスレッドを埋められた)
+					// Do not wait forever for nonpositive or invalid values. Cap at MAX_MESSAGES_WAIT (2026-10-03;
+					// previously, wait(0) meant forever, and repeated requests could exhaust XNIO task threads).
 					if (wait > 0) {
 						try {
 							this.wait(Math.min(wait, MAX_MESSAGES_WAIT));
@@ -1199,7 +1197,7 @@ public class RestSession {
 			out.print(code);
 			out.println("\" />");
 
-			// メッセージを送る
+			// Send messages
 			if (!this.messages.isEmpty()) {
 				out.println("<messages>");
 				do {
@@ -1218,7 +1216,7 @@ public class RestSession {
 				out.println("</messages>");
 			}
 			if (this.transcode != null) {
-				// 中断
+				// Abort
 				if (this.transcode.ex != null) {
 					TranscoderException e;
 					if (this.transcode.ex instanceof TranscoderException) {
@@ -1239,7 +1237,7 @@ public class RestSession {
 					out.println("</interrupted>");
 				}
 
-				// 要求されたリソース
+				// Requested resource
 				if (this.transcode.requiredResource != null) {
 					out.println("<resources>");
 					out.print("<resource uri=\"");
@@ -1247,7 +1245,7 @@ public class RestSession {
 					out.println("\"/>");
 					out.println("</resources>");
 				}
-				// 変換結果
+				// Conversion results
 				if (this.transcode.uriToResult != null && !this.transcode.uriToResult.isEmpty()) {
 					out.println("<results>");
 					for (URI uri : this.transcode.resultList) {
@@ -1279,7 +1277,7 @@ public class RestSession {
 					}
 					out.println("</results>");
 				}
-				// 進行状況
+				// Progress
 				if (this.transcode.srcLength != -1L || this.transcode.srcRead != -1L) {
 					out.print("<progress");
 					if (this.transcode.srcLength != -1L) {
@@ -1296,7 +1294,7 @@ public class RestSession {
 	}
 
 	/**
-	 * 結果を受信します。
+	 * Receives a result.
 	 * 
 	 * @param req
 	 * @param res
@@ -1319,15 +1317,14 @@ public class RestSession {
 	}
 
 	/**
-	 * パス形式({@code /result/<セッションID>/<相対URI>})で結果を返します
-	 * (2026-08-28)。
+	 * Returns a result by path ({@code /result/<sessionID>/<relativeURI>})
+	 * (2026-08-28).
 	 *
 	 * <p>
-	 * 結果集合(ページ分割SVG等)は相対URIで互いを参照します。問い合わせ
-	 * 形式({@code ?rest.uri=…})では、受け取ったページの中の
-	 * {@code ../assets/…}をクライアントが自分で書き換えるしかありません。
-	 * パス形式なら<b>ブラウザの相対解決がそのまま当たる</b>ので、
-	 * 書き換えも資源の先読みも要りません。
+	 * Result sets (such as page-split SVG) refer to one another with relative URIs. With the query form
+	 * ({@code ?rest.uri=…}), the client has to rewrite {@code ../assets/…} in each received page itself.
+	 * With the path form, <b>the browser's relative URI resolution works directly</b>,
+	 * so neither rewriting nor resource prefetching is needed.
 	 * </p>
 	 */
 	void resultByPath(HttpServletRequest req, HttpServletResponse res, String uri)
@@ -1341,10 +1338,10 @@ public class RestSession {
 	}
 
 	/**
-	 * 無い結果は <b>404</b> で返します(2026-09-02、cti.li の要望)。以前は変換前が
-	 * 200+XML(3016)、変換後に無い URI が 500+XML(3002 I/O error)で、読み器は
-	 * 本文の形で「まだ」を判定し、500 は監視の誤検知になっていた。本文は
-	 * 今までどおり XML の 3016 なので、既存クライアントは本文でも判定できる。
+	 * Returns <b>404</b> for missing results (2026-09-02, requested by cti.li). Previously, the response
+	 * before conversion was 200+XML(3016), and a missing URI after conversion returned 500+XML(3002 I/O error).
+	 * The viewer had to recognize "not yet" from the body format, and the 500 caused false monitoring alerts.
+	 * The body still contains XML code 3016, so existing clients can also check the body.
 	 */
 	private static void noResult(HttpServletRequest req, HttpServletResponse res)
 			throws ServletException, IOException {
@@ -1353,9 +1350,9 @@ public class RestSession {
 	}
 
 	/**
-	 * @param declareEncoding gzipで縮めた結果に{@code Content-Encoding}を
-	 *                        付けるか。パス形式だけで付ける——問い合わせ形式は
-	 *                        既存クライアントが生バイトを受け取る前提のため
+	 * @param declareEncoding whether to add {@code Content-Encoding} to gzip-compressed results.
+	 *                        Added only for the path form, because existing clients expect raw bytes
+	 *                        with the query form.
 	 */
 	private void writeResult(HttpServletRequest req, HttpServletResponse res, String uri, boolean declareEncoding)
 			throws IOException, FileUploadException, ServletException {
@@ -1372,7 +1369,7 @@ public class RestSession {
 			if (declareEncoding) {
 				final String name = resultURI.toString();
 				if (name.endsWith(".gz") || name.endsWith(".svgz")) {
-					// 中身はgzip。宣言しておけばブラウザが解いて渡す
+					// The content is gzip-compressed. Declaring it lets the browser decompress it before passing it on.
 					res.setHeader("Content-Encoding", "gzip");
 				}
 			}
@@ -1385,7 +1382,7 @@ public class RestSession {
 	}
 
 	/**
-	 * 変換処理を中断します。
+	 * Aborts conversion.
 	 * 
 	 * @param req
 	 * @throws IOException
@@ -1406,7 +1403,7 @@ public class RestSession {
 	}
 
 	/**
-	 * 結果を結合します。
+	 * Joins results.
 	 * 
 	 * @throws IOException
 	 * @throws FileUploadException
@@ -1416,7 +1413,7 @@ public class RestSession {
 		try {
 			this.session.join();
 		} finally {
-			// continuous はここで終わる(2026-10-03)
+			// continuous mode ends here (2026-10-03).
 			if (this.transcode != null && !this.transcode.transcoding) {
 				this.transcode.releasePermit();
 			}
@@ -1424,7 +1421,7 @@ public class RestSession {
 	}
 
 	/**
-	 * セッションをリセットします。
+	 * Resets the session.
 	 * 
 	 * @throws IOException
 	 */
@@ -1435,7 +1432,7 @@ public class RestSession {
 	}
 
 	/**
-	 * セッションを終了します。
+	 * Closes the session.
 	 * 
 	 * @throws IOException
 	 */
@@ -1445,8 +1442,8 @@ public class RestSession {
 	}
 
 	/**
-	 * 変換を片付けます。クライアントの資源を待っている変換は待ちを抜けさせてから終わりを待ち(以前は
-	 * どちらも終わらなかった)、許可を返します(2026-10-03)。
+	 * Cleans up conversion. If conversion is waiting for a client resource, ends that wait before waiting
+	 * for conversion to finish (previously, neither finished), then returns the permit (2026-10-03).
 	 */
 	private void disposeTranscode() {
 		if (this.transcode != null) {
@@ -1457,6 +1454,6 @@ public class RestSession {
 		}
 	}
 
-	/** {@code /messages} の {@code rest.wait} の上限(ミリ秒)。 */
+	/** Maximum {@code rest.wait} for {@code /messages} (milliseconds). */
 	static final long MAX_MESSAGES_WAIT = 30000L;
 }

@@ -14,181 +14,181 @@ import net.zamasoft.zstream.resolver.Source;
 import net.zamasoft.zstream.resolver.SourceResolver;
 
 /**
- * ドキュメント変換処理を実行するためのサーバーとの接続です。
+ * A connection to a server for converting documents.
  * 
  * @author MIYABE Tatsuhiko
  * @version $Id: CTISession.java 1552 2018-04-26 01:43:24Z miyabe $
  */
 public interface CTISession extends Closeable {
-	/** きりのよいところまで処理する中断処理の定数です。abortメソッドに渡します。 */
+	/** A constant for aborting at a suitable stopping point. Pass this to the abort method. */
 	public static final byte ABORT_NORMAL = 1;
 
-	/** 強制的に中断する処理の定数です。abortメソッドに渡します。 */
+	/** A constant for forcibly aborting processing. Pass this to the abort method. */
 	public static final byte ABORT_FORCE = 2;
 
 	/**
-	 * サーバー情報を返します。 詳細は<a href=
+	 * Returns server information. For details, see the <a href=
 	 * "http://dl.cssj.jp/docs/copper/3.0/html/3410_ctip2.html#prog-ctip2-server-info"
-	 * >Copper PDF ドキュメント</a>を参照して下さい。
+	 * >Copper PDF documentation</a>.
 	 * 
 	 * @param uri
-	 *            サーバー情報を選択するためのURI。
-	 * @return サーバー情報データのストリーム。
+	 *            The URI that selects the server information.
+	 * @return A stream of server information data.
 	 */
 	public InputStream getServerInfo(URI uri) throws IOException;
 
 	/**
 	 * <p>
-	 * 出力先を設定します。
+	 * Sets the output destination.
 	 * </p>
 	 * <p>
-	 * このメソッドは各transcodeメソッドの前に呼ぶ必要があります。
+	 * You must call this method before any transcode method.
 	 * </p>
 	 * 
 	 * @param results
-	 *            出力先。
+	 *            The output destination.
 	 */
 	public void setResults(Results results) throws IOException;
 
 	/**
 	 * <p>
-	 * メッセージを受け取るためのオブジェクトを設定します。
+	 * Sets the object that receives messages.
 	 * </p>
 	 * 
 	 * <p>
-	 * このメソッドは各transcodeメソッドの前に呼ぶ必要があります。
+	 * You must call this method before any transcode method.
 	 * </p>
 	 * 
 	 * @see MessageHandler
 	 * @param messageHandler
-	 *            メッセージハンドラ
+	 *            The message handler
 	 */
 	public void setMessageHandler(MessageHandler messageHandler) throws IOException;
 
 	/**
 	 * <p>
-	 * 進行状況を監視するためのオブジェクトを設定します。
+	 * Sets the object that monitors progress.
 	 * </p>
 	 * <p>
-	 * このメソッドは各transcodeメソッドの前に呼ぶ必要があります。
+	 * You must call this method before any transcode method.
 	 * </p>
 	 * 
 	 * @see ProgressListener
 	 * @param progressListener
-	 *            進行状況リスナ
+	 *            The progress listener
 	 */
 	public void setProgressListener(ProgressListener progressListener) throws IOException;
 
 	/**
 	 * <p>
-	 * プロパティを設定します。
+	 * Sets a property.
 	 * </p>
 	 * <p>
-	 * このメソッドは各transcodeメソッドの前に呼ぶ必要があります。
+	 * You must call this method before any transcode method.
 	 * </p>
 	 * 
 	 * @param name
-	 *            プロパティ名
+	 *            The property name
 	 * @param value
-	 *            値
+	 *            The value
 	 * @throws IOException
 	 */
 	public void property(String name, String value) throws IOException;
 
 	/**
 	 * <p>
-	 * リソースを送信するための出力ストリームを返します。
+	 * Returns an output stream for sending a resource.
 	 * </p>
 	 * <p>
-	 * <strong>リソースを送信した後、出力ストリームは必ずクローズしてください。 </strong>
+	 * <strong>Always close the output stream after sending the resource. </strong>
 	 * </p>
 	 * <p>
-	 * このメソッドは各transcodeメソッドの前に呼ぶ必要があります。
+	 * You must call this method before any transcode method.
 	 * </p>
 	 * 
 	 * @param SourceMetadata
-	 *            リソースデータのメタ情報。
-	 * @return サーバーへの出力ストリーム。
+	 *            Metadata for the resource data.
+	 * @return An output stream to the server.
 	 * @throws IOException
 	 */
 	public OutputStream resource(SourceMetadata metaSource) throws IOException;
 
 	/**
 	 * <p>
-	 * リソースを送信します。
+	 * Sends a resource.
 	 * </p>
 	 * <p>
-	 * このメソッドは各transcodeメソッドの前に呼ぶ必要があります。
+	 * You must call this method before any transcode method.
 	 * </p>
 	 * 
 	 * @param source
-	 *            リソースのデータソース。
+	 *            The data source for the resource.
 	 * @throws IOException
 	 */
 	public void resource(Source source) throws IOException;
 
 	/**
 	 * <p>
-	 * リソースを読み込むためのオブジェクトを設定します。
+	 * Sets the object that loads resources.
 	 * </p>
 	 * 
 	 * @param resolver
-	 *            サーバー側から要求したリソースを取得するためのSourceResolver。
+	 *            The SourceResolver that retrieves resources requested by the server.
 	 */
 	public void setSourceResolver(SourceResolver resolver) throws IOException;
 
 	/**
 	 * <p>
-	 * メインドキュメントを送信するための出力ストリームを返します。
+	 * Returns an output stream for sending the main document.
 	 * </p>
 	 * <p>
-	 * <strong>本体を送信した後、出力ストリームは必ずクローズしてください。 </strong>
+	 * <strong>Always close the output stream after sending the document body. </strong>
 	 * </p>
 	 * 
 	 * @param SourceMetadata
-	 *            メインドキュメントのメタ情報。
-	 * @return サーバーへの出力ストリーム。
+	 *            Metadata for the main document.
+	 * @return An output stream to the server.
 	 * @throws IOException
 	 */
 	public OutputStream transcode(SourceMetadata metaSource) throws IOException;
 
 	/**
 	 * <p>
-	 * 指定されたアドレスへサーバー側からアクセスしてメインドキュメントを取得して変換します。
-	 * resourceメソッドで事前に送信したリソースに対しても有効です。
+	 * Retrieves and converts the main document by accessing the specified address from the server.
+	 * This also works with resources you previously sent using the resource method.
 	 * </p>
 	 * 
 	 * @param uri
-	 *            メインドキュメントのURI。
+	 *            The URI of the main document.
 	 * @throws IOException
 	 */
 	public void transcode(URI uri) throws IOException, TranscoderException;
 
 	/**
 	 * <p>
-	 * メインドキュメントをデータソースから取得して変換します。
+	 * Retrieves the main document from a data source and converts it.
 	 * </p>
 	 * 
 	 * @param source
-	 *            メインドキュメントのデータソース。
+	 *            The data source for the main document.
 	 * @throws IOException
 	 */
 	public void transcode(Source source) throws IOException, TranscoderException;
 
 	/**
 	 * <p>
-	 * 複数の結果を結合するモードに切り替えます。
+	 * Switches to a mode that combines multiple results.
 	 * </p>
 	 * 
 	 * @param continuous
-	 *            trueであればjoinにより結果を結合するモードにします。
+	 *            If true, enables the mode that combines results using join.
 	 * @throws IOException
 	 */
 	public void setContinuous(boolean continuous) throws IOException;
 
 	/**
 	 * <p>
-	 * setContinues(true) が設定された状態で、複数回のtranscodeにより生成された結果を結合して出力します。
+	 * With setContinues(true) set, combines and outputs the results of multiple transcode calls.
 	 * </p>
 	 * 
 	 * @throws IOException
@@ -197,20 +197,22 @@ public interface CTISession extends Closeable {
 
 	/**
 	 * <p>
-	 * 変換を中断します。 このメソッドは非同期的に（別スレッドから）呼び出す必要があります。
-	 * 実際に処理が中断された場合は、変換処理を行なっている（transcodeを呼び出した
-	 * ）スレッドで、TranscoderExceptionがスローされます。
+	 * Aborts conversion. You must call this method asynchronously (from another thread).
+	 * When processing actually stops, the thread performing the conversion (the one that called transcode)
+	 * throws a TranscoderException.
 	 * </p>
 	 * 
 	 * @param mode
-	 *            きりのよいところまで出力する場合はABORT_NORMAL、強制的に処理を停止するにはABORT_FORCEを指定します。
+	 *            Specify ABORT_NORMAL to output up to a suitable stopping point,
+	 *            or ABORT_FORCE to forcibly stop processing.
 	 * @throws IOException
 	 */
 	public void abort(byte mode) throws IOException;
 
 	/**
 	 * <p>
-	 * 送られたリソースと、プロパティ、メッセージハンドラ等の全ての設定をクリアして、セッションが作られた時点と同じ初期状態に戻します。
+	 * Clears all sent resources and all settings, including properties and the message handler,
+	 * and restores the initial state the session had when it was created.
 	 * </p>
 	 * 
 	 * @throws IOException
@@ -219,10 +221,10 @@ public interface CTISession extends Closeable {
 
 	/**
 	 * <p>
-	 * セッションをクローズします。
+	 * Closes the session.
 	 * <p>
 	 * 
-	 * このメソッドを呼び出した後は、セッションに対して何も出来ません。
+	 * You cannot perform any operations on the session after calling this method.
 	 * 
 	 * @throws IOException
 	 */

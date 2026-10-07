@@ -11,7 +11,7 @@ import net.zamasoft.zstream.io.util.OutputMeasurer;
 import net.zamasoft.zstream.io.impl.StreamFragmentedOutput;
 
 /**
- * 構築したデータをサーブレットのレスポンスとして送り出します。
+ * Sends the built data as a servlet response.
  * 
  * @author MIYABE Tatsuhiko
  * @version $Id: ServletResponseResults.java 1552 2018-04-26 01:43:24Z miyabe $

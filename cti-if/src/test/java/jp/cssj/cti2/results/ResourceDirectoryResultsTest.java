@@ -49,7 +49,7 @@ class ResourceDirectoryResultsTest {
 		assertTrue(Files.notExists(this.temp.getParent().resolve("escape")));
 	}
 
-	/** 画像出力の頁ごとの結果({@code #1}, {@code #2}…)は page-0001.png などに書く(2026-10-04)。 */
+	/** Write per-page image output results ({@code #1}, {@code #2}...) to page-0001.png and so on (2026-10-04). */
 	@Test
 	void storesNumberedResultsAsPageFiles() throws Exception {
 		final ResourceDirectoryResults results = new ResourceDirectoryResults(this.temp.toFile());
@@ -60,7 +60,7 @@ class ResourceDirectoryResultsTest {
 		assertArrayEquals(new byte[] { 1 }, Files.readAllBytes(this.temp.resolve("page-0001.png")));
 		assertArrayEquals(new byte[] { 2 }, Files.readAllBytes(this.temp.resolve("page-0002.png")));
 		assertArrayEquals(new byte[] { 3 }, Files.readAllBytes(this.temp.resolve("page-0012.jpg")));
-		// 番号でない断片は従来どおり断る
+		// Continue to reject nonnumeric fragments
 		assertThrows(IOException.class, () -> results.nextBuilder(
 				new SimpleSourceMetadata(URI.create("#x"), "image/png", null, -1)));
 	}

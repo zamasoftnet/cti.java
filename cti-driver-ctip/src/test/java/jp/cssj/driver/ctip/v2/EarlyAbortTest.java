@@ -30,18 +30,19 @@ import jp.cssj.driver.ctip.CTIPDriver;
 import net.zamasoft.zstream.resolver.util.SimpleSourceMetadata;
 
 /**
- * 本文を送っている最中に届いたサーバーの ABORT の扱い(2026-09-28)。
+ * Handling a server ABORT received while sending the body (2026-09-28).
  *
  * <p>
- * 送信中の先読み({@code V2RequestConsumer.sendUntil} の {@code pollResponse})が ABORT を読むと、
- * {@code TranscoderException}({@code IOException} の子)を送信の失敗として保持して接続を閉じていた。
- * 中断は 1 回報告されるのに、あとの {@code close()}・{@code reset()} が同じ例外をもう一度投げ、
- * 同じセッションで次の変換もできなかった。ABORT は受信側の揃った完全な応答なので、送信の失敗ではない。
+ * When read-ahead during sending ({@code V2RequestConsumer.sendUntil}'s {@code pollResponse}) read an ABORT,
+ * it stored the {@code TranscoderException} (a subclass of {@code IOException}) as a send failure and closed
+ * the connection. Although the abort was reported once, subsequent {@code close()} and {@code reset()} calls
+ * threw the same exception again, and the same session could not perform another conversion.
+ * ABORT is a complete response received in full, so it is not a send failure.
  * </p>
  *
  * <p>
- * 相手は台本どおりに動く偽のサーバー: client の ABORT を受けたらすぐに ABORT を返し(本文の途中)、
- * そのあとの DATA・EOF は読み捨て、次の本文には EOF を返す。
+ * The peer is a scripted fake server: it returns ABORT as soon as it receives the client's ABORT
+ * (while the body is still being sent), discards subsequent DATA and EOF, and returns EOF for the next body.
  * </p>
  */
 class EarlyAbortTest {
@@ -72,7 +73,7 @@ class EarlyAbortTest {
 						}
 					}
 				} finally {
-					// 報告済みの中断をもう一度投げない
+					// Do not throw an already reported abort again.
 					out.close();
 				}
 				assertNotNull(reported, "送信中に ABORT を読まなかった(試験の前提が崩れている)");
@@ -119,7 +120,7 @@ class EarlyAbortTest {
 					final byte type = in.readByte();
 					in.readFully(new byte[len - 1]);
 					if (type == V2ClientPackets.ABORT) {
-						// 本文の途中で、すぐに ABORT を返す
+						// Return ABORT immediately, while the body is still being sent.
 						final byte[] message = "Aborted.".getBytes(StandardCharsets.UTF_8);
 						out.writeInt(1 + 1 + 2 + 2 + message.length);
 						out.writeByte(V2ServerPackets.ABORT);
@@ -146,7 +147,7 @@ class EarlyAbortTest {
 					}
 				}
 			} catch (final IOException e) {
-				// 試験側の判定に任せる
+				// Leave the outcome to the test's assertions.
 			}
 		}
 

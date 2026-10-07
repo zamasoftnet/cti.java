@@ -108,12 +108,12 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 				return super.resolve(uri);
 			}
 
-			// data:スキームは除外する
+			// Exclude the data: scheme
 			if ("data".equalsIgnoreCase(uri.getScheme())) {
 				return super.resolve(uri);
 			}
 
-			// リソース要求パケット送信
+			// Send a resource request packet
 			V2ProtocolProcessor v2pp = V2ProtocolProcessor.this;
 			byte[] uriBytes = ChannelIO.toBytes(uri.toString(), v2pp.charset);
 			{
@@ -128,7 +128,7 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 				v2pp.out.write(uriBytes, 0, length);
 			}
 
-			// クライアントから送られるまで待つ
+			// Wait until the client sends the resource
 			v2pp.request.next();
 			byte type = v2pp.request.getType();
 			if (type == V2ClientPackets.MISSING_RESOURCE) {
@@ -164,10 +164,10 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 		this.driver = driver;
 	}
 
-	/** 同時変換数の上限(REST と共有。2026-10-03)。 */
+	/** Concurrent conversion limit (shared with REST; 2026-10-03). */
 	private ConversionGate gate = ConversionGate.UNLIMITED;
 
-	/** この接続が持っている許可。continuous の間は join・reset・接続の終わりまで持ち続ける。 */
+	/** The permit held by this connection. In continuous mode, hold it until join, reset, or the connection ends. */
 	private ConversionGate.Permit permit = null;
 
 	private boolean continuous = false;
@@ -177,7 +177,8 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 	}
 
 	/**
-	 * 変換を始める前に許可を取ります。空きが無ければ、利用者に返す中断の例外を返します(待たない)。
+	 * Acquires a permit before starting conversion. If no capacity is available, returns an abort exception
+	 * to report to the user (without waiting).
 	 */
 	private TranscoderException enterGate() {
 		if (this.permit != null) {
@@ -193,7 +194,7 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 				CTIMessageHelper.toString(code, args));
 	}
 
-	/** 許可を返します。 */
+	/** Releases the permit. */
 	private void leaveGate() {
 		if (this.permit != null) {
 			this.permit.close();
@@ -207,7 +208,7 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 		this.charset = firstLine.substring(firstLine.indexOf(' ') + 1);
 		V2RequestProducer request = new V2RequestProducer(this.charset, this.in);
 
-		// 認証前
+		// Before authentication
 		BufferedReader reader = new BufferedReader(new InputStreamReader(this.in, this.charset));
 		String line = reader.readLine();
 		int colon = line.indexOf(':');
@@ -242,7 +243,7 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 		}
 		this.out.write("OK \n".getBytes(this.charset));
 
-		// 認証後
+		// After authentication
 		try {
 			MessageHandler messageHandler = new ServerMessageHandler(this);
 			this.session.setMessageHandler(messageHandler);
@@ -251,7 +252,7 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 			FOR: for (;;) {
 				switch (request.getType()) {
 				case V2ClientPackets.PROPERTY -> {
-					// プロパティ受信
+					// Receive a property
 					String name = request.getName();
 					if (name != null && name.length() > 0) {
 						String value = request.getValue();
@@ -268,7 +269,7 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 				}
 
 				case V2ClientPackets.START_MAIN -> {
-					// パイプライン変換開始
+					// Start pipeline conversion
 					URI uri;
 					String uriStr = request.getURI();
 					try {
@@ -290,8 +291,8 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 					this.session.setProgressListener(this);
 					this.session.setResults(this);
 					try {
-						// 同時変換数の上限(2026-10-03)。断るときも、本文を読み捨ててから
-						// 中断を知らせる下の経路をそのまま使う
+						// Concurrent conversion limit (2026-10-03). Even on rejection, use the path below
+						// to drain the body before reporting the abort
 						final TranscoderException busy = this.enterGate();
 						if (busy != null) {
 							throw busy;
@@ -311,10 +312,10 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 						}
 						this.next();
 					} catch (TranscoderException e) {
-						// 中断。本文の途中で終わったときは、client が残りを送り終える(EOF)まで読み捨ててから
-						// 知らせる(2026-09-28)。先に知らせると、EOF の後に終端が来る前提のドライバが
-						// 待ち続けたり(Python・PHP・Perl)、接続を捨てたり(Java)していた。
-						// EOF を送らずに次の要求が来たら client は終端を待っていないので、知らせずにそのパケットを次の周回で扱う
+						// Abort mid-body: drain through the client's EOF before reporting (2026-09-28). Earlier reporting
+						// made drivers expecting termination after EOF keep waiting (Python, PHP, Perl) or drop the
+						// connection (Java). If the next request arrives without EOF, the client is not waiting for termination;
+						// do not report the abort, and handle that packet in the next iteration.
 						if (!min.drain()) {
 							continue FOR;
 						}
@@ -328,7 +329,7 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 				}
 
 				case V2ClientPackets.SERVER_MAIN -> {
-					// サーバー側データ変換
+					// Convert server-side data
 					URI uri;
 					String uriStr = request.getURI();
 					try {
@@ -355,7 +356,7 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 						this.session.transcode(uri);
 						this.next();
 					} catch (TranscoderException e) {
-						// 中断
+						// Abort
 						this.abort(e);
 					} finally {
 						this.request = null;
@@ -403,7 +404,7 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 					request.next();
 				}
 
-				// DATAチャンクが来るのは、処理が中断されて残りのデータが送られている場合なので無視する。
+				// Ignore DATA chunks: after processing is aborted, they carry the remaining data being sent.
 				case V2ClientPackets.DATA, V2ClientPackets.MISSING_RESOURCE, V2ClientPackets.EOF ->
 					request.next();
 
@@ -476,7 +477,7 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 	}
 
 	/**
-	 * 変換の中断をクライアントに通知します。
+	 * Notifies the client that conversion has been aborted.
 	 */
 	private synchronized void abort(TranscoderException e) throws IOException {
 		switch (e.getState()) {
@@ -666,7 +667,7 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 	}
 
 	protected static String stringLimit(String str) {
-		// 3000字に制限
+		// Limit to 3000 characters
 		if (str != null && str.length() > 3000) {
 			str = str.substring(0, 3000 - 3) + "...";
 		}
@@ -745,7 +746,7 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 		return false;
 	}
 
-	// Resultsのメソッド
+	// Results methods
 
 	public boolean hasNext() {
 		return true;
@@ -775,8 +776,8 @@ public class V2ProtocolProcessor implements ResponseConsumer, ProtocolProcessor,
 	}
 
 	/**
-	 * 結果1件分の出力です。FragmentedOutput.close()は結果構築の終了を意味するため、
-	 * 接続を閉じるV2ProtocolProcessor.close()と分離するために使います。
+	 * Output for one result. FragmentedOutput.close() marks the end of result construction, so this separates it
+	 * from V2ProtocolProcessor.close(), which closes the connection.
 	 */
 	private class ResultOutput implements SequentialOutput {
 		private boolean closed = false;

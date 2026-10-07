@@ -5,64 +5,64 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * サーバー証明書を検証するかどうかの設定です。
+ * Controls whether to verify the server certificate.
  *
  * <p>
- * <b>既定は検証します。</b>以前は検証しないのが既定で、しかも設定の名前は
- * {@code jp.cssj.driver.tls.trust}(既定 {@code true})——<b>名前と意味が
- * 反転していました</b>。「信頼する」が「何でも通す」を意味していたのです。
+ * <b>Verification is enabled by default.</b> Previously, verification was disabled by default, and the setting
+ * was named {@code jp.cssj.driver.tls.trust} (default {@code true})—<b>the name and meaning
+ * were reversed</b>. "Trust" meant "accept anything."
  * </p>
  *
  * <p>
- * 新しい名前は {@link #INSECURE}({@code jp.cssj.driver.tls.insecure})で、
- * 既定は {@code false}(＝検証する)。自己署名の証明書を使う試験用サーバーへ
- * 繋ぐときだけ {@code true} にしてください。
+ * The new name is {@link #INSECURE} ({@code jp.cssj.driver.tls.insecure}),
+ * with a default of {@code false} (verification enabled). Set it to {@code true} only when
+ * connecting to a test server that uses a self-signed certificate.
  * </p>
  *
- * <h2>優先順位</h2>
+ * <h2>Precedence</h2>
  *
  * <p>
- * 新しい名前が指定されていれば<b>それだけ</b>を見ます。指定されていないときだけ
- * 旧名を見て、{@code true} なら検証しないものとして扱います。
- * <b>{@code insecure=false} が旧名の {@code true} に負けることはありません。</b>
+ * If the new name is specified, <b>only that setting</b> is used. The legacy name is checked only when
+ * the new name is absent, and {@code true} disables verification.
+ * <b>{@code insecure=false} is never overridden by {@code true} under the legacy name.</b>
  * </p>
  *
- * <h2>CTIP と REST で意味が違う</h2>
+ * <h2>Different meanings for CTIP and REST</h2>
  *
  * <p>
- * {@code insecure=true} のとき、CTIP は<b>何でも通します</b>。RESTは
- * <b>証明書チェーンが1つだけのものを信頼扱いにし</b>、それ以外は通常の検証へ
- * 委ねます(HttpClient の {@code TrustSelfSignedStrategy})。どちらも
- * 試験用の逃げ道であって、本番で使うものではありません。
+ * With {@code insecure=true}, CTIP <b>accepts anything</b>. REST
+ * <b>trusts certificate chains containing only one certificate</b> and uses normal verification
+ * for all other chains (HttpClient's {@code TrustSelfSignedStrategy}). Both are
+ * workarounds for testing and must not be used in production.
  * </p>
  */
 public final class TLSPolicy {
 
-	/** サーバー証明書を検証しないかどうか。既定は{@code false}(検証する)。 */
+	/** Whether to skip server certificate verification. Defaults to {@code false} (verification enabled). */
 	public static final String INSECURE = "jp.cssj.driver.tls.insecure";
 
 	/**
-	 * 旧名です。意味は「何でも通す」で、名前と反転していました。
+	 * The legacy name. It meant "accept anything," which was the opposite of what the name suggested.
 	 *
-	 * @deprecated {@link #INSECURE}を使ってください。
+	 * @deprecated Use {@link #INSECURE}.
 	 */
 	@Deprecated
 	public static final String LEGACY_TRUST = "jp.cssj.driver.tls.trust";
 
 	private static final Logger LOG = Logger.getLogger(TLSPolicy.class.getName());
 
-	/** 旧名の警告はJVMごとに1回だけ。CTIPとRESTの両方を使っても1回。 */
+	/** Warn about the legacy name only once per JVM, even when both CTIP and REST are used. */
 	private static final AtomicBoolean WARNED = new AtomicBoolean();
 
 	private TLSPolicy() {
-		// インスタンスを作らない
+		// Prevent instantiation
 	}
 
-	/** サーバー証明書の検証を省くかどうかです。 */
+	/** Returns whether to skip server certificate verification. */
 	public static boolean isInsecure() {
 		final String value = System.getProperty(INSECURE);
 		if (value != null) {
-			// **新しい名前が指定されたら、それだけを見る**
+			// **If the new name is specified, use only that setting**
 			return Boolean.parseBoolean(value);
 		}
 		final String legacy = System.getProperty(LEGACY_TRUST);

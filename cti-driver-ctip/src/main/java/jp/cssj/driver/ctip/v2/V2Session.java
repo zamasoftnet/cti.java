@@ -49,7 +49,7 @@ public class V2Session extends AbstractCTISession implements CTISession {
 
 	protected ProgressListener progressListener = null;
 
-	// 1=変換準備OK, 2=変換中, 3=クローズ
+	// 1=ready for conversion, 2=converting, 3=closed
 	protected volatile int state = 1;
 	private final java.util.concurrent.locks.ReentrantLock responseLock = new java.util.concurrent.locks.ReentrantLock();
 
@@ -71,7 +71,7 @@ public class V2Session extends AbstractCTISession implements CTISession {
 	}
 
 	protected void init() throws IOException {
-		// 認証
+		// Authentication
 		if (this.producer == null) {
 			V2ContentProducer producer;
 			if (this.uri.getScheme().equals("ctips")) {
@@ -206,7 +206,7 @@ public class V2Session extends AbstractCTISession implements CTISession {
 		case V2ServerPackets.BLOCK_DATA: {
 			assert this.builder != null;
 			assert !serial;
-			// 結果データ
+			// Result data
 			int blockId = this.producer.getBlockId();
 			for (int len = this.producer.read(this.readBuff, 0, this.readBuff.length); len != -1; len = this.producer
 					.read(this.readBuff, 0, this.readBuff.length)) {
@@ -265,7 +265,7 @@ public class V2Session extends AbstractCTISession implements CTISession {
 			break;
 
 		case V2ServerPackets.DATA: {
-			// 結果データ
+			// Result data
 			assert this.builder != null;
 			if (this.builder instanceof SequentialOutput) {
 				SequentialOutput builder = (SequentialOutput) this.builder;
@@ -291,7 +291,7 @@ public class V2Session extends AbstractCTISession implements CTISession {
 			break;
 
 		case V2ServerPackets.RESOURCE_REQUEST: {
-			// リソース要求。再入したメイン送信の入力配列を上書きしない。
+			// Resource request. Do not overwrite the input array of the reentrant main document send.
             byte[] resourceBuffer = new byte[BUFFER_SIZE];
 			URI uri = this.producer.getURI();
 			if (this.resolver != null) {

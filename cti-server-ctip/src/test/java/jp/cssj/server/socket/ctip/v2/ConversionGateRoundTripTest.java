@@ -41,9 +41,10 @@ import net.zamasoft.zstream.resolver.SourceResolver;
 import net.zamasoft.zstream.resolver.util.SimpleSourceMetadata;
 
 /**
- * CTIP の同時変換数の上限を、本物の CTIP サーバーと Java ドライバで往復させます
- * (2026-10-03、共有サービスの資源の上限 増分3)。空きが無ければ待たずに中断(0x3003)を返し、
- * 同じ接続はそのまま次の変換に使え、許可は変換の終わりに戻ります。
+ * Exercises the CTIP concurrent conversion limit with round trips between a real CTIP server and the Java driver
+ * (2026-10-03, shared service resource limits, increment 3). When no capacity is available, the server returns an
+ * abort (0x3003) without waiting. The same connection remains usable for the next conversion, and the permit is
+ * released when conversion ends.
  */
 class ConversionGateRoundTripTest {
 	private Engine engine;
@@ -79,7 +80,7 @@ class ConversionGateRoundTripTest {
 		final CTISession first = this.session();
 		final CTISession second = this.session();
 		try {
-			// 1 本目は変換の中で止めておく(許可を持ったまま)
+			// Pause the first conversion while it is running (still holding its permit)
 			final AtomicReference<Throwable> firstFailure = new AtomicReference<>();
 			final Thread firstThread = new Thread(() -> {
 				try {
@@ -95,7 +96,7 @@ class ConversionGateRoundTripTest {
 			assertTrue(this.engine.entered.await(5, TimeUnit.SECONDS), "1 本目が始まらなかった");
 			assertEquals(1, this.gate.running());
 
-			// 2 本目は待たずに断られる
+			// The second conversion is rejected without waiting
 			second.setResults(NopResults.SHARED_INSTANCE);
 			final OutputStream out = second.transcode(meta());
 			out.write("second".getBytes("UTF-8"));
@@ -103,7 +104,7 @@ class ConversionGateRoundTripTest {
 			assertEquals(CTIMessageCodes.ERROR_BUSY, refused.getCode());
 			assertEquals(1L, this.gate.refused());
 
-			// 1 本目を終わらせると許可が戻り、断られた接続のまま次の変換が通る
+			// Ending the first conversion releases the permit, allowing the next conversion on the rejected connection
 			this.engine.release.countDown();
 			firstThread.join(5000);
 			assertNull(firstFailure.get());
@@ -131,7 +132,7 @@ class ConversionGateRoundTripTest {
 					out.write("first".getBytes("UTF-8"));
 				}
 			} catch (final Throwable t) {
-				// 試験では見ない
+				// Not checked in this test
 			}
 		});
 		firstThread.start();
@@ -166,7 +167,7 @@ class ConversionGateRoundTripTest {
 		}
 	}
 
-	/** 本文を読むだけの変換エンジン。最初の変換は release まで終えない。 */
+	/** A conversion engine that only reads the body. The first conversion does not finish until release. */
 	private static final class Engine implements CTIDriver {
 		final CountDownLatch entered = new CountDownLatch(1);
 		final CountDownLatch release = new CountDownLatch(1);
@@ -198,11 +199,11 @@ class ConversionGateRoundTripTest {
 			}
 
 			public void abort(final byte mode) {
-				// 使わない
+				// Not used
 			}
 
 			public void reset() {
-				// 使わない
+				// Not used
 			}
 
 			public InputStream getServerInfo(final URI uri) {
@@ -210,19 +211,19 @@ class ConversionGateRoundTripTest {
 			}
 
 			public void setResults(final Results results) {
-				// 出力はしない
+				// No output
 			}
 
 			public void setMessageHandler(final MessageHandler messageHandler) {
-				// 通知はしない
+				// No notifications
 			}
 
 			public void setProgressListener(final ProgressListener progressListener) {
-				// 進捗は出さない
+				// No progress updates
 			}
 
 			public void property(final String name, final String value) {
-				// 使わない
+				// Not used
 			}
 
 			public OutputStream resource(final SourceMetadata metaSource) {
@@ -234,7 +235,7 @@ class ConversionGateRoundTripTest {
 			}
 
 			public void setSourceResolver(final SourceResolver resolver) {
-				// 使わない
+				// Not used
 			}
 
 			public OutputStream transcode(final SourceMetadata metaSource) {
@@ -246,15 +247,15 @@ class ConversionGateRoundTripTest {
 			}
 
 			public void setContinuous(final boolean continuous) {
-				// 使わない
+				// Not used
 			}
 
 			public void join() {
-				// 使わない
+				// Not used
 			}
 
 			public void close() {
-				// 何も持たない
+				// Holds no resources
 			}
 		}
 	}

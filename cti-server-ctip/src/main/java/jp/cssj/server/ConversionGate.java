@@ -6,21 +6,22 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
 
 /**
- * 同時に走る変換の数の上限です(2026-10-03、共有サービスの資源の上限 増分3)。
+ * Limits the number of concurrent conversions (2026-10-03, shared service resource limits, increment 3).
  *
  * <p>
- * REST と CTIP が 1 つのゲートを共有し、<b>実行中の変換</b>を数えます(待機しているだけのセッションは
- * 数えない)。空きが無ければ<b>待たずに断ります</b>——待つと要求を受けるスレッドや接続の枠を塞ぎ、
- * 待っている間は中断も読めないためです。断られた利用者には「混雑しています。少し待ってからやり直して
- * ください」とだけ伝わります。
+ * REST and CTIP share one gate that counts <b>active conversions</b> (sessions that are only waiting do not
+ * count). When no capacity is available, it <b>rejects requests without waiting</b>: waiting occupies request
+ * threads or connection slots and prevents reading abort requests during the wait. Rejected users receive
+ * only the message "The server is busy. Please wait a little and try again."
  * </p>
  *
  * <p>
- * 許可({@link Permit})は 1 回だけ効く{@link Permit#close()}で返します。2 回返しても上限は増えません。
+ * Release a permit ({@link Permit}) with {@link Permit#close()}, which takes effect only once.
+ * Releasing it twice does not increase the limit.
  * </p>
  */
 public final class ConversionGate {
-	/** 上限なし(数えるだけ)。 */
+	/** No limit (count only). */
 	public static final ConversionGate UNLIMITED = new ConversionGate(0);
 
 	private final int limit;
@@ -32,7 +33,7 @@ public final class ConversionGate {
 	private final LongAdder refused = new LongAdder();
 
 	/**
-	 * @param limit 同時に走る変換の数。0 以下は上限なし
+	 * @param limit the number of concurrent conversions; zero or less means no limit
 	 */
 	public ConversionGate(final int limit) {
 		this.limit = Math.max(0, limit);
@@ -40,9 +41,9 @@ public final class ConversionGate {
 	}
 
 	/**
-	 * 待たずに許可を取ります。
+	 * Acquires a permit without waiting.
 	 *
-	 * @return 許可。空きが無ければ null(断った件数に数える)
+	 * @return a permit, or null if no capacity is available (counted as a rejected request)
 	 */
 	public Permit tryEnter() {
 		if (this.permits != null && !this.permits.tryAcquire()) {
@@ -53,30 +54,30 @@ public final class ConversionGate {
 		return new Permit();
 	}
 
-	/** @return 同時に走る変換の数の上限(0 は上限なし) */
+	/** @return the maximum number of concurrent conversions (0 means no limit) */
 	public int limit() {
 		return this.limit;
 	}
 
-	/** @return 実行中の変換の数 */
+	/** @return the number of active conversions */
 	public int running() {
 		return this.running.get();
 	}
 
-	/** @return 空きが無くて断った数(起動からの累計) */
+	/** @return the number of requests rejected due to lack of capacity (total since startup) */
 	public long refused() {
 		return this.refused.sum();
 	}
 
-	/** 変換 1 件分の許可です。 */
+	/** A permit for one conversion. */
 	public final class Permit implements AutoCloseable {
 		private final AtomicBoolean closed = new AtomicBoolean();
 
 		private Permit() {
-			// ConversionGate#tryEnter だけが作る
+			// Only ConversionGate#tryEnter creates instances
 		}
 
-		/** 許可を返します。2 回目以降は何もしません。 */
+		/** Releases the permit. Subsequent calls do nothing. */
 		@Override
 		public void close() {
 			if (this.closed.compareAndSet(false, true)) {

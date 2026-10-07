@@ -1,7 +1,7 @@
 package jp.cssj.cti2.helpers;
 
 /**
- * MIME方を解析する補助クラスです。
+ * A helper class for parsing MIME types.
  * 
  * @author MIYABE Tatsuhiko
  * @version $Id: MimeTypeHelper.java 1552 2018-04-26 01:43:24Z miyabe $
@@ -12,13 +12,13 @@ public final class MimeTypeHelper {
 	}
 
 	/**
-	 * 2つのMIMEタイプがパラメータを除いて同じがどうかを判別します。
+	 * Determines whether two MIME types are equal, ignoring their parameters.
 	 * 
 	 * @param type1
-	 *            MIME型1。
+	 *            The first MIME type.
 	 * @param type2
-	 *            MIME型2。
-	 * @return 2つのタイプが一致していればtrue、そうでなければfalse。
+	 *            The second MIME type.
+	 * @return true if the two types match; false otherwise.
 	 */
 	public static boolean equals(String type1, String type2) {
 		if (type2 == null || type1 == null) {
@@ -30,11 +30,11 @@ public final class MimeTypeHelper {
 	}
 
 	/**
-	 * パラメータを除いた部分を返します。
+	 * Returns the part excluding parameters.
 	 * 
 	 * @param type
-	 *            MIME型。
-	 * @return MIME型のパラメータを除いた部分。
+	 *            The MIME type.
+	 * @return The MIME type without its parameters.
 	 */
 	public static String getTypePart(String type) {
 		if (type == null) {
@@ -49,13 +49,13 @@ public final class MimeTypeHelper {
 	}
 
 	/**
-	 * Content-Typeヘッダパラメータの値を返します。
+	 * Returns the value of a Content-Type header parameter.
 	 * 
 	 * @param type
-	 *            Content-Typeヘッダ値。
+	 *            The Content-Type header value.
 	 * @param name
-	 *            パラメータ名。
-	 * @return パラメータの値。
+	 *            The parameter name.
+	 * @return The parameter value.
 	 */
 	public static String getParameter(String type, String name) {
 		int state = 0;

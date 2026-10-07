@@ -5,7 +5,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 
 /**
- * RESTインターフェース関連のユーティリティ群です。
+ * Utilities for the REST interface.
  * 
  * @author MIYABE Tatsuhiko
  * @version $Id: RestUtils.java 1552 2018-04-26 01:43:24Z miyabe $
@@ -16,7 +16,7 @@ public final class RestUtils {
 	}
 
 	/**
-	 * HTML文字列をエスケープします。
+	 * Escapes an HTML string.
 	 * 
 	 * @param strVar
 	 * @return

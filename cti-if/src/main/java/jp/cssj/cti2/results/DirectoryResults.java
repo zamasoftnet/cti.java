@@ -7,7 +7,7 @@ import net.zamasoft.zstream.io.FragmentedOutput;
 import net.zamasoft.zstream.io.impl.FileFragmentedOutput;
 
 /**
- * ディレクトリに複数の結果を出力するResultsです。
+ * A Results implementation that outputs multiple results to a directory.
  * 
  * @author MIYABE Tatsuhiko
  * @version $Id: DirectoryResults.java 1552 2018-04-26 01:43:24Z miyabe $
@@ -18,17 +18,18 @@ public class DirectoryResults implements Results {
 	protected int counter = 0;
 
 	/**
-	 * 出力先ディレクトリとファイル名の前後を指定してオブジェクトを構築します。
+	 * Constructs an object with the specified output directory and file name prefix and suffix.
 	 * <p>
-	 * ファイルはdirに出力され、ファイル名は prefix, 1から始まる通し番号, suffixを連結したものとなります。
+	 * Outputs files to dir, with file names formed by concatenating prefix,
+	 * a sequence number starting at 1, and suffix.
 	 * </p>
 	 * 
 	 * @param dir
-	 *            出力先ディレクトリです。
+	 *            The output directory.
 	 * @param prefix
-	 *            ファイル名の前に付ける文字列です。
+	 *            The string to prepend to the file name.
 	 * @param suffix
-	 *            ファイル名の後に付ける文字列です。
+	 *            The string to append to the file name.
 	 */
 	public DirectoryResults(File dir, String prefix, String suffix) {
 		this.dir = dir;

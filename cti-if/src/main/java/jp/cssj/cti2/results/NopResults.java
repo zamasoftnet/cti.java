@@ -5,7 +5,7 @@ import net.zamasoft.zstream.io.FragmentedOutput;
 import net.zamasoft.zstream.io.impl.NoOpFragmentedOutput;
 
 /**
- * 何も出力しないResultsです。
+ * A Results implementation that outputs nothing.
  * 
  * @author MIYABE Tatsuhiko
  * @version $Id: NopResults.java 1552 2018-04-26 01:43:24Z miyabe $

@@ -33,7 +33,7 @@ public class V2RequestProducer {
 	}
 
 	/**
-	 * 次のパケットへカーソルを移動します。
+	 * Moves the cursor to the next packet.
 	 * 
 	 * @throws IOException
 	 */
@@ -89,10 +89,10 @@ public class V2RequestProducer {
 	}
 
 	private String readString() throws IOException {
-		// **長さは符号なし16bit**(2026-08-28)。符号付きで読むと32,767バイトを
-		// 超える値が負になり、本体を読み飛ばさないままストリームが崩れる——
-		// 48KBのinput.image-metrics(data:URI)を送ると、本文途中の':'を
-		// 次のパケット種別として読み"Bad request: type 3a"で接続が落ちていた
+		// **The length is an unsigned 16-bit value** (2026-08-28). Reading it as signed made values
+		// above 32,767 bytes negative and corrupted the stream without skipping the body.
+		// Sending a 48 KB input.image-metrics (data:URI) caused ':' within the body to be read
+		// as the next packet type, dropping the connection with "Bad request: type 3a"
 		int len = this.in.readUnsignedShort();
 		if (len <= 0) {
 			return null;
@@ -104,7 +104,7 @@ public class V2RequestProducer {
 	}
 
 	/**
-	 * パケットのタイプを返します。
+	 * Returns the packet type.
 	 * 
 	 * @return
 	 */
@@ -113,7 +113,7 @@ public class V2RequestProducer {
 	}
 
 	/**
-	 * プロパティ名を返します。
+	 * Returns the property name.
 	 * 
 	 * @return
 	 */
@@ -122,7 +122,7 @@ public class V2RequestProducer {
 	}
 
 	/**
-	 * プロパティの値を返します。
+	 * Returns the property value.
 	 * 
 	 * @return
 	 */
@@ -131,7 +131,7 @@ public class V2RequestProducer {
 	}
 
 	/**
-	 * データの仮想URIを返します。
+	 * Returns the virtual URI of the data.
 	 * 
 	 * @return
 	 */
@@ -140,7 +140,7 @@ public class V2RequestProducer {
 	}
 
 	/**
-	 * データのMIME型を返します。
+	 * Returns the MIME type of the data.
 	 * 
 	 * @return
 	 */
@@ -149,7 +149,7 @@ public class V2RequestProducer {
 	}
 
 	/**
-	 * データのキャラクタ・エンコーディングを返します。
+	 * Returns the character encoding of the data.
 	 * 
 	 * @return
 	 */
@@ -166,15 +166,15 @@ public class V2RequestProducer {
 	}
 
 	/**
-	 * データを受け取ります。
+	 * Receives data.
 	 * 
 	 * @param b
-	 *            バイト列バッファ。
+	 *            The byte buffer.
 	 * @param off
-	 *            受け取ったデータの書き込み開始位置。
+	 *            The starting offset at which to write the received data.
 	 * @param len
-	 *            受け取るデータの最大長さ。
-	 * @return 受け取ったデータのバイト数。
+	 *            The maximum length of data to receive.
+	 * @return The number of bytes received.
 	 */
 	public int read(byte[] b, int off, int len) {
 		int remainder = this.len - this.off;

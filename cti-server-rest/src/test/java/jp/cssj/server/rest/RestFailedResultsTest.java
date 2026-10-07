@@ -40,15 +40,14 @@ import net.zamasoft.zstream.resolver.SourceResolver;
 import net.zamasoft.zstream.resolver.util.SimpleSourceMetadata;
 
 /**
- * 非同期の変換が失敗したときの結果の扱いを固定します(2026-10-04、
- * TECH-20261003-004 の⑦)。
+ * Verifies how results are handled when asynchronous conversion fails
+ * (2026-10-04, TECH-20261003-004, item ⑦).
  *
  * <p>
- * 画像出力で{@code output.page-limit}を超えると、エンジンは完成した頁の結果を
- * 出したあとに 3805 を通知して中断する。以前は失敗で結果を全部消したので、
- * {@code /messages}で通知済みの頁まで{@code /result}が 404 になった。
- * エラーの通知より前に閉じられた結果は残し、後に閉じられた結果(中断で
- * 閉じられた途中までの出力)は捨てる。
+ * When image output exceeds {@code output.page-limit}, the engine outputs results for completed pages,
+ * then reports 3805 and aborts. Previously, failure deleted all results, so {@code /result} returned 404
+ * even for pages already announced by {@code /messages}. Keep results closed before the error notification
+ * and discard those closed afterward (partial output closed during the abort).
  * </p>
  */
 class RestFailedResultsTest {
@@ -59,7 +58,7 @@ class RestFailedResultsTest {
 		final RestSession session = new RestSession(engine, true, false, 60000L, ConversionGate.UNLIMITED);
 		assertTrue(session.transcode(request("X", Map.of("rest.async", "true")), new MockResponse().response));
 		assertTrue(engine.done.await(10, TimeUnit.SECONDS), "変換が終わらない");
-		// 変換のスレッドの後始末を待つ
+		// Wait for the conversion thread to finish cleanup
 		Thread.sleep(200);
 
 		final MockResponse first = new MockResponse();
@@ -105,7 +104,7 @@ class RestFailedResultsTest {
 			}
 
 			public void setReadListener(final ReadListener listener) {
-				// 使わない
+				// Unused
 			}
 		};
 		final Map<String, Object> attributes = new HashMap<>();
@@ -191,7 +190,7 @@ class RestFailedResultsTest {
 				}
 
 				public void setWriteListener(final WriteListener listener) {
-					// 使わない
+					// Unused
 				}
 			};
 			this.response = (HttpServletResponse) Proxy.newProxyInstance(
@@ -221,7 +220,7 @@ class RestFailedResultsTest {
 		}
 	}
 
-	/** 結果 #1 を出し、エラーを通知し、途中までの結果 #2 を閉じて失敗する変換。 */
+	/** A conversion that outputs result #1, reports an error, closes partial result #2, and fails. */
 	private static final class FailingEngine implements CTISession {
 		final CountDownLatch done = new CountDownLatch(1);
 		volatile boolean notifyError = true;
@@ -264,19 +263,19 @@ class RestFailedResultsTest {
 		}
 
 		public void setSourceResolver(final SourceResolver resolver) {
-			// 使わない
+			// Unused
 		}
 
 		public void abort(final byte mode) {
-			// 使わない
+			// Unused
 		}
 
 		public void reset() {
-			// 使わない
+			// Unused
 		}
 
 		public void close() {
-			// 使わない
+			// Unused
 		}
 
 		public InputStream getServerInfo(final URI uri) {
@@ -284,11 +283,11 @@ class RestFailedResultsTest {
 		}
 
 		public void setProgressListener(final ProgressListener progressListener) {
-			// 進捗は出さない
+			// Reports no progress
 		}
 
 		public void property(final String name, final String value) {
-			// 使わない
+			// Unused
 		}
 
 		public OutputStream resource(final SourceMetadata metaSource) {
@@ -308,11 +307,11 @@ class RestFailedResultsTest {
 		}
 
 		public void setContinuous(final boolean continuous) {
-			// 使わない
+			// Unused
 		}
 
 		public void join() {
-			// 使わない
+			// Unused
 		}
 	}
 }

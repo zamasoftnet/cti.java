@@ -15,15 +15,14 @@ import jp.cssj.driver.ctip.common.ChannelIO;
 import jp.cssj.driver.ctip.v2.V2ClientPackets;
 
 /**
- * 32,767バイトを超える文字列(2026-08-28)。長さは符号なし16bitで、
- * 符号付きで読むと本体を読み飛ばさないままストリームが崩れていた——
- * 48KBの{@code input.image-metrics}(data:URI)を送ると、本文途中の
- * {@code ':'}を次のパケット種別として読み「Bad request: type 3a」で
- * 接続ごと落ちていた。
+ * Strings longer than 32,767 bytes (2026-08-28). The length is an unsigned 16-bit value;
+ * reading it as signed corrupted the stream without skipping the body.
+ * Sending a 48 KB {@code input.image-metrics} (data:URI) caused {@code ':'} within the body
+ * to be read as the next packet type, dropping the entire connection with "Bad request: type 3a".
  */
 class V2RequestProducerLongStringTest {
 
-	/** 40,000バイトのプロパティ値が、そのまま復元できること。 */
+	/** A 40,000-byte property value can be reconstructed unchanged. */
 	@Test
 	void readsPropertyValueLongerThanSignedShort() throws Exception {
 		final String name = "input.image-metrics";
@@ -34,12 +33,12 @@ class V2RequestProducerLongStringTest {
 		assertEquals(V2ClientPackets.PROPERTY, producer.getType());
 		assertEquals(name, producer.getName());
 		assertEquals(value, producer.getValue());
-		// 続きが正しい位置から読めること(ストリームが崩れていない)
+		// Subsequent data can be read from the correct position (the stream is not corrupted)
 		producer.next();
 		assertEquals(V2ClientPackets.EOF, producer.getType());
 	}
 
-	/** 16bitに収まらない文字列は、壊さずに断ること。 */
+	/** Reject strings that do not fit in 16 bits without corrupting the stream. */
 	@Test
 	void refusesStringThatDoesNotFitTheLengthField() {
 		final String tooLong = "A".repeat(ChannelIO.MAX_STRING_BYTES + 1);
@@ -47,7 +46,7 @@ class V2RequestProducerLongStringTest {
 		assertEquals(true, e.getMessage().contains("too long"));
 	}
 
-	/** クライアントと同じ書式でPROPERTYとEOFを組み立てます。 */
+	/** Builds PROPERTY and EOF packets in the same format as the client. */
 	private static byte[] propertyPacket(final String name, final String value) throws IOException {
 		final byte[] nameBytes = name.getBytes(StandardCharsets.UTF_8);
 		final byte[] valueBytes = value.getBytes(StandardCharsets.UTF_8);

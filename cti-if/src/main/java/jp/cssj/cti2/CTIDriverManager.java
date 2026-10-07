@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.ServiceLoader;
 
 /**
- * ドライバの窓口クラスです。
+ * The entry point for drivers.
  * 
  * @author MIYABE Tatsuhiko
  * @version $Id: CTIDriverManager.java 1552 2018-04-26 01:43:24Z miyabe $
@@ -18,12 +18,12 @@ public class CTIDriverManager {
 	}
 
 	/**
-	 * 指定されたURIへ接続するためのドライバを返します。
+	 * Returns a driver for connecting to the specified URI.
 	 * 
 	 * @see CTIDriver#getSession(URI, Map)
 	 * @param uri
-	 *            接続先URI。
-	 * @return ドライバ。
+	 *            The connection URI.
+	 * @return The driver.
 	 */
 	public static CTIDriver getDriver(URI uri) {
 		for (CTIDriver driver : ServiceLoader.load(CTIDriver.class)) {
@@ -35,15 +35,15 @@ public class CTIDriverManager {
 	}
 
 	/**
-	 * セッションを返します。
+	 * Returns a session.
 	 * <p>
-	 * これは<tt>CTIDriver.getDriver(uri).getSession(null)</tt>の簡易メソッドです。
+	 * This is a convenience method for <tt>CTIDriver.getDriver(uri).getSession(null)</tt>.
 	 * </p>
 	 * 
 	 * @see CTIDriver#getSession(URI, Map)
 	 * @param uri
-	 *            接続先URI。
-	 * @return セッション。
+	 *            The connection URI.
+	 * @return The session.
 	 * @throws IOException
 	 */
 	public static CTISession getSession(URI uri) throws IOException {
@@ -51,15 +51,15 @@ public class CTIDriverManager {
 	}
 
 	/**
-	 * セッションを返します。
+	 * Returns a session.
 	 * <p>
-	 * これは<tt>CTIDriver.getDriver(uri).getSession(props)</tt>の簡易メソッドです。
+	 * This is a convenience method for <tt>CTIDriver.getDriver(uri).getSession(props)</tt>.
 	 * </p>
 	 * 
 	 * @see CTIDriver#getSession(URI, Map)
 	 * @param uri
-	 *            接続先URI。
-	 * @return セッション。
+	 *            The connection URI.
+	 * @return The session.
 	 * @throws IOException
 	 */
 	public static CTISession getSession(URI uri, Map<String, String> props) throws IOException {
@@ -68,16 +68,16 @@ public class CTIDriverManager {
 	}
 
 	/**
-	 * セッションを返します。
+	 * Returns a session.
 	 * <p>
-	 * これは<tt>CTIDriver.getDriver(uri).getSession(props)</tt>の簡易メソッドです。
-	 * プロパティにユーザー、パスワードを設定します。
+	 * This is a convenience method for <tt>CTIDriver.getDriver(uri).getSession(props)</tt>.
+	 * Sets the user and password in the properties.
 	 * </p>
 	 * 
 	 * @see CTIDriver#getSession(URI, Map)
 	 * @param uri
-	 *            接続先URI。
-	 * @return セッション。
+	 *            The connection URI.
+	 * @return The session.
 	 * @throws IOException
 	 */
 	public static CTISession getSession(URI uri, String user, String password) throws IOException {

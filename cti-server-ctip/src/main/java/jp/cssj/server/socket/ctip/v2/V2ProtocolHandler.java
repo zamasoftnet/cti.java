@@ -30,7 +30,7 @@ public class V2ProtocolHandler implements ProtocolHandler {
 
 	private ConversionGate gate = ConversionGate.UNLIMITED;
 
-	/** 同時変換数の上限を設定します(REST と共有するゲート。2026-10-03)。 */
+	/** Sets the concurrent conversion limit (a gate shared with REST; 2026-10-03). */
 	public void setConversionGate(final ConversionGate gate) {
 		this.gate = gate == null ? ConversionGate.UNLIMITED : gate;
 	}

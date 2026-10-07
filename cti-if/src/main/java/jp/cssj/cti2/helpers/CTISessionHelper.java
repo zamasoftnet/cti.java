@@ -20,7 +20,7 @@ import net.zamasoft.zstream.resolver.protocol.stream.StreamSource;
 import net.zamasoft.zstream.resolver.protocol.url.URLSource;
 
 /**
- * クライアント側のファイル、URL、ストリームを送るためのユーティリティです。
+ * Utilities for sending client-side files, URLs, and streams.
  * 
  * @author MIYABE Tatsuhiko
  * @version $Id: CTISessionHelper.java 1552 2018-04-26 01:43:24Z miyabe $
@@ -31,7 +31,7 @@ public final class CTISessionHelper {
 	}
 
 	/**
-	 * 出力先ファイルを設定します。
+	 * Sets the output file.
 	 * 
 	 * @param session
 	 * @param file
@@ -43,7 +43,7 @@ public final class CTISessionHelper {
 	}
 
 	/**
-	 * 出力先ストリームを設定します。
+	 * Sets the output stream.
 	 * 
 	 * @param session
 	 * @param out
@@ -55,7 +55,7 @@ public final class CTISessionHelper {
 	}
 
 	/**
-	 * プロパティをまとめて設定します。
+	 * Sets multiple properties at once.
 	 * 
 	 * @param session
 	 * @param props
@@ -69,16 +69,16 @@ public final class CTISessionHelper {
 	}
 
 	/**
-	 * リソースとしてファイルを送信します。
+	 * Sends a file as a resource.
 	 * 
 	 * @param session
-	 *            セッション
+	 *            The session
 	 * @param file
-	 *            ファイル
+	 *            The file
 	 * @param mimeType
-	 *            MIME型(省略する場合はnull)
+	 *            The MIME type (null if omitted)
 	 * @param encoding
-	 *            エンコーディング(省略する場合はnull)
+	 *            The encoding (null if omitted)
 	 * @throws IOException
 	 */
 	public static void sendResourceFile(CTISession session, File file, String mimeType, String encoding)
@@ -87,16 +87,16 @@ public final class CTISessionHelper {
 	}
 
 	/**
-	 * リソースとしてURLを送信します。
+	 * Sends a URL as a resource.
 	 * 
 	 * @param session
-	 *            セッション
+	 *            The session
 	 * @param url
 	 *            URL
 	 * @param mimeType
-	 *            MIME型(省略する場合はnull)
+	 *            The MIME type (null if omitted)
 	 * @param encoding
-	 *            エンコーディング(省略する場合はnull)
+	 *            The encoding (null if omitted)
 	 * @throws IOException
 	 */
 	public static void sendResourceURL(CTISession session, URL url, String mimeType, String encoding)
@@ -111,16 +111,16 @@ public final class CTISessionHelper {
 	}
 
 	/**
-	 * リソースとしてストリームから取り出されるデータを送信します。
+	 * Sends data read from a stream as a resource.
 	 * 
 	 * @param session
-	 *            セッション
+	 *            The session
 	 * @param in
-	 *            入力ストリーム
+	 *            The input stream
 	 * @param mimeType
-	 *            MIME型(省略する場合はnull)
+	 *            The MIME type (null if omitted)
 	 * @param encoding
-	 *            エンコーディング(省略する場合はnull)
+	 *            The encoding (null if omitted)
 	 * @throws IOException
 	 */
 	public static void sendResourceStream(CTISession session, InputStream in, URI uri, String mimeType, String encoding)
@@ -129,16 +129,16 @@ public final class CTISessionHelper {
 	}
 
 	/**
-	 * リソースとして、ディレクトリ内のファイルを全て送信します。 このメソッドは子ディレクトリも再帰的に処理します。
+	 * Sends all files in a directory as resources. This method also processes subdirectories recursively.
 	 * 
 	 * @param session
-	 *            セッション
+	 *            The session
 	 * @param dir
-	 *            ディレクトリ
+	 *            The directory
 	 * @param mimeType
-	 *            MIME型(省略する場合はnull)
+	 *            The MIME type (null if omitted)
 	 * @param encoding
-	 *            エンコーディング(省略する場合はnull)
+	 *            The encoding (null if omitted)
 	 * @throws IOException
 	 */
 	public static void sendResourceDir(CTISession session, File dir, String mimeType, String encoding)
@@ -156,16 +156,16 @@ public final class CTISessionHelper {
 	}
 
 	/**
-	 * 本体としてファイルを送信します。
+	 * Sends a file as the document body.
 	 * 
 	 * @param session
-	 *            セッション
+	 *            The session
 	 * @param file
-	 *            ファイル
+	 *            The file
 	 * @param mimeType
-	 *            MIME型(省略する場合はnull)
+	 *            The MIME type (null if omitted)
 	 * @param encoding
-	 *            エンコーディング(省略する場合はnull)
+	 *            The encoding (null if omitted)
 	 * @throws IOException
 	 */
 	public static void transcodeFile(CTISession session, File file, String mimeType, String encoding)
@@ -174,16 +174,16 @@ public final class CTISessionHelper {
 	}
 
 	/**
-	 * 本体としてURLを送信します。
+	 * Sends a URL as the document body.
 	 * 
 	 * @param session
-	 *            セッション
+	 *            The session
 	 * @param url
 	 *            URL
 	 * @param mimeType
-	 *            MIME型(省略する場合はnull)
+	 *            The MIME type (null if omitted)
 	 * @param encoding
-	 *            エンコーディング(省略する場合はnull)
+	 *            The encoding (null if omitted)
 	 * @throws IOException
 	 */
 	public static void transcodeURL(CTISession session, URL url, String mimeType, String encoding)
@@ -198,16 +198,16 @@ public final class CTISessionHelper {
 	}
 
 	/**
-	 * 本体としてストリームから取り出されるデータを送信します。
+	 * Sends data read from a stream as the document body.
 	 * 
 	 * @param session
-	 *            セッション
+	 *            The session
 	 * @param in
-	 *            入力ストリーム
+	 *            The input stream
 	 * @param mimeType
-	 *            MIME型(省略する場合はnull)
+	 *            The MIME type (null if omitted)
 	 * @param encoding
-	 *            エンコーディング(省略する場合はnull)
+	 *            The encoding (null if omitted)
 	 * @throws IOException
 	 */
 	public static void transcodeStream(CTISession session, InputStream in, URI uri, String mimeType, String encoding)

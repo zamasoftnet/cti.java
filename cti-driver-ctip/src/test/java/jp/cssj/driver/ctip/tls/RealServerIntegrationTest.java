@@ -25,10 +25,10 @@ import net.zamasoft.zstream.resolver.SourceResolver;
 import net.zamasoft.zstream.resolver.protocol.stream.StreamSource;
 
 /**
- * 実サーバーとの統合(段階5)。<b>既定では走りません。</b>
+ * Integration with a real server (stage 5). <b>Does not run by default.</b>
  *
  * <p>
- * 外部のサーバーに依存するので、明示的に指定したときだけ走ります。
+ * This depends on an external server, so it runs only when explicitly enabled.
  * </p>
  *
  * <pre>
@@ -38,9 +38,9 @@ import net.zamasoft.zstream.resolver.protocol.stream.StreamSource;
  * </pre>
  *
  * <p>
- * 確かめるのは<b>証明書の検証を有効にしたまま繋がること</b>です。
- * 実サーバーの証明書は公的な CA のものなので、独自の設定は要りません。
- * これが通れば、既定を安全側へ倒したあとも通常の運用が壊れていないと言えます。
+ * This checks that <b>the connection succeeds with certificate verification enabled</b>.
+ * The real server uses a certificate from a public CA, so no custom configuration is needed.
+ * Passing this test shows that normal operation still works after switching to a secure default.
  * </p>
  */
 @EnabledIfSystemProperty(named = "cti.integration.uri", matches = ".+")
@@ -49,12 +49,14 @@ class RealServerIntegrationTest {
 	private static final String HTML = "<!DOCTYPE html><html><head><meta charset=\"utf-8\">"
 			+ "<title>integration</title></head><body><p>ctips integration</p></body></html>";
 
-	/** 証明書を検証したまま、実サーバーで変換できること。 */
+	/** Verifies that conversion succeeds on a real server with certificate verification enabled. */
 	/**
-	 * 接続試験マトリクスの共通契約(copperpdf4/docs/design/2026-09-20-cti-driver-tls-test-matrix-design.md §2)を
-	 * システムプロパティで受ける(build.gradle の tlsTest が試験 JVM へ転送する):
-	 * {@code cti.integration.insecure=true} で証明書を検証しない、{@code cti.integration.trustStore}(+ {@code trustStorePassword})で
-	 * 信頼させる証明書、{@code cti.integration.expectReject=true} で「証明書の検証で拒否されること」だけを試験する。
+	 * Accepts the shared contract of the connection test matrix
+	 * (copperpdf4/docs/design/2026-09-20-cti-driver-tls-test-matrix-design.md §2)
+	 * through system properties (tlsTest in build.gradle forwards them to the test JVM):
+	 * {@code cti.integration.insecure=true} disables certificate verification;
+	 * {@code cti.integration.trustStore} (+ {@code trustStorePassword}) specifies the certificates to trust;
+	 * {@code cti.integration.expectReject=true} tests only that certificate verification rejects the connection.
 	 */
 	private static void applyMatrixContract() {
 		System.clearProperty(TLSPolicy.INSECURE);
@@ -88,8 +90,9 @@ class RealServerIntegrationTest {
 	}
 
 	/**
-	 * 拒否試験(tls-reject / tls-badname)。接続は遅延なので getServerInfo で起こし、証明書の検証エラー
-	 * (SSLHandshakeException)で拒否されることだけを確かめる。変換まで進む・接続拒否・認証失敗は成功に数えない。
+	 * Rejection tests (tls-reject / tls-badname). The connection is lazy, so getServerInfo triggers it.
+	 * Checks only for rejection due to a certificate verification error (SSLHandshakeException).
+	 * Reaching conversion, connection refusal, and authentication failure do not count as success.
 	 */
 	@Test
 	@EnabledIfSystemProperty(named = "cti.integration.expectReject", matches = "true")
@@ -133,10 +136,10 @@ class RealServerIntegrationTest {
 		assertEquals("%PDF-", new String(pdf, 0, 5, "ISO-8859-1"), "PDF になっていない");
 	}
 
-	// ---- 他の 6 本のドライバと同じ項目(2026-09-20、接続試験マトリクスの拡張)。
-	// 主要機能 8 項目(サーバー情報・認証失敗・ファイル出力・ディレクトリ出力・プロパティ・リゾルバ・進行状況・reset)と
-	// プロトコルの周辺機能 4 項目(メッセージ受信・中断・ストリーム出力・連続結合)。ストリーム出力は上の
-	// convertsOverCtipsWithVerificationOn が兼ねる。
+	// ---- Same cases as the other 6 drivers (2026-09-20, connection test matrix expansion).
+	// 8 core features (server information, authentication failure, file output, directory output, properties,
+	// resolver, progress, reset) and 4 more protocol features (messages, abort, stream output, continuous joining).
+	// convertsOverCtipsWithVerificationOn above also covers stream output.
 
 	private static final String MISSING_CSS_HTML = "<html><head><link rel=\"stylesheet\" href=\"missing.css\"></head><body><p>message test</p></body></html>";
 
@@ -282,7 +285,7 @@ class RealServerIntegrationTest {
 					progress.add(serverRead);
 				}
 			});
-			// 進行状況はサーバー側で取得する本文(transcode(URI))で届く。他のドライバの試験と同じ URL
+			// Progress arrives for server-fetched bodies (transcode(URI)); URL as in other driver tests.
 			session.property("input.include", "https://www.w3.org/**");
 			final ByteArrayOutputStream out = new ByteArrayOutputStream();
 			session.setResults(new SingleResult(new StreamFragmentedOutput(out)));
@@ -302,7 +305,10 @@ class RealServerIntegrationTest {
 		}
 	}
 
-	/** 存在しないスタイルシートを参照する文書を変換し、サーバーのエラーメッセージがハンドラに届く(引数にその名前が入る)。 */
+	/**
+	 * Converts a document that references a missing stylesheet. The server's error message reaches the handler
+	 * (with the stylesheet name in its arguments).
+	 */
 	@Test
 	@DisabledIfSystemProperty(named = "cti.integration.expectReject", matches = "true")
 	void messageCallback() throws Exception {
@@ -327,8 +333,9 @@ class RealServerIntegrationTest {
 	}
 
 	/**
-	 * 本文の送信中に abort を送ると変換が止まり(完全な出力が返らない)、reset 後に同じセッションで再変換できる。
-	 * サーバーが中断をどのメッセージ・例外で報告するかは版で違うので見ない。
+	 * Sending abort while uploading the body stops conversion (no complete output is returned), and reset lets
+	 * the same session perform another conversion. The message or exception used to report the abort varies
+	 * by server version, so this test does not check it.
 	 */
 	@Test
 	@DisabledIfSystemProperty(named = "cti.integration.expectReject", matches = "true")
@@ -359,7 +366,9 @@ class RealServerIntegrationTest {
 		}
 	}
 
-	/** 連続モードで 2 文書を変換して join すると 1 つの PDF になる(1 文書より大きい)。 */
+	/**
+	 * Converting 2 documents in continuous mode and calling join produces one PDF (larger than for 1 document).
+	 */
 	@Test
 	@DisabledIfSystemProperty(named = "cti.integration.expectReject", matches = "true")
 	void continuousJoin() throws Exception {

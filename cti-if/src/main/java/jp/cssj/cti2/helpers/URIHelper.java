@@ -9,9 +9,9 @@ import java.net.URISyntaxException;
 import java.util.BitSet;
 
 /**
- * URI解析の補助クラスです。 JavaのURIクラスよりも柔軟に解析します。
+ * A helper class for parsing URIs. It parses more flexibly than Java's URI class.
  * 
- * @deprecated net.zamasoft.zstream.resolver.util.URIHelperを使ってください。
+ * @deprecated Use net.zamasoft.zstream.resolver.util.URIHelper.
  * @author MIYABE Tatsuhiko
  * @version $Id: URIHelper.java 1552 2018-04-26 01:43:24Z miyabe $
  */
@@ -123,13 +123,13 @@ public final class URIHelper {
 	}
 
 	/**
-	 * URIを生成します。
+	 * Creates a URI.
 	 * 
 	 * @param encoding
-	 *            マルチバイト文字のエンコーディング。
+	 *            The encoding for multibyte characters.
 	 * @param href
-	 *            URI文字列。
-	 * @return 生成したURI。
+	 *            The URI string.
+	 * @return The created URI.
 	 * @throws URISyntaxException
 	 */
 	public static URI create(String encoding, String href) throws URISyntaxException {
@@ -139,15 +139,15 @@ public final class URIHelper {
 	}
 
 	/**
-	 * 相対URIを解決します。
+	 * Resolves a relative URI.
 	 * 
 	 * @param encoding
-	 *            マルチバイト文字のエンコーディング。
+	 *            The encoding for multibyte characters.
 	 * @param baseURI
-	 *            基底URI。
+	 *            The base URI.
 	 * @param href
-	 *            相対URI文字列。
-	 * @return 生成したURI。
+	 *            The relative URI string.
+	 * @return The created URI.
 	 * @throws URISyntaxException
 	 */
 	public static URI resolve(String encoding, URI baseURI, String href) throws URISyntaxException {
@@ -161,7 +161,7 @@ public final class URIHelper {
 			uri = new URI(baseURI.getScheme(), uri.getSchemeSpecificPart(), uri.getFragment());
 		}
 		if ((hasWindowsDrive(baseURI) && !hrefURI.isAbsolute()) || hasWindowsDrive(hrefURI)) {
-			// Windowsのファイルパスでrelativeをすると、ドライブ名のコロンが消えるバグがあるための対策。
+			// Work around a bug in relative resolution of Windows file paths that removes the drive letter's colon.
 			String path = uri.getSchemeSpecificPart();
 			int start = 0;
 			for (; start < path.length() && path.charAt(start) == '/'; ++start)
@@ -182,10 +182,10 @@ public final class URIHelper {
 	}
 
 	/**
-	 * Windowsのドライブかどうかチェックします。
+	 * Checks whether the URI refers to a Windows drive.
 	 * 
 	 * @param uri
-	 * @return Windowsのドライブであればtrue
+	 * @return true if the URI refers to a Windows drive
 	 */
 	private static boolean hasWindowsDrive(URI uri) {
 		if (!WINDOWS) {

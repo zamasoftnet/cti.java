@@ -51,9 +51,9 @@ public class V1Session extends AbstractCTISession implements CTISession {
 	protected long srcPos = 0L;
 
 	/**
-	 * {@code ctips:} は CTIP v2 だけが担います。v1 は TLS を張らないので、
-	 * {@code ctips://…/?version=1} をそのまま通すと**平文で接続し、認証情報も
-	 * 平文で流れます**(2026-09-08 に発見)。接続する前に拒否します。
+	 * Only CTIP v2 supports {@code ctips:}. v1 does not establish TLS, so
+	 * accepting {@code ctips://…/?version=1} as-is **establishes a plaintext connection and sends credentials
+	 * in plaintext too** (discovered on 2026-09-08). Reject it before connecting.
 	 */
 	public static void rejectSecureScheme(URI uri) throws IOException {
 		if (uri != null && "ctips".equals(uri.getScheme())) {
@@ -71,7 +71,7 @@ public class V1Session extends AbstractCTISession implements CTISession {
 	}
 
 	protected void init() throws IOException {
-		// 認証
+		// Authentication
 		if (this.producer == null) {
 			this.producer = new V1ContentProducer(this.uri, this.encoding);
 			this.request = (V1RequestConsumer) this.producer.connect();

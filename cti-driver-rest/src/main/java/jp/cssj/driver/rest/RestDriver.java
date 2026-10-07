@@ -9,10 +9,10 @@ import jp.cssj.cti2.CTISession;
 
 /**
  * <p>
- * HTTP/REST通信を利用するドライバです。
+ * A driver (client library) that communicates over HTTP/REST.
  * </p>
  * <p>
- * URIの形式は <tt>http://ホスト名:ポート番号/</tt> です。
+ * The URI format is <tt>http://hostname:port/</tt>.
  * </p>
  * 
  * @author MIYABE Tatsuhiko
@@ -23,7 +23,7 @@ public class RestDriver implements CTIDriver {
 		if (uri == null) {
 			return false;
 		}
-		// http:またはhttps:で始まる透明URI
+		// A non-opaque URI starting with http: or https:
 		return !uri.isOpaque() && ("http".equals(uri.getScheme()) || "https".equals(uri.getScheme()));
 	}
 

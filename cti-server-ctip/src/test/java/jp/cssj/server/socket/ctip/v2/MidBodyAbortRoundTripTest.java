@@ -40,13 +40,15 @@ import net.zamasoft.zstream.resolver.SourceResolver;
 import net.zamasoft.zstream.resolver.util.SimpleSourceMetadata;
 
 /**
- * 本文の途中で変換が終わったときの終端の応答を、本物の CTIP サーバーと Java ドライバで往復させる(2026-09-28)。
+ * Exercises terminal responses when conversion ends midway through the body, with round trips between a real
+ * CTIP server and the Java driver (2026-09-28).
  *
  * <p>
- * サーバーは本文の途中で終わっても、client が残りを送り終える(EOF)まで読み捨ててから ABORT を返す。
- * 以前はすぐに返していたので、「EOF の後に終端が来る」前提のドライバが待ち続けたり(Python・PHP・Perl)、
- * 接続を捨てたり(Java)していた。EOF を送らずに reset した client には ABORT を送らない
- * (読まれない ABORT が次の変換の応答の頭に残るため)。
+ * Even if conversion ends midway through the body, the server drains input until the client finishes sending
+ * (EOF) before returning ABORT. Previously it returned ABORT immediately, causing drivers expecting a terminal
+ * response after EOF to wait indefinitely (Python, PHP, Perl) or discard the connection (Java). It does not send
+ * ABORT to a client that resets without sending EOF (an unread ABORT would remain at the start of the next
+ * conversion's response).
  * </p>
  */
 class MidBodyAbortRoundTripTest {
@@ -79,7 +81,7 @@ class MidBodyAbortRoundTripTest {
 	@AfterEach
 	void stop() throws IOException {
 		try {
-			// 中断のあとでも、閉じるときに中断をもう一度投げない
+			// Even after an abort, closing does not throw the abort exception again
 			this.session.close();
 		} finally {
 			this.server.shutdown();
@@ -124,21 +126,24 @@ class MidBodyAbortRoundTripTest {
 		this.session.abort(CTISession.ABORT_FORCE);
 		assertTrue(this.engine.stopped.await(5, TimeUnit.SECONDS), "サーバーの変換が止まらなかった");
 		Thread.sleep(200);
-		// 本文を閉じずに(EOF を送らずに)reset する
+		// Reset without closing the body (without sending EOF)
 		this.assertTheSessionGoesOn();
 	}
 
-	/** 変換が止まった後も、client は残りの本文を送り終えられる(その間に終端は届かない)。 */
+	/** Even after conversion stops, the client can finish sending the body (no terminal response arrives meanwhile). */
 	private void sendRestAfterTheEngineStopped(final OutputStream out) throws Exception {
 		assertTrue(this.engine.stopped.await(5, TimeUnit.SECONDS), "サーバーの変換が止まらなかった");
-		// 先に ABORT を返していたら、この間に client の受信側へ届いている
+		// If ABORT were returned early, it would reach the client's receiver during this time
 		Thread.sleep(200);
 		for (int i = 0; i < 8; ++i) {
 			out.write(CHUNK);
 		}
 	}
 
-	/** 同じ接続のまま reset して、次の変換が最後まで通る(前の変換の ABORT が頭に残っていない)。 */
+	/**
+	 * Reset on the same connection and complete the next conversion (no ABORT from the previous conversion
+	 * remains at the start).
+	 */
 	private void assertTheSessionGoesOn() throws Exception {
 		this.session.reset();
 		this.session.setResults(NopResults.SHARED_INSTANCE);
@@ -161,8 +166,9 @@ class MidBodyAbortRoundTripTest {
 	}
 
 	/**
-	 * 本文を読むだけの変換エンジン。本文の途中で中断されたら実エンジンと同じく中断を投げ、
-	 * {@link #failAfter} バイト読んだら入出力の失敗を投げる(残りは読まない)。
+	 * A conversion engine that only reads the body. If aborted midway through the body, it throws an abort
+	 * exception like the real engine. After reading {@link #failAfter} bytes, it throws an I/O failure
+	 * (without reading the rest).
 	 */
 	private static final class Engine implements CTIDriver {
 		final CountDownLatch stopped = new CountDownLatch(1);
@@ -216,19 +222,19 @@ class MidBodyAbortRoundTripTest {
 			}
 
 			public void setResults(final Results results) {
-				// 出力はしない
+				// No output
 			}
 
 			public void setMessageHandler(final MessageHandler messageHandler) {
-				// 通知はしない
+				// No notifications
 			}
 
 			public void setProgressListener(final ProgressListener progressListener) {
-				// 進捗は出さない
+				// No progress updates
 			}
 
 			public void property(final String name, final String value) {
-				// 使わない
+				// Not used
 			}
 
 			public OutputStream resource(final SourceMetadata metaSource) {
@@ -240,7 +246,7 @@ class MidBodyAbortRoundTripTest {
 			}
 
 			public void setSourceResolver(final SourceResolver resolver) {
-				// 使わない
+				// Not used
 			}
 
 			public OutputStream transcode(final SourceMetadata metaSource) {
@@ -252,15 +258,15 @@ class MidBodyAbortRoundTripTest {
 			}
 
 			public void setContinuous(final boolean continuous) {
-				// 使わない
+				// Not used
 			}
 
 			public void join() {
-				// 使わない
+				// Not used
 			}
 
 			public void close() {
-				// 何も持たない
+				// Holds no resources
 			}
 		}
 	}

@@ -7,7 +7,7 @@ import java.util.ResourceBundle;
 import jp.cssj.cti2.message.MessageHandler;
 
 /**
- * メッセージ関係の補助ツールです。
+ * Message utilities.
  * 
  * @author MIYABE Tatsuhiko
  * @version $Id: CTIMessageHelper.java 1552 2018-04-26 01:43:24Z miyabe $
@@ -18,16 +18,16 @@ public final class CTIMessageHelper {
 	}
 
 	/**
-	 * 標準出力に表示するメッセージハンドラです。
+	 * A message handler that writes to standard output.
 	 * 
-	 * @deprecated createStreamMessageHandler(System.out)を使用してください。
+	 * @deprecated Use createStreamMessageHandler(System.out).
 	 */
 	public static final MessageHandler STDOUT = new StreamMessageHandler(System.out);
 
 	/**
-	 * 標準出エラー出力に表示するメッセージハンドラです。
+	 * A message handler that writes to standard error.
 	 * 
-	 * @deprecated createStreamMessageHandler(System.err)を使用してください。
+	 * @deprecated Use createStreamMessageHandler(System.err).
 	 */
 	public static final MessageHandler STDERR = new StreamMessageHandler(System.err);
 
@@ -36,7 +36,7 @@ public final class CTIMessageHelper {
 	}
 
 	/**
-	 * どこにも表示しないメッセージハンドラです。
+	 * A message handler that displays nothing.
 	 */
 	public static final MessageHandler NULL = new MessageHandler() {
 		public void message(short code, String[] args, String mes) {
@@ -45,27 +45,27 @@ public final class CTIMessageHelper {
 	};
 
 	/**
-	 * 情報レベルメッセージです。
+	 * An information-level message.
 	 */
 	public static final short INFO = 1;
 	/**
-	 * 警告レベルメッセージです。
+	 * A warning-level message.
 	 */
 	public static final short WARN = 2;
 	/**
-	 * エラーレベルメッセージです。
+	 * An error-level message.
 	 */
 	public static final short ERROR = 3;
 	/**
-	 * 深刻なエラーレベルメッセージです。
+	 * A fatal error message.
 	 */
 	public static final short FATAL = 4;
 
 	/**
-	 * エラーレベルを返します。
+	 * Returns the error level.
 	 * 
 	 * @param code
-	 * @return エラーレベルの値。
+	 * @return The error level value.
 	 */
 	public static final short getLevel(short code) {
 		return (short) (code >> 12 & 0xF);
@@ -74,10 +74,10 @@ public final class CTIMessageHelper {
 	private static final ResourceBundle BUNDLE = ResourceBundle.getBundle(CTIMessageCodes.class.getName());
 
 	/**
-	 * メッセージコードに対応するメッセージフォーマットを返します。
+	 * Returns the message format for the message code.
 	 * 
 	 * @param code
-	 * @return メッセージコードに対応するjava.text.MessageFormat形式の文字列。
+	 * @return The java.text.MessageFormat pattern for the message code.
 	 */
 	public static String getFormat(short code) {
 		String str = Integer.toHexString(code).toUpperCase();
@@ -86,10 +86,10 @@ public final class CTIMessageHelper {
 	}
 
 	/**
-	 * メッセージを文字列化します。
+	 * Converts the message to a string.
 	 * 
 	 * @param code
-	 * @return 文字列化したメッセージ。
+	 * @return The message as a string.
 	 */
 	public static String toString(short code, String[] args) {
 		String str = getFormat(code);
@@ -117,8 +117,8 @@ class StreamMessageHandler implements MessageHandler {
 			this.out.println(mes);
 			return;
 		}
-		// リモート実装や独自ドライバが展開済み文言を渡さなくても、診断を
-		// 黙って "null" にしない。メッセージコードと生の引数は常に残す。
+		// Even if a remote implementation or custom driver does not supply formatted text,
+		// do not silently turn the diagnostic into "null". Always retain the message code and raw arguments.
 		final StringBuilder fallback = new StringBuilder(32);
 		fallback.append('[').append(Integer.toHexString(code & 0xFFFF).toUpperCase()).append(']');
 		if (args != null) {

@@ -1,7 +1,7 @@
 package jp.cssj.cti2.progress;
 
 /**
- * サーバ側でのメインドキュメントの処理状況を受け取ります。
+ * Receives updates on the server's progress in processing the main document.
  * 
  * @author MIYABE Tatsuhiko
  * @version $Id: ProgressListener.java 1552 2018-04-26 01:43:24Z miyabe $
@@ -9,25 +9,25 @@ package jp.cssj.cti2.progress;
 public interface ProgressListener {
 	/**
 	 * <p>
-	 * サーバ側で見積もられたメインドキュメントの大きさが渡されます。
+	 * Receives the server's estimate of the main document's size.
 	 * </p>
 	 * <p>
-	 * このメソッドは呼ばれないことがあり、不正確な値が渡される可能性もあります。
+	 * This method may not be called, and the value passed to it may be inaccurate.
 	 * </p>
 	 * 
 	 * @param sourceLength
-	 *            メインドキュメントのバイト数。
+	 *            The size of the main document in bytes.
 	 */
 	public void sourceLength(long sourceLength);
 
 	/**
-	 * 処理されたメインドキュメントのバイト数が渡されます。
+	 * Receives the number of bytes of the main document that have been processed.
 	 * <p>
-	 * このメソッドは呼ばれないことがあり、不正確な値が渡される可能性もあります。
+	 * This method may not be called, and the value passed to it may be inaccurate.
 	 * </p>
 	 * 
 	 * @param serverRead
-	 *            読み込み済みバイト数。
+	 *            The number of bytes read.
 	 */
 	public void progress(long serverRead);
 }

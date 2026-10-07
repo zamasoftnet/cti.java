@@ -3,7 +3,7 @@ package jp.cssj.cti2;
 import java.io.IOException;
 
 /**
- * ドキュメントの変換を中断したことを示す例外です。
+ * An exception that indicates document conversion has been aborted.
  * 
  * @author MIYABE Tatsuhiko
  * @version $Id: TranscoderException.java 1552 2018-04-26 01:43:24Z miyabe $
@@ -18,12 +18,12 @@ public class TranscoderException extends IOException {
 	private final byte state;
 
 	/**
-	 * 変換結果は不完全ですが、利用可能なデータです。
+	 * The conversion result is incomplete, but the data is usable.
 	 */
 	public static final byte STATE_READABLE = 1;
 
 	/**
-	 * 変換結果のデータは破壊されています。
+	 * The conversion result data is corrupt.
 	 */
 	public static final byte STATE_BROKEN = 2;
 
@@ -39,27 +39,27 @@ public class TranscoderException extends IOException {
 	}
 
 	/**
-	 * 中断の原因となったメッセージコードです。
+	 * The message code that caused the abort.
 	 * 
-	 * @return メッセージコード。
+	 * @return The message code.
 	 */
 	public short getCode() {
 		return this.code;
 	}
 
 	/**
-	 * メッセージに付随する値です。
+	 * The values associated with the message.
 	 * 
-	 * @return メッセージの引数。
+	 * @return The message arguments.
 	 */
 	public String[] getArgs() {
 		return this.args;
 	}
 
 	/**
-	 * 変換後の状態(STATE_XXX定数)を返します。
+	 * Returns the state after conversion (a STATE_XXX constant).
 	 * 
-	 * @return 変換後の状態定数。
+	 * @return The state constant after conversion.
 	 */
 	public byte getState() {
 		return this.state;

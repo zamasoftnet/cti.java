@@ -34,7 +34,7 @@ public class V2ContentProducer {
 	}
 
 	/**
-	 * サーバーに接続し、リクエストを開始します。
+	 * Connects to the server and starts a request.
 	 * 
 	 * @param user
 	 * @param password
@@ -240,9 +240,9 @@ public class V2ContentProducer {
     }
 
 	/**
-	 * 断片のIDを返します。
+	 * Returns the fragment ID.
 	 * 
-	 * @return 断片のID。
+	 * @return The fragment ID.
 	 * @throws IOException
 	 */
 	public int getBlockId() throws IOException {
@@ -250,9 +250,9 @@ public class V2ContentProducer {
 	}
 
 	/**
-	 * アンカーとなる断片のIDを返します。
+	 * Returns the ID of the anchor fragment.
 	 * 
-	 * @return 断片のID。
+	 * @return The fragment ID.
 	 * @throws IOException
 	 */
 	public int getAnchorId() throws IOException {
@@ -260,9 +260,9 @@ public class V2ContentProducer {
 	}
 
 	/**
-	 * 現在のパケットのデータのタイプを返します。
+	 * Returns the data type of the current packet.
 	 * 
-	 * @return パケットのタイプ。
+	 * @return The packet type.
 	 * @throws IOException
 	 */
 	public byte getType() throws IOException {
@@ -270,9 +270,9 @@ public class V2ContentProducer {
 	}
 
 	/**
-	 * 進行状況を返します。
+	 * Returns the progress.
 	 * 
-	 * @return バイト数。
+	 * @return The number of bytes.
 	 * @throws IOException
 	 */
 	public long getLength() throws IOException {
@@ -280,9 +280,9 @@ public class V2ContentProducer {
 	}
 
 	/**
-	 * メッセージを返します。
+	 * Returns the message.
 	 * 
-	 * @return メッセージの文字列。
+	 * @return The message string.
 	 * @throws IOException
 	 */
 	public String getMessage() throws IOException {
@@ -290,9 +290,9 @@ public class V2ContentProducer {
 	}
 
 	/**
-	 * メッセージの引数返します。
+	 * Returns the message arguments.
 	 * 
-	 * @return メッセージの引数。
+	 * @return The message arguments.
 	 * @throws IOException
 	 */
 	public String[] getArgs() throws IOException {
@@ -300,9 +300,9 @@ public class V2ContentProducer {
 	}
 
 	/**
-	 * データのURIを返します。
+	 * Returns the URI of the data.
 	 * 
-	 * @return データのURI。
+	 * @return The URI of the data.
 	 * @throws IOException
 	 */
 	public URI getURI() throws IOException {
@@ -310,9 +310,9 @@ public class V2ContentProducer {
 	}
 
 	/**
-	 * データのMIME型を返します。
+	 * Returns the MIME type of the data.
 	 * 
-	 * @return データのMIME型。
+	 * @return The MIME type of the data.
 	 * @throws IOException
 	 */
 	public String getMimeType() throws IOException {
@@ -320,9 +320,9 @@ public class V2ContentProducer {
 	}
 
 	/**
-	 * データのエンコーディングを返します。
+	 * Returns the encoding of the data.
 	 * 
-	 * @return データのエンコーディング。
+	 * @return The encoding of the data.
 	 * @throws IOException
 	 */
 	public String getEncoding() throws IOException {
@@ -330,9 +330,9 @@ public class V2ContentProducer {
 	}
 
 	/**
-	 * メッセージコードを返します。
+	 * Returns the message code.
 	 * 
-	 * @return メッセージコード。
+	 * @return The message code.
 	 * @throws IOException
 	 */
 	public short getCode() throws IOException {
@@ -340,9 +340,9 @@ public class V2ContentProducer {
 	}
 
 	/**
-	 * 中断処理のモードを返します。
+	 * Returns the abort mode.
 	 * 
-	 * @return 中断処理のモード。
+	 * @return The abort mode.
 	 * @throws IOException
 	 */
 	public byte getMode() throws IOException {
@@ -350,15 +350,15 @@ public class V2ContentProducer {
 	}
 
 	/**
-	 * データを取得します。
+	 * Reads data.
 	 * 
 	 * @param b
-	 *            データが格納されるバッファ。
+	 *            The buffer that receives the data.
 	 * @param off
-	 *            バッファの開始位置。
+	 *            The starting offset in the buffer.
 	 * @param len
-	 *            バッファに格納可能なバイト数。
-	 * @return 取得されたデータの長さ。データがない場合は-1。
+	 *            The number of bytes that can be stored in the buffer.
+	 * @return The length of the data read, or -1 if no data is available.
 	 * @throws IOException
 	 */
 	public int read(byte[] b, int off, int len) throws IOException {

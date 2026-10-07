@@ -27,18 +27,17 @@ import jp.cssj.cti2.TLSPolicy;
 import jp.cssj.driver.ctip.v2.TLSSocketChannel;
 
 /**
- * 段階4: サーバー証明書の検証とSNI。
+ * Stage 4: Server certificate verification and SNI.
  *
  * <p>
- * これまでは<b>検証しないのが既定</b>で、しかも設定の名前
- * ({@code jp.cssj.driver.tls.trust}、既定 {@code true})は意味と反転して
- * いました。SNIも送らず、ホスト名も検証していませんでした。
+ * Previously, <b>verification was disabled by default</b>, and the setting's name
+ * ({@code jp.cssj.driver.tls.trust}, default {@code true}) was the opposite of its meaning.
+ * The client also sent no SNI and did not verify hostnames.
  * </p>
  *
  * <p>
- * ここでは<b>実際のクライアント経路</b>({@link TLSSocketChannel#connect})で
- * 測ります。生の{@code SSLSocket}で測っても、製品の経路がその設定を使って
- * いる証拠にはならないためです。
+ * These tests use <b>the actual client path</b> ({@link TLSSocketChannel#connect}).
+ * Testing with a raw {@code SSLSocket} does not prove that the product's path uses those settings.
  * </p>
  */
 class TlsStage4Test {
@@ -80,9 +79,9 @@ class TlsStage4Test {
 		}
 	}
 
-	// ------------------------------------------------------------ 設定の優先順位
+	// ------------------------------------------------------------ Setting precedence
 
-	/** 新しい名前が指定されたら、それだけを見ること。 */
+	/** When the new name is specified, only that setting is used. */
 	@Test
 	void newNameWinsOverTheLegacyName() {
 		System.setProperty(TLSPolicy.INSECURE, "false");
@@ -94,7 +93,7 @@ class TlsStage4Test {
 		assertTrue(TLSPolicy.isInsecure(), "insecure=true が旧名の false に負けてはいけない");
 	}
 
-	/** 何も指定しなければ検証すること(既定の反転)。 */
+	/** With no setting specified, verification is enabled (reversing the default). */
 	@Test
 	void verificationIsTheDefault() {
 		System.clearProperty(TLSPolicy.INSECURE);
@@ -102,7 +101,7 @@ class TlsStage4Test {
 		assertFalse(TLSPolicy.isInsecure(), "既定は検証する");
 	}
 
-	/** 旧名だけを指定したときは、その意味(検証しない)で効くこと。 */
+	/** When only the old name is specified, it retains its meaning (disabling verification). */
 	@Test
 	void legacyNameStillWorksAlone() {
 		System.clearProperty(TLSPolicy.INSECURE);
@@ -111,11 +110,11 @@ class TlsStage4Test {
 	}
 
 	/**
-	 * 旧名の警告はJVMごとに1回だけであること。
+	 * The warning for the old name appears only once per JVM.
 	 *
 	 * <p>
-	 * 静的な状態なので、他の試験が先に警告を出していれば0回になります。
-	 * <b>2回続けて呼んで2回出ない</b>ことを見ます。
+	 * The state is static, so no warning appears if another test has already triggered it.
+	 * Checks that <b>two consecutive calls do not produce two warnings</b>.
 	 * </p>
 	 */
 	@Test
@@ -150,9 +149,9 @@ class TlsStage4Test {
 		}
 	}
 
-	// ------------------------------------------------------------ 実際の接続
+	// ------------------------------------------------------------ Actual connections
 
-	/** 自己署名の証明書は、既定では拒むこと。 */
+	/** A self-signed certificate is rejected by default. */
 	@Test
 	void selfSignedIsRejectedByDefault() throws Exception {
 		System.clearProperty(TLSPolicy.INSECURE);
@@ -162,14 +161,14 @@ class TlsStage4Test {
 		assertTrue(hasCertificateCause(error), "証明書の失敗ではない: " + describe(error));
 	}
 
-	/** {@code insecure=true} なら通ること(試験用の逃げ道)。 */
+	/** {@code insecure=true} allows the connection (a test-only escape hatch). */
 	@Test
 	void selfSignedIsAcceptedWhenInsecure() throws Exception {
 		System.setProperty(TLSPolicy.INSECURE, "true");
 		assertTrue(connect("localhost"), "insecure=true で繋がらない");
 	}
 
-	/** 旧名でも同じ逃げ道が効くこと(互換)。 */
+	/** The old name provides the same escape hatch (compatibility). */
 	@Test
 	void selfSignedIsAcceptedWithTheLegacyName() throws Exception {
 		System.clearProperty(TLSPolicy.INSECURE);
@@ -178,11 +177,11 @@ class TlsStage4Test {
 	}
 
 	/**
-	 * 独自CAを登録すれば、検証したまま通ること。
+	 * Registering a custom CA allows the connection with verification enabled.
 	 *
 	 * <p>
-	 * 証明書のSANは {@code dns:localhost,ip:127.0.0.1} なので、
-	 * {@code localhost} で繋げばホスト名の検証も通ります。
+	 * The certificate's SAN is {@code dns:localhost,ip:127.0.0.1}, so
+	 * connecting to {@code localhost} also passes hostname verification.
 	 * </p>
 	 */
 	@Test
@@ -195,11 +194,11 @@ class TlsStage4Test {
 	}
 
 	/**
-	 * 証明書のSANに無い名前では、検証が落ちること。
+	 * Verification fails for a name absent from the certificate's SAN.
 	 *
 	 * <p>
-	 * 証明書チェーンが信頼できても、<b>別のホストの証明書なら受け入れない</b>。
-	 * これが{@code setEndpointIdentificationAlgorithm}の効き目です。
+	 * Even with a trusted certificate chain, <b>a certificate for a different host is rejected</b>.
+	 * This is the effect of {@code setEndpointIdentificationAlgorithm}.
 	 * </p>
 	 */
 	@Test
@@ -208,7 +207,7 @@ class TlsStage4Test {
 		System.clearProperty(TLSPolicy.LEGACY_TRUST);
 		System.setProperty("javax.net.ssl.trustStore", identity.toString());
 		System.setProperty("javax.net.ssl.trustStorePassword", "ephemeral-test-only");
-		// 127.0.0.1 へ繋ぐが、名前は SAN に無いものを名乗る
+		// Connect to 127.0.0.1, but use a hostname absent from the SAN.
 		final IOException error = assertThrows(IOException.class, () -> connect("not-in-san.example"));
 		assertTrue(hasCertificateCause(error), "ホスト名の不一致で落ちていない: " + describe(error));
 	}
@@ -216,13 +215,13 @@ class TlsStage4Test {
 	// ------------------------------------------------------------ SNI
 
 	/**
-	 * IPリテラルで繋いでも通ること。
+	 * Connecting with an IP literal also succeeds.
 	 *
 	 * <p>
-	 * SNIにはIPアドレスを載せられません(RFC 6066)。載せるとJDKが
-	 * {@code IllegalArgumentException}を投げるので、<b>繋がること自体が
-	 * 載せていない証拠</b>になります。証明書のSANには
-	 * {@code ip:127.0.0.1}があるので、ホスト名の検証は通ります。
+	 * SNI cannot contain IP addresses (RFC 6066). Including one makes the JDK throw
+	 * {@code IllegalArgumentException}, so <b>a successful connection itself proves that
+	 * the IP address is not included</b>. Hostname verification passes because the certificate's
+	 * SAN contains {@code ip:127.0.0.1}.
 	 * </p>
 	 */
 	@Test
@@ -234,14 +233,14 @@ class TlsStage4Test {
 		assertTrue(connect("127.0.0.1"), "IPリテラルで繋がらない(SNIに載せてしまっていないか)");
 	}
 
-	// ------------------------------------------------------------ 補助
+	// ------------------------------------------------------------ Helpers
 
 	/**
-	 * ローカルのTLSサーバへ、その名前を名乗って繋ぎます。
+	 * Connects to the local TLS server using the given hostname.
 	 *
 	 * <p>
-	 * 接続先は常に {@code 127.0.0.1} で、<b>名乗る名前だけ</b>を変えます。
-	 * こうするとホスト名の検証だけを切り分けて測れます。
+	 * The destination is always {@code 127.0.0.1}; <b>only the hostname used</b> changes.
+	 * This isolates hostname verification for testing.
 	 * </p>
 	 */
 	private static boolean connect(final String name) throws Exception {
@@ -252,7 +251,7 @@ class TlsStage4Test {
 				socket.startHandshake();
 				socket.getInputStream().read();
 			} catch (final Exception e) {
-				// クライアント側が拒否すればここは落ちる。それが期待の形
+				// This fails if the client rejects the connection, which is the expected behavior.
 			}
 		});
 		accepting.setDaemon(true);

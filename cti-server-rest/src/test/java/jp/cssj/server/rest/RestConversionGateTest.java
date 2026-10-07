@@ -42,11 +42,15 @@ import net.zamasoft.zstream.resolver.SourceMetadata;
 import net.zamasoft.zstream.resolver.SourceResolver;
 
 /**
- * REST の同時変換数の上限と、許可が必ず戻ることを固定します(2026-10-03、共有サービスの資源の上限 増分3)。
+ * Verifies the REST concurrent conversion limit and that permits are always returned
+ * (2026-10-03, shared-service resource limits, increment 3).
  */
 class RestConversionGateTest {
 
-	/** 空きが無ければ待たずに断る(0x3003)。同じセッションが変換中なら 0x3017。空いたら通る。 */
+	/**
+	 * Refuses without waiting if no slot is available (0x3003). Returns 0x3017 if the same session
+	 * is converting. Allows conversion when a slot becomes available.
+	 */
 	@Test
 	void refusesWithoutWaitingAndRecovers() throws Exception {
 		final ConversionGate gate = new ConversionGate(1);
@@ -76,7 +80,7 @@ class RestConversionGateTest {
 		sessionB.close();
 	}
 
-	/** 同期の変換も、終われば許可を返す。 */
+	/** Synchronous conversion also returns its permit when it finishes. */
 	@Test
 	void syncReleasesThePermit() throws Exception {
 		final ConversionGate gate = new ConversionGate(1);
@@ -89,8 +93,9 @@ class RestConversionGateTest {
 	}
 
 	/**
-	 * クライアントの資源を待っている変換(rest.requestResource)も close で閉じられ、許可が戻る。
-	 * 以前は resolve が割り込みも無視して待ち続け、close が変換の終わりを待って、どちらも終わらなかった。
+	 * close also closes a conversion waiting for a client resource (rest.requestResource) and returns its permit.
+	 * Previously, resolve ignored interrupts and kept waiting, while close waited for conversion to finish,
+	 * so neither finished.
 	 */
 	@Test
 	void closeEndsAResourceWait() throws Exception {
@@ -107,7 +112,7 @@ class RestConversionGateTest {
 		assertEquals(0, gate.running());
 	}
 
-	/** {@code rest.wait=0} で {@code /messages} が無期限に待たない(以前は wait(0)=無期限)。 */
+	/** {@code /messages} does not wait indefinitely with {@code rest.wait=0} (previously, wait(0) meant forever). */
 	@Test
 	void messagesDoNotWaitForeverOnZero() throws Exception {
 		final Engine engine = new Engine(true);
@@ -133,7 +138,9 @@ class RestConversionGateTest {
 		return request(body, Map.of("rest.async", "true"));
 	}
 
-	/** 本文を text/html で送る(フォームでない)要求。RestRequest を作って要求に登録する。 */
+	/**
+	 * A request that sends its body as text/html (not a form). Creates a RestRequest and registers it on the request.
+	 */
 	private static HttpServletRequest request(final String body, final Map<String, String> params) throws Exception {
 		final byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
 		final ByteArrayInputStream in = new ByteArrayInputStream(bytes);
@@ -151,7 +158,7 @@ class RestConversionGateTest {
 			}
 
 			public void setReadListener(final ReadListener listener) {
-				// 使わない
+				// Unused
 			}
 		};
 		final Map<String, Object> attributes = new HashMap<>();
@@ -246,7 +253,7 @@ class RestConversionGateTest {
 		}
 	}
 
-	/** 本文を読むだけの変換。{@code hold} なら release まで変換を終えない。 */
+	/** A conversion that only reads the body. With {@code hold}, it does not finish until release. */
 	private static final class Engine implements CTISession {
 		final CountDownLatch entered = new CountDownLatch(1);
 		final CountDownLatch release = new CountDownLatch(1);
@@ -268,7 +275,7 @@ class RestConversionGateTest {
 				try {
 					this.resolver.resolve(URI.create("missing.css"));
 				} catch (final FileNotFoundException e) {
-					// close で待ちを抜けた
+					// close ended the wait
 				}
 			}
 			if (this.hold) {
@@ -290,11 +297,11 @@ class RestConversionGateTest {
 		}
 
 		public void reset() {
-			// 使わない
+			// Unused
 		}
 
 		public void close() {
-			// 使わない
+			// Unused
 		}
 
 		public InputStream getServerInfo(final URI uri) {
@@ -302,19 +309,19 @@ class RestConversionGateTest {
 		}
 
 		public void setResults(final Results results) {
-			// 出力はしない
+			// Produces no output
 		}
 
 		public void setMessageHandler(final MessageHandler messageHandler) {
-			// 通知はしない
+			// Sends no notifications
 		}
 
 		public void setProgressListener(final ProgressListener progressListener) {
-			// 進捗は出さない
+			// Reports no progress
 		}
 
 		public void property(final String name, final String value) {
-			// 使わない
+			// Unused
 		}
 
 		public OutputStream resource(final SourceMetadata metaSource) {
@@ -334,11 +341,11 @@ class RestConversionGateTest {
 		}
 
 		public void setContinuous(final boolean continuous) {
-			// 使わない
+			// Unused
 		}
 
 		public void join() {
-			// 使わない
+			// Unused
 		}
 	}
 }

@@ -43,12 +43,12 @@ public class V2RequestConsumer {
 	}
 
 	/**
-	 * プロパティを送ります。
+	 * Sends a property.
 	 * 
 	 * @param name
-	 *            プロパティ名。
+	 *            The property name.
 	 * @param value
-	 *            値。
+	 *            The value.
 	 * @throws IOException
 	 */
 	public void property(String name, String value) throws IOException {
@@ -67,10 +67,10 @@ public class V2RequestConsumer {
 	}
 
 	/**
-	 * クライアント側でリソースを解決するモードを設定します。
+	 * Sets the mode for resolving resources on the client.
 	 * 
 	 * @param on
-	 *            trueであれば切り替え、falseであれば解除。
+	 *            true to enable the mode, false to disable it.
 	 * @throws IOException
 	 */
 	public void clientResource(boolean on) throws IOException {
@@ -84,14 +84,14 @@ public class V2RequestConsumer {
 	}
 
 	/**
-	 * 本体の開始を通知します。
+	 * Signals the start of the main document.
 	 * 
 	 * @param uri
-	 *            仮想URI。
+	 *            The virtual URI.
 	 * @param mimeType
-	 *            MIME型。
+	 *            The MIME type.
 	 * @param encoding
-	 *            キャラクタ・エンコーディング。
+	 *            The character encoding.
 	 * @throws IOException
 	 */
 	public void startMain(URI uri, String mimeType, String encoding, long length) throws IOException {
@@ -114,10 +114,10 @@ public class V2RequestConsumer {
 	}
 
 	/**
-	 * サーバー側でメインドキュメントを取得します。
+	 * Retrieves the main document on the server.
 	 * 
 	 * @param uri
-	 *            メインドキュメントのURI。
+	 *            The URI of the main document.
 	 * @throws IOException
 	 */
 	public void serverMain(URI uri) throws IOException {
@@ -133,14 +133,14 @@ public class V2RequestConsumer {
 	}
 
 	/**
-	 * データパケットを送ります。
+	 * Sends a data packet.
 	 * 
 	 * @param b
-	 *            バイト列バッファ。
+	 *            The byte array buffer.
 	 * @param off
-	 *            データの開始位置。
+	 *            The starting offset of the data.
 	 * @param len
-	 *            データの長さ。
+	 *            The length of the data.
 	 * @throws IOException
 	 */
 	public void data(byte[] b, int off, int len) throws IOException {
@@ -243,14 +243,14 @@ public class V2RequestConsumer {
     }
 
 	/**
-	 * リソースの開始を通知します。
+	 * Signals the start of a resource.
 	 * 
 	 * @param uri
-	 *            仮想URI。
+	 *            The virtual URI.
 	 * @param mimeType
-	 *            MIME型。
+	 *            The MIME type.
 	 * @param encoding
-	 *            キャラクタ・エンコーディング。
+	 *            The character encoding.
 	 * @throws IOException
 	 */
 	public void startResource(URI uri, String mimeType, String encoding, long length) throws IOException {
@@ -273,10 +273,10 @@ public class V2RequestConsumer {
 	}
 
 	/**
-	 * 存在しないリソースとして通知します。
+	 * Reports a resource as missing.
 	 * 
 	 * @param uri
-	 *            リソースのURI。
+	 *            The URI of the resource.
 	 * @throws IOException
 	 */
 	public void missingResource(URI uri) throws IOException {
@@ -292,7 +292,7 @@ public class V2RequestConsumer {
 	}
 
 	/**
-	 * データの終了を通知します。
+	 * Signals the end of data.
 	 * 
 	 * @throws IOException
 	 */
@@ -306,10 +306,10 @@ public class V2RequestConsumer {
 	}
 
 	/**
-	 * 複数の結果を結合するモードを切り替えます。
+	 * Switches the mode for combining multiple results.
 	 * 
 	 * @param continuous
-	 *            結合モード。
+	 *            The mode for combining results.
 	 * @throws IOException
 	 */
 	public void continuous(boolean continuous) throws IOException {
@@ -323,7 +323,7 @@ public class V2RequestConsumer {
 	}
 
 	/**
-	 * 結果の結合を要求します。
+	 * Requests that the results be combined.
 	 * 
 	 * @throws IOException
 	 */
@@ -336,10 +336,10 @@ public class V2RequestConsumer {
 	}
 
 	/**
-	 * 処理の中断を要求します。
+	 * Requests that processing be aborted.
 	 * 
 	 * @param mode
-	 *            中断モード。
+	 *            The abort mode.
 	 * @throws IOException
 	 */
 	public void abort(byte mode) throws IOException {
@@ -353,7 +353,7 @@ public class V2RequestConsumer {
 	}
 
 	/**
-	 * 状態をリセットします。
+	 * Resets the state.
 	 * 
 	 * @throws IOException
 	 */
@@ -367,7 +367,7 @@ public class V2RequestConsumer {
 	}
 
 	/**
-	 * 通信を終了します。
+	 * Ends communication.
 	 * 
 	 * @throws IOException
 	 */
@@ -388,10 +388,10 @@ public class V2RequestConsumer {
     }
 
 	/**
-	 * サーバー情報を要求します。
+	 * Requests server information.
 	 * 
 	 * @param uri
-	 *            サーバー情報のURI。
+	 *            The URI of the server information.
 	 * @throws IOException
 	 */
 	public void serverInfo(URI uri) throws IOException {

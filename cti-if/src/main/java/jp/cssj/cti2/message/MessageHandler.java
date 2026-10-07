@@ -1,21 +1,21 @@
 package jp.cssj.cti2.message;
 
 /**
- * メッセージを受け取るインターフェースです。
+ * An interface for receiving messages.
  * 
  * @author MIYABE Tatsuhiko
  * @version $Id: MessageHandler.java 1552 2018-04-26 01:43:24Z miyabe $
  */
 public interface MessageHandler {
 	/**
-	 * メッセージ受け取ります。
+	 * Receives a message.
 	 * 
 	 * @param code
-	 *            メッセージコード。
+	 *            The message code.
 	 * @param args
-	 *            メッセージに付随する値。
+	 *            The values associated with the message.
 	 * @param mes
-	 *            人間が読める形式のメッセージ。
+	 *            The message in a human-readable format.
 	 */
 	public void message(short code, String[] args, String mes);
 }

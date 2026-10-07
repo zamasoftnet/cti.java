@@ -1,12 +1,12 @@
 package jp.cssj.server.rest;
 
 /**
- * 変換を始めなかった(待たずに断った)ことを表します(2026-10-03)。サーブレットは
- * HTTP 503 と {@code Retry-After} を付けて、このコードのメッセージを返します。
+ * Indicates that conversion did not start (it was refused without waiting) (2026-10-03).
+ * The servlet returns a message with this code, HTTP 503, and {@code Retry-After}.
  *
  * <ul>
- * <li>{@link jp.cssj.cti2.helpers.CTIMessageCodes#ERROR_BUSY}(0x3003): サーバーの同時変換数の上限</li>
- * <li>{@link RestServlet#ERROR_SESSION_BUSY}(0x3017): このセッションは変換中</li>
+ * <li>{@link jp.cssj.cti2.helpers.CTIMessageCodes#ERROR_BUSY}(0x3003): Server's concurrent conversion limit</li>
+ * <li>{@link RestServlet#ERROR_SESSION_BUSY}(0x3017): This session is converting</li>
  * </ul>
  */
 public class ConversionRefusedException extends Exception {

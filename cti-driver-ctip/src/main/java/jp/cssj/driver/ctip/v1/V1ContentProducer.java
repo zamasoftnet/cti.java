@@ -17,43 +17,43 @@ import jp.cssj.driver.ctip.common.ChannelIO;
  */
 public class V1ContentProducer {
 	/**
-	 * 断片追加パケットです。
+	 * A packet that adds a fragment.
 	 */
 	public static final byte ADD = 1;
 
 	/**
-	 * 断片挿入パケットです。
+	 * A packet that inserts a fragment.
 	 * 
-	 * getAnchorIdで直後の断片IDを得ることができます。
+	 * Use getAnchorId to obtain the ID of the immediately following fragment.
 	 */
 	public static final byte INSERT = 2;
 
 	/**
-	 * エラーメッセージパケットです。
+	 * An error message packet.
 	 * 
-	 * getLevel,getMessageでエラーレベルとメッセージを得ることができます。
+	 * Use getLevel and getMessage to obtain the error level and message.
 	 */
 	public static final byte MESSAGE = 3;
 
 	/**
-	 * データパケットです。
+	 * A data packet.
 	 * 
-	 * getId,readで断片IDとデータを得ることができます。
+	 * Use getId and read to obtain the fragment ID and data.
 	 */
 	public static final byte DATA = 4;
 
 	/**
-	 * CSSの文法エラーなどの警告を表します。
+	 * Indicates a warning, such as a CSS syntax error.
 	 */
 	public static final byte ERROR_WARN = 1;
 
 	/**
-	 * リソースの取得失敗など、生成される文書の情報が欠落すようなエラーです。
+	 * An error that causes information to be missing from the generated document, such as a resource retrieval failure.
 	 */
 	public static final byte ERROR_ERROR = 2;
 
 	/**
-	 * 処理の続行を妨げるような深刻なエラーです。
+	 * A fatal error that prevents processing from continuing.
 	 */
 	public static final byte ERROR_FATAL = 3;
 
@@ -64,14 +64,14 @@ public class V1ContentProducer {
 	protected ChannelIO io;
 
 	public V1ContentProducer(URI uri, String encoding) throws IOException {
-		// ctips: を v1 で受けると平文で接続してしまう(V1Session#rejectSecureScheme)
+		// Accepting ctips: in v1 would establish a plaintext connection (V1Session#rejectSecureScheme).
 		V1Session.rejectSecureScheme(uri);
 		this.encoding = encoding;
 		this.uri = uri;
 	}
 
 	/**
-	 * サーバーに接続し、リクエストを開始します。
+	 * Connects to the server and starts a request.
 	 * 
 	 * @throws IOException
 	 */
@@ -128,9 +128,9 @@ public class V1ContentProducer {
 	}
 
 	/**
-	 * 次のパケットにカーソルを移します。
+	 * Moves the cursor to the next packet.
 	 * 
-	 * @return 終了パケットを受信した場合はfalse、それ以外はtrue。
+	 * @return false if an end packet is received; otherwise true.
 	 * @throws IOException
 	 */
 	public boolean next() throws IOException {
@@ -189,9 +189,9 @@ public class V1ContentProducer {
 	}
 
 	/**
-	 * 断片のIDを返します。
+	 * Returns the fragment ID.
 	 * 
-	 * @return 断片のID。
+	 * @return The fragment ID.
 	 * @throws IOException
 	 */
 	public int getId() throws IOException {
@@ -199,9 +199,9 @@ public class V1ContentProducer {
 	}
 
 	/**
-	 * アンカーとなる断片のIDを返します。
+	 * Returns the ID of the anchor fragment.
 	 * 
-	 * @return 断片のID。
+	 * @return The fragment ID.
 	 * @throws IOException
 	 */
 	public int getAnchorId() throws IOException {
@@ -209,9 +209,9 @@ public class V1ContentProducer {
 	}
 
 	/**
-	 * 現在のパケットのデータのタイプを返します。
+	 * Returns the data type of the current packet.
 	 * 
-	 * @return パケットのタイプ。
+	 * @return The packet type.
 	 * @throws IOException
 	 */
 	public byte getType() throws IOException {
@@ -219,9 +219,9 @@ public class V1ContentProducer {
 	}
 
 	/**
-	 * 進行状況を返します。
+	 * Returns the progress.
 	 * 
-	 * @return サーバー側での読み込みバイト数。
+	 * @return The number of bytes read by the server.
 	 * @throws IOException
 	 */
 	public long getProgress() throws IOException {
@@ -229,9 +229,9 @@ public class V1ContentProducer {
 	}
 
 	/**
-	 * メッセージの値を返します。
+	 * Returns the message value.
 	 * 
-	 * @return メッセージの値。
+	 * @return The message value.
 	 * @throws IOException
 	 */
 	public String[] getArgs() throws IOException {
@@ -239,9 +239,9 @@ public class V1ContentProducer {
 	}
 
 	/**
-	 * メッセージを返します。
+	 * Returns the message.
 	 * 
-	 * @return メッセージの文字列。
+	 * @return The message string.
 	 * @throws IOException
 	 */
 	public String getMessage() throws IOException {
@@ -249,9 +249,9 @@ public class V1ContentProducer {
 	}
 
 	/**
-	 * メッセージコードを返します。
+	 * Returns the message code.
 	 * 
-	 * @return メッセージコード。
+	 * @return The message code.
 	 * @throws IOException
 	 */
 	public short getCode() throws IOException {
@@ -259,15 +259,15 @@ public class V1ContentProducer {
 	}
 
 	/**
-	 * データを取得します。
+	 * Retrieves data.
 	 * 
 	 * @param b
-	 *            データが格納されるバッファ。
+	 *            The buffer in which to store the data.
 	 * @param off
-	 *            バッファの開始位置。
+	 *            The starting position in the buffer.
 	 * @param len
-	 *            バッファに格納可能なバイト数。
-	 * @return 取得されたデータの長さ。データがない場合は-1。
+	 *            The number of bytes the buffer can hold.
+	 * @return The length of the retrieved data, or -1 if there is no data.
 	 * @throws IOException
 	 */
 	public int read(byte[] b, int off, int len) throws IOException {

@@ -13,27 +13,27 @@ import jp.cssj.driver.ctip.common.ChannelIO;
  */
 public class V1RequestConsumer {
 	/**
-	 * プロパティパケットです。 getName,getValueで名前と値を取得できます。
+	 * A property packet. Use getName and getValue to obtain the name and value.
 	 */
 	public static final byte PROPERTY = 1;
 
 	/**
-	 * リソース開始パケットです。 getURI,getMimeType,getEncodingでURIとMIMEタイプとエンコーディングを取得できます。
+	 * A resource start packet. Use getURI, getMimeType, and getEncoding to obtain the URI, MIME type, and encoding.
 	 */
 	public static final byte RESOURCE = 2;
 
 	/**
-	 * 内容開始パケットです。 getURI,getMimeType,getEncodingでURIとMIMEタイプとエンコーディングを取得できます。
+	 * A content start packet. Use getURI, getMimeType, and getEncoding to obtain the URI, MIME type, and encoding.
 	 */
 	public static final byte MAIN = 3;
 
 	/**
-	 * データパケットです。 readでデータを取得できます。
+	 * A data packet. Use read to obtain the data.
 	 */
 	public static final byte DATA = 4;
 
 	/**
-	 * 終了パケットです。
+	 * An end packet.
 	 */
 	public static final byte END = 5;
 
@@ -53,12 +53,12 @@ public class V1RequestConsumer {
 	}
 
 	/**
-	 * プロパティを送ります。
+	 * Sends a property.
 	 * 
 	 * @param name
-	 *            プロパティ名。
+	 *            The property name.
 	 * @param value
-	 *            値。
+	 *            The value.
 	 * @throws IOException
 	 */
 	public void property(String name, String value) throws IOException {
@@ -82,14 +82,14 @@ public class V1RequestConsumer {
 	}
 
 	/**
-	 * リソースの開始を通知します。
+	 * Signals the start of a resource.
 	 * 
 	 * @param uri
-	 *            仮想URI。
+	 *            The virtual URI.
 	 * @param mimeType
-	 *            MIME型。
+	 *            The MIME type.
 	 * @param encoding
-	 *            キャラクタ・エンコーディング。
+	 *            The character encoding.
 	 * @throws IOException
 	 */
 	public void resource(URI uri, String mimeType, String encoding) throws IOException {
@@ -111,14 +111,14 @@ public class V1RequestConsumer {
 	}
 
 	/**
-	 * 本体の開始を通知します。
+	 * Signals the start of the body.
 	 * 
 	 * @param uri
-	 *            仮想URI。
+	 *            The virtual URI.
 	 * @param mimeType
-	 *            MIME型。
+	 *            The MIME type.
 	 * @param encoding
-	 *            キャラクタ・エンコーディング。
+	 *            The character encoding.
 	 * @throws IOException
 	 */
 	public void main(URI uri, String mimeType, String encoding) throws IOException {
@@ -145,14 +145,14 @@ public class V1RequestConsumer {
 	}
 
 	/**
-	 * データパケットを送ります。
+	 * Sends a data packet.
 	 * 
 	 * @param b
-	 *            バイト列バッファ。
+	 *            The byte buffer.
 	 * @param off
-	 *            データの開始位置。
+	 *            The starting position of the data.
 	 * @param len
-	 *            データの長さ。
+	 *            The data length.
 	 * @throws IOException
 	 */
 	public void write(byte[] b, int off, int len) throws IOException {
@@ -195,7 +195,7 @@ public class V1RequestConsumer {
 	}
 
 	/**
-	 * 終了パケットを送ります。
+	 * Sends an end packet.
 	 * 
 	 * @throws IOException
 	 */

@@ -20,19 +20,20 @@ import org.junit.jupiter.api.Test;
 import jp.cssj.driver.ctip.v2.V2ServerPackets;
 
 /**
- * 応答のパケットは、複数のスレッドから書かれても混ざらないことを固定します(2026-10-04)。
+ * Verifies that response packets do not interleave even when multiple threads write them (2026-10-04).
  *
  * <p>
- * 本文の途中に client の ABORT が届くと、サーバーは本文を読んでいる側のスレッド(copper4 では
- * 入力の先読み)で中断を受け、その場で中断の報告(MESSAGE)を書く。変換のスレッドが同時に
- * データを書いていると、1 つのパケットの途中にもう一方のバイトが入り、client が
- * 「Trailing bytes in CTIP response」で落ちていた(copper4 の ClientAbortTest がゲートで時々赤)。
+ * When a client's ABORT arrives midway through the body, the server receives it on the thread reading the body
+ * (input read-ahead in copper4) and writes the abort report (MESSAGE) there immediately. If the conversion thread
+ * was writing data at the same time, bytes from one thread were inserted into the middle of the other's packet,
+ * causing the client to fail with "Trailing bytes in CTIP response" (copper4's ClientAbortTest occasionally
+ * failed in the validation gate).
  * </p>
  */
 class V2ProtocolProcessorConcurrentWriteTest {
 	/**
-	 * データのパケットを長さの 4 バイトまで書いたところで書き手を止め、その間にメッセージを書かせる。
-	 * 排他されていればメッセージ側は待たされ、止めた側が時間切れで続きを書く。
+	 * Pauses the writer after it writes the data packet's 4-byte length, then has another thread write a message.
+	 * With mutual exclusion, the message writer waits and the paused writer resumes after a timeout.
 	 */
 	private static final class PausingOutput extends OutputStream {
 		final ByteArrayOutputStream bytes = new ByteArrayOutputStream();
@@ -81,7 +82,7 @@ class V2ProtocolProcessorConcurrentWriteTest {
 				failure.set(t);
 			}
 		});
-		// 中断の報告は、本文を読む側のスレッドから届く
+		// The abort report comes from the thread reading the body
 		final Thread message = new Thread(() -> {
 			try {
 				sink.dataStarted.await();

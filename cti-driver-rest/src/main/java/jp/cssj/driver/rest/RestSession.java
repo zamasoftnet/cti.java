@@ -105,9 +105,10 @@ public class RestSession extends AbstractCTISession implements CTISession {
 	protected Collection<URI> resultSet = new HashSet<URI>();
 
 	/**
-	 * {@link #transcode(SourceMetadata)} の本文を一時ファイルへ溜めている間と、その間に中断を求められたこと
-	 * (2026-09-28)。本文は閉じたときに 1 回の要求で送るので、溜めている間はサーバーに止める変換が無く、
-	 * abort は空振りして全文が変換されていた。
+	 * Tracks whether {@link #transcode(SourceMetadata)} is buffering the body in a temporary file and whether
+	 * an abort was requested during buffering (2026-09-28). Closing the stream sends the body in a single
+	 * request, so there is no conversion for the server to stop during buffering. Previously, abort had
+	 * no effect and the entire body was converted.
 	 */
 	protected volatile boolean buffering = false, abortWhileBuffering = false;
 
@@ -120,9 +121,9 @@ public class RestSession extends AbstractCTISession implements CTISession {
 		if (uri.getScheme().equals("https")) {
 			try {
 				if (jp.cssj.cti2.TLSPolicy.isInsecure()) {
-					// **試験用の逃げ道。** CTIPの insecure(何でも通す)とは意味が違い、
-					// ここは「証明書チェーンが1つだけのもの」を信頼扱いにする
-					// (それ以外は通常の検証へ委ねる)。ホスト名の検証もしない
+					// **Escape hatch for testing.** Unlike CTIP's insecure (which trusts everything),
+					// this trusts certificate chains containing exactly one certificate
+					// (all others undergo normal validation). It also skips hostname verification.
 					SSLContext ssl = org.apache.http.ssl.SSLContextBuilder.create()
 							.loadTrustMaterial(new TrustSelfSignedStrategy()).build();
 					builder.setSSLContext(ssl);
@@ -134,8 +135,8 @@ public class RestSession extends AbstractCTISession implements CTISession {
 					builder.setSSLContext(ssl);
 				}
 			} catch (Exception e) {
-				// **投げる。** かつては IOException を作るだけで投げておらず、
-				// TLS の初期化に失敗しても構築が続いていた
+				// **Throw the exception.** Previously, this only created an IOException without throwing it,
+				// so construction continued even when TLS initialization failed.
 				throw IOException(e);
 			}
 		}
@@ -498,7 +499,7 @@ public class RestSession extends AbstractCTISession implements CTISession {
 				try {
 					super.close();
 					if (RestSession.this.abortWhileBuffering) {
-						// 送る前に中断された。CTIP と同じく、本文を閉じたところで中断として知らせる
+						// Aborted before sending. As with CTIP, report the abort when the body stream closes.
 						final short code = CTIMessageCodes.INFO_ABORT;
 						throw new TranscoderException(TranscoderException.STATE_BROKEN, code, null,
 								CTIMessageHelper.toString(code, null));
@@ -589,7 +590,7 @@ public class RestSession extends AbstractCTISession implements CTISession {
 
 	public void abort(byte mode) throws IOException {
 		if (this.buffering && this.state < 2) {
-			// 本文はまだ送っていない。閉じたときに送らずに中断を知らせる
+			// The body has not been sent yet. Report the abort on close without sending the body.
 			this.abortWhileBuffering = true;
 			return;
 		}

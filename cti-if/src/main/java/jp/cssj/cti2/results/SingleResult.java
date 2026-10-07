@@ -10,19 +10,19 @@ import net.zamasoft.zstream.io.impl.NoOpFragmentedOutput;
 import net.zamasoft.zstream.io.impl.StreamFragmentedOutput;
 
 /**
- * 単一の結果を出力するResultsです。
+ * A Results implementation that outputs a single result.
  * 
  * @author MIYABE Tatsuhiko
  * @version $Id: SingleResult.java 1552 2018-04-26 01:43:24Z miyabe $
  */
 public class SingleResult implements Results {
 	/**
-	 * 出力先のデータ構築オブジェクトです。
+	 * The data builder object that receives output.
 	 */
 	protected FragmentedOutput builder;
 
 	/**
-	 * 1つのデータ構築オブジェクトに対して出力します。
+	 * Outputs to a single data builder object.
 	 * 
 	 * @param builder
 	 */
@@ -31,7 +31,7 @@ public class SingleResult implements Results {
 	}
 
 	/**
-	 * OutputStreamにデータを出力します。
+	 * Outputs data to an OutputStream.
 	 * 
 	 * @param out
 	 */
@@ -40,7 +40,7 @@ public class SingleResult implements Results {
 	}
 
 	/**
-	 * ファイルにデータを出力します。
+	 * Outputs data to a file.
 	 * 
 	 * @param file
 	 */

@@ -6,25 +6,25 @@ import java.io.OutputStream;
 import java.net.Socket;
 
 /**
- * 接続後、クライアントとのやり取りを行います 。
+ * Communicates with the client after a connection is established.
  * 
  * @author MIYABE Tatsuhiko
  * @version $Id: ProtocolProcessor.java 1552 2018-04-26 01:43:24Z miyabe $
  */
 public interface ProtocolProcessor {
 	/**
-	 * クライアントとのやり取りを行います。
+	 * Communicates with the client.
 	 * 
 	 * @param in
 	 * @param out
 	 * @param firstLine
-	 *            クライアントから送られた最初の行。
+	 *            The first line sent by the client.
 	 * @throws IOException
 	 */
 	public void process(Socket socket, InputStream in, OutputStream out, String firstLine) throws IOException;
 
 	/**
-	 * クライアントにメッセージを送ります。
+	 * Sends a message to the client.
 	 * 
 	 * @param code
 	 * @param args
@@ -34,7 +34,7 @@ public interface ProtocolProcessor {
 	public void message(short code, String[] args, String message) throws IOException;
 
 	/**
-	 * 通信を終了します。
+	 * Ends communication.
 	 * 
 	 * @throws IOException
 	 */

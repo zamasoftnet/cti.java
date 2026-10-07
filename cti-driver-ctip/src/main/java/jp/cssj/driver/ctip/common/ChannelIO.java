@@ -167,10 +167,10 @@ public final class ChannelIO {
     }
 
 	/**
-	 * 1バイト整数を読み込みます。
+	 * Reads a 1-byte integer.
 	 * 
 	 * @param destByte
-	 * @return 読み込んだ値。
+	 * @return The value read.
 	 * @throws IOException
 	 */
 	public byte readByte(ByteBuffer destByte) throws IOException {
@@ -179,10 +179,10 @@ public final class ChannelIO {
 	}
 
 	/**
-	 * 2バイト整数を読み込みます。
+	 * Reads a 2-byte integer.
 	 * 
 	 * @param destShort
-	 * @return 読み込んだ値。
+	 * @return The value read.
 	 * @throws IOException
 	 */
 	public short readShort(ByteBuffer destShort) throws IOException {
@@ -191,10 +191,10 @@ public final class ChannelIO {
 	}
 
 	/**
-	 * 4バイト整数を読み込みます。
+	 * Reads a 4-byte integer.
 	 * 
 	 * @param destInt
-	 * @return 読み込んだ値。
+	 * @return The value read.
 	 * @throws IOException
 	 */
 	public int readInt(ByteBuffer destInt) throws IOException {
@@ -203,10 +203,10 @@ public final class ChannelIO {
 	}
 
 	/**
-	 * 8バイト整数を読み込みます。
+	 * Reads an 8-byte integer.
 	 * 
 	 * @param destLong
-	 * @return 読み込んだ値。
+	 * @return The value read.
 	 * @throws IOException
 	 */
 	public long readLong(ByteBuffer destLong) throws IOException {
@@ -215,16 +215,16 @@ public final class ChannelIO {
 	}
 
 	/**
-	 * 文字列を読み込みます。 文字列は2バイトの文字列長(バイト数)に続く文字列本体のバイト列で構成されます。
-	 * バイト列は指定したエンコーディングで文字列に変換します。
+	 * Reads a string: a 2-byte length (in bytes) followed by the bytes of the string itself.
+	 * Converts the bytes to a string using the specified encoding.
 	 * 
 	 * @param destShort
 	 * @param encoding
-	 * @return 読み込んだ文字列。
+	 * @return The string read.
 	 * @throws IOException
 	 */
 	public String readString(ByteBuffer destShort, String encoding) throws IOException {
-		// 長さは符号なし16bit(2026-08-28。V2RequestProducer.readStringと同じ理由)
+		// The length is an unsigned 16-bit value (2026-08-28; same reason as V2RequestProducer.readString).
 		int len = this.readShort(destShort) & 0xFFFF;
 		if (len == 0) {
 			return "";
@@ -234,10 +234,10 @@ public final class ChannelIO {
 	}
 
 	/**
-	 * 指定された長さだけバイト列を読み込みます。
+	 * Reads the specified number of bytes.
 	 * 
 	 * @param len
-	 * @return 読み込んだデータ。
+	 * @return The data read.
 	 * @throws IOException
 	 */
 	public byte[] readBytes(int len) throws IOException {
@@ -247,7 +247,7 @@ public final class ChannelIO {
 		return buff;
 	}
 
-	/** 文字列1つの上限(長さは符号なし16bitで送るため)。 */
+	/** The limit for one string (its length is sent as an unsigned 16-bit value). */
 	public static final int MAX_STRING_BYTES = 0xFFFF;
 
 	public static byte[] toBytes(String str, String encoding) throws IOException {
@@ -255,9 +255,9 @@ public final class ChannelIO {
 			str = "";
 		}
 		final byte[] bytes = str.getBytes(encoding);
-		// **収まらない値は送らない**(2026-08-28)。長さが16bitに入らないまま
-		// 送るとサーバー側で本体が読み飛ばされずストリームが崩れ、
-		// 「Bad request」で接続ごと落ちる。壊すより断る方が直せる
+		// **Do not send values that do not fit** (2026-08-28). If a length exceeds 16 bits,
+		// the server cannot skip the body, corrupting the stream and closing the entire
+		// connection with "Bad request." Rejecting the value makes it easier to fix than corrupting the stream.
 		if (bytes.length > MAX_STRING_BYTES) {
 			throw new IOException(
 					"CTIP string too long: " + bytes.length + " bytes (max " + MAX_STRING_BYTES + ")");

@@ -8,7 +8,7 @@ import jp.cssj.cti2.CTISession;
 import net.zamasoft.zstream.resolver.SourceMetadata;
 
 /**
- * サーブレットからドキュメント変換サーバーを利用する際のユーティリティです。
+ * Utilities for using a document conversion server from a servlet.
  * 
  * @author MIYABE Tatsuhiko
  * @version $Id: ServletHelper.java 1552 2018-04-26 01:43:24Z miyabe $
@@ -19,12 +19,12 @@ public final class ServletHelper {
 	}
 
 	/**
-	 * セッションの出力先にServletResponseを設定します。
+	 * Sets a ServletResponse as the session's output destination.
 	 * 
 	 * @param session
-	 *            出力先を設定するセッション。
+	 *            The session whose output destination you want to set.
 	 * @param response
-	 *            結果の出力際のレスポンス。
+	 *            The response to output the results to.
 	 * @throws IOException
 	 */
 	public static void setServletResponse(final CTISession session, final ServletResponse response) throws IOException {
@@ -32,11 +32,11 @@ public final class ServletHelper {
 	}
 
 	/**
-	 * charsetパラメータつきのContent-Typeヘッダ値を返します。
+	 * Returns a Content-Type header value with a charset parameter.
 	 * 
 	 * @param SourceMetadata
-	 *            データのメタ情報。
-	 * @return charsetパラメータつきのContent-Typeヘッダ。
+	 *            Metadata for the data.
+	 * @return The Content-Type header with a charset parameter.
 	 */
 	public static String getContentType(SourceMetadata metaSource) {
 		String mimeType;

@@ -31,7 +31,7 @@ import javax.net.ssl.SSLContext;
 import jp.cssj.server.acl.Acl;
 
 /**
- * ソケットで待ち受けるサーバーです。
+ * A server that listens on sockets.
  * 
  * @author MIYABE Tatsuhiko
  * @version $Id: CTIServer.java 1552 2018-04-26 01:43:24Z miyabe $
@@ -46,7 +46,7 @@ public class CTIServer {
 	private ProtocolHandler[] handlers = null;
 
 	/**
-	 * 待ち受けポート、キューのサイズ、タイムアウト、最小ワーカー数、最大ワーカー数。
+	 * Listening port, queue size, timeout, minimum worker count, and maximum worker count.
 	 */
 	private int port = -1, tlsPort = -1, backlog = 30, timeout = 180000, minThreads = 10, maxThreads = 50;
 
@@ -100,7 +100,7 @@ public class CTIServer {
 	}
 
 	public synchronized void setConfigFile(File configFile, Properties props) throws IOException {
-		// 設定の読み込み
+		// Load settings
 		LOG.fine("設定ファイルを読み込みます");
 		if (props == null) {
 			props = new Properties();
@@ -255,17 +255,17 @@ public class CTIServer {
 	}
 
 	/**
-	 * サーバーを起動します。
+	 * Starts the server.
 	 * 
 	 * @throws IOException
 	 */
 	public synchronized void startup() throws BindException, IOException {
 		this.permits = new Semaphore(this.maxThreads);
-		// 接続ごとに仮想スレッドを割り当てる。同時実行数の上限は permits で制御する。
+		// Assign a virtual thread to each connection. Use permits to limit concurrency.
 		this.executor = Executors.newThreadPerTaskExecutor(
 				Thread.ofVirtual().name("CopperServer worker-", 0).factory());
 
-		// サーバー開始
+		// Start the server
 		if (this.port != -1) {
 			this.serverSocket = new ServerSocket(this.port, this.backlog);
 		}
@@ -301,7 +301,7 @@ public class CTIServer {
 	}
 
 	/**
-	 * サーバーを停止します。
+	 * Stops the server.
 	 * 
 	 */
 	public synchronized void shutdown() {

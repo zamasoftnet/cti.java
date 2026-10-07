@@ -22,21 +22,21 @@ import net.zamasoft.zstream.resolver.protocol.url.URLSource;
 public class JakartaSampleHttpServlet extends HttpServlet {
 	private static final long serialVersionUID = 0L;
 
-	/** 接続先。 */
+	/** Server URI. */
 	private static final URI SERVER_URI = URI.create("ctip://127.0.0.1:8099/");
 
-	/** ユーザー。 */
+	/** User. */
 	private static final String USER = "user";
 
-	/** パスワード。 */
+	/** Password. */
 	private static final String PASSWORD = "kappa";
 
 	protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
 		try (CTISession session = CTIDriverManager.getSession(SERVER_URI, USER, PASSWORD)) {
-			// 出力先をレスポンスに設定
+			// Set the response as the output destination
 			ServletHelper.setServletResponse(session, res);
 
-			// コンテキスト上に置かれたリソースを使う
+			// Use resources stored in the servlet context
 			session.setSourceResolver(new ServletContextResolver(this.getServletContext()));
 
 			String path = ((HttpServletRequest) req).getPathInfo();
@@ -59,7 +59,7 @@ public class JakartaSampleHttpServlet extends HttpServlet {
 		}
 
 		public Source resolve(URI uri) throws IOException {
-			// コンテキストに置かれたファイルを取得する
+			// Retrieve a file stored in the servlet context
 			URL url = this.context.getResource(uri.toString());
 			if (url == null) {
 				throw new FileNotFoundException(uri.toString());

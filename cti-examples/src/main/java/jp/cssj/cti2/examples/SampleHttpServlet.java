@@ -25,29 +25,29 @@ import net.zamasoft.zstream.resolver.protocol.url.URLSourceResolver;
 public class SampleHttpServlet extends HttpServlet {
 	private static final long serialVersionUID = 0L;
 
-	/** 接続先。 */
+	/** Server URI. */
 	private static final URI SERVER_URI = URI.create("ctip://127.0.0.1:8099/");
 
-	/** ユーザー。 */
+	/** User. */
 	private static final String USER = "user";
 
-	/** パスワード。 */
+	/** Password. */
 	private static final String PASSWORD = "kappa";
 
 	protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
 		try (CTISession session = CTIDriverManager.getSession(SERVER_URI, USER, PASSWORD)) {
-			// 出力先をレスポンスに設定
+			// Set the response as the output destination
 			ServletHelper.setServletResponse(session, res);
-			// リソースを読み込むためのオブジェクトを設定
+			// Set the object used to load resources
 			session.setSourceResolver(new URLSourceResolver());
-			// 目次、ページ参照のための情報収集設定
+			// Configure information collection for the table of contents and page references
 			session.property("processing.page-references", "true");
 			session.property("processing.pass-count", "2");
 
-			// ストリームを定義
+			// Define the stream
 			try (OutputStreamWriter outHtmlStr = new OutputStreamWriter(
 					session.transcode(new SimpleSourceMetadata(URI.create("."), "text/html", null, -1)), "UTF-8")) {
-				// ストリームに文字列を出力
+				// Write a string to the stream
 				outHtmlStr.write("xxx<img id=\"arrow\" src=\"arrow.png\" alt=\"arror\" />yyy");
 			}
 		}
@@ -61,7 +61,7 @@ public class SampleHttpServlet extends HttpServlet {
 		}
 
 		public Source resolve(URI uri) throws IOException {
-			// コンテキストに置かれたファイルを取得する
+			// Retrieve a file stored in the servlet context
 			URL url = this.context.getResource(uri.toString());
 			if (url == null) {
 				throw new FileNotFoundException(uri.toString());

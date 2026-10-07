@@ -105,9 +105,9 @@ public final class Main {
 
 		{
 			Option opt = new Option("p", true, "プロパティを指定する。");
-			// 無制限は UNLIMITED_VALUES(-2)。Integer.MAX_VALUE を渡すと
-			// DefaultParser が「まだ引数が足りない」と判定し、-p の使用が
-			// 常に MissingArgumentException になる(2026-07-30修正)
+			// Unlimited arguments use UNLIMITED_VALUES(-2). Passing Integer.MAX_VALUE caused
+			// DefaultParser to conclude that arguments were still missing, so using -p
+			// always threw MissingArgumentException (fixed 2026-07-30).
 			opt.setArgs(Option.UNLIMITED_VALUES);
 			opt.setArgName("プロパティ名=値");
 			opt.setValueSeparator('=');
@@ -147,7 +147,7 @@ public final class Main {
 			OPTIONS.addOption(opt);
 		}
 		{
-			// 意味は「検証しない」。名前は互換のために残す
+			// Means "do not verify." Keep the name for compatibility.
 			Option opt = new Option("t", "trust", false,
 					"サーバー証明書を検証しません(危険。自己署名の試験用)。--insecureと同じです。");
 			OPTIONS.addOption(opt);
@@ -169,14 +169,14 @@ public final class Main {
 		try {
 			line = parser.parse(OPTIONS, args);
 		} catch (Exception e) {
-			// 失敗を成功(0)で返すと、呼び出し側のビルド・スクリプトが
-			// 「何も変換していないのに成功」と誤認する(2026-07-30修正)
+			// Returning success (0) on failure caused the calling build or script to
+			// report success even though nothing was converted (fixed 2026-07-30).
 			System.err.println(e.getMessage());
 			System.exit(1);
 			return;
 		}
 
-		// ヘルプの表示
+		// Display help
 		if (line.hasOption("h")) {
 			HelpFormatter formatter = new HelpFormatter();
 			formatter.printHelp("copper", OPTIONS, true);
@@ -184,7 +184,7 @@ public final class Main {
 			return;
 		}
 
-		// バージョン情報の表示
+		// Display version information
 		if (line.hasOption("v")) {
 			System.out.print("Copper PDF CLI ");
 			try (InputStream in = Main.class.getResourceAsStream("VERSION")) {
@@ -199,7 +199,7 @@ public final class Main {
 			return;
 		}
 
-		// タイプ
+		// Type
 		String inputType;
 		if (line.hasOption("if")) {
 			inputType = line.getOptionValue("if");
@@ -207,7 +207,7 @@ public final class Main {
 			inputType = "text/html";
 		}
 
-		// エンコーディング
+		// Encoding
 		String encoding;
 		if (line.hasOption("ie")) {
 			encoding = line.getOptionValue("ie");
@@ -215,7 +215,7 @@ public final class Main {
 			encoding = null;
 		}
 
-		// 入力
+		// Input
 		URI uri = new File(".").toURI();
 		Source source;
 		if (line.hasOption("in")) {
@@ -236,7 +236,7 @@ public final class Main {
 			source = new StreamSource(uri, System.in, inputType, encoding);
 		}
 
-		// プロパティ
+		// Properties
 		Properties props = new Properties();
 		if (line.hasOption("pf")) {
 			File file = new File(line.getOptionValue("pf"));
@@ -247,7 +247,7 @@ public final class Main {
 		if (line.hasOption("p")) {
 			String[] values = line.getOptionValues("p");
 			if (values.length % 2 != 0) {
-				// '=' を含まない -p 値があると対で崩れる。黙って続けない
+				// A -p value without '=' breaks the pairing. Do not silently continue.
 				System.err.println("-p はプロパティ名=値 の形式で指定してください: " + values[values.length - 1]);
 				System.exit(1);
 				return;
@@ -263,7 +263,7 @@ public final class Main {
 			return;
 		}
 
-		// 出力。-outdir は結果メタデータの相対URIをそのまま安全に保存する。
+		// Output. -outdir safely saves results while preserving the relative URIs in their metadata.
 		Results results;
 		if (line.hasOption("outdir")) {
 			results = new ResourceDirectoryResults(new File(line.getOptionValue("outdir")));
@@ -292,7 +292,7 @@ public final class Main {
 		}
 		
 		if (line.hasOption("t") || line.hasOption("insecure")) {
-			// **新しい名前へ設定する。** 旧名は指定されると警告が出る
+			// **Set the new name.** Specifying the old name produces a warning.
 			System.setProperty(jp.cssj.cti2.TLSPolicy.INSECURE, "true");
 		}
 		

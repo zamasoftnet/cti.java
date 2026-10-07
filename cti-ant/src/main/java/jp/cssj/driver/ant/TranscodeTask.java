@@ -25,7 +25,7 @@ import org.apache.tools.ant.util.IdentityMapper;
 import org.apache.tools.ant.util.SourceFileScanner;
 
 /**
- * Copper PDFで文書を変換するタスクです。
+ * A task that converts documents with Copper PDF.
  * 
  * @author MIYABE Tatsuhiko
  * @version $Id: TranscodeTask.java 1552 2018-04-26 01:43:24Z miyabe $
@@ -47,7 +47,7 @@ public class TranscodeTask extends MatchingTask {
 		private Map<String, String> props = new HashMap<String, String>();
 
 		/**
-		 * ドキュメント変換サーバーのURIを設定します。
+		 * Sets the URI of the document conversion server.
 		 * 
 		 * @param uri
 		 */
@@ -73,7 +73,7 @@ public class TranscodeTask extends MatchingTask {
 	}
 
 	/**
-	 * プロパティです。
+	 * A property.
 	 * 
 	 * @author MIYABE Tatsuhiko
 	 * @version $Id: TranscodeTask.java 1552 2018-04-26 01:43:24Z miyabe $
@@ -99,7 +99,7 @@ public class TranscodeTask extends MatchingTask {
 	}
 
 	/**
-	 * &lt;property name="" value=""&gt; 要素を作成します。
+	 * Creates a &lt;property name="" value=""&gt; element.
 	 * 
 	 * @return
 	 */
@@ -110,7 +110,7 @@ public class TranscodeTask extends MatchingTask {
 	}
 
 	/**
-	 * 変換元ディレクトリを設定します。
+	 * Sets the source directory.
 	 * 
 	 * @param srcDir
 	 */
@@ -119,7 +119,7 @@ public class TranscodeTask extends MatchingTask {
 	}
 
 	/**
-	 * 出力先ディレクトリを設定します。
+	 * Sets the output directory.
 	 * 
 	 * @param destDir
 	 */
@@ -128,7 +128,7 @@ public class TranscodeTask extends MatchingTask {
 	}
 
 	/**
-	 * 出力ファイルの拡張子を設定します。
+	 * Sets the output file extension.
 	 * 
 	 * @param suffix
 	 */
@@ -154,7 +154,7 @@ public class TranscodeTask extends MatchingTask {
 	}
 
 	public void execute() throws BuildException {
-		// 変換元
+		// Conversion source
 		File srcDir;
 		if (this.srcDir == null) {
 			srcDir = this.getProject().resolveFile(".");
@@ -162,7 +162,7 @@ public class TranscodeTask extends MatchingTask {
 			srcDir = this.srcDir;
 		}
 
-		// 変換元
+		// Conversion source
 		File destDir;
 		if (this.destDir == null) {
 			destDir = srcDir;
@@ -172,7 +172,7 @@ public class TranscodeTask extends MatchingTask {
 
 		int count = 0;
 		try {
-			// 接続する
+			// Connect
 			try (CTISession session = CTIDriverManager.getSession(this.conn.getUri(), this.conn.getProps())) {
 				session.setMessageHandler(CTIMessageHelper.createStreamMessageHandler(System.err));
 

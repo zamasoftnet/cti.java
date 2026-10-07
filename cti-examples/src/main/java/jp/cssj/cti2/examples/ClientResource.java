@@ -18,22 +18,22 @@ import net.zamasoft.zstream.resolver.SourceResolver;
 import net.zamasoft.zstream.resolver.util.SimpleSourceMetadata;
 
 /**
- * クライアントから送ったデータを変換します。
+ * Converts data sent from the client.
  */
 public class ClientResource {
-	/** 接続先。 */
+	/** Server URI. */
 	private static final URI SERVER_URI = URI.create("ctip://localhost:8101/");
 
-	/** ユーザー。 */
+	/** User. */
 	private static final String USER = "user";
 
-	/** パスワード。 */
+	/** Password. */
 	private static final String PASSWORD = "kappa";
 
 	public static void main(String[] args) throws Exception {
-		// 接続する
+		// Connect to the server
 		try (CTISession session = CTIDriverManager.getSession(SERVER_URI, USER, PASSWORD)) {
-			// test.pdfに結果を出力する
+			// Write the result to test.pdf
 			File file = new File("test.pdf");
 			File inFile = new File("sample2.html");
 			CTISessionHelper.setResultFile(session, file);
@@ -50,10 +50,10 @@ public class ClientResource {
 			};
     		session.setSourceResolver( sourceResolver );
 
-			// 出力先ストリームを取得
+			// Get the output stream
 			try (OutputStream out = 
 					session.transcode(new SimpleSourceMetadata(URI.create("."), "text/html", "UTF-8", -1))) {
-				// 入力ファイルを読み込み、変換結果を出力する
+				// Read the input file and write the conversion result
 				try (InputStream in = new FileInputStream(inFile)) {
 					IOUtils.copy(in, out);
 				}

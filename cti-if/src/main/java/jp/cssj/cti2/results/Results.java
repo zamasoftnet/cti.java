@@ -6,34 +6,34 @@ import net.zamasoft.zstream.resolver.SourceMetadata;
 import net.zamasoft.zstream.io.FragmentedOutput;
 
 /**
- * 処理結果です。
+ * Processing results.
  * 
  * @author MIYABE Tatsuhiko
  * @version $Id: Results.java 1552 2018-04-26 01:43:24Z miyabe $
  */
 public interface Results {
 	/**
-	 * 次の結果を出力可能であればtrueを返します。
+	 * Returns true if the next result can be output.
 	 * 
-	 * @return 次の結果を出力可能であればtrueそうでなければfalse。
+	 * @return true if the next result can be output; false otherwise.
 	 */
 	public boolean hasNext();
 
 	/**
-	 * 次の処理結果を構築するためのビルダを返します。
+	 * Returns a builder for constructing the next processing result.
 	 * 
 	 * @param SourceMetadata
-	 *            出力データのメタ情報。
-	 * @return データ構築オブジェクト。
+	 *            Metadata for the output data.
+	 * @return The data builder object.
 	 * @throws IOException
 	 */
 	public FragmentedOutput nextBuilder(SourceMetadata metaSource) throws IOException;
 
 	/**
-	 * 一連のデータ出力を完了します。
+	 * Completes the sequence of data outputs.
 	 * <p>
-	 * 通常の変換では全結果のビルダが閉じられた後に1回呼ばれます。連続変換では
-	 * 個々の{@code transcode}では呼ばれず、最終的な{@code join}で1回呼ばれます。
+	 * For a normal conversion, this is called once after all result builders are closed. For continuous conversion,
+	 * it is not called for individual {@code transcode} calls, but is called once at the final {@code join}.
 	 * </p>
 	 * 
 	 * @throws IOException

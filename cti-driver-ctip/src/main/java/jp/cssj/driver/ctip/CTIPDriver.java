@@ -11,10 +11,10 @@ import jp.cssj.driver.ctip.v2.V2Session;
 
 /**
  * <p>
- * ソケット通信を利用するドライバです。
+ * A driver (client library) that uses socket communication.
  * </p>
  * <p>
- * URIの形式は <tt>ctip://ホスト名:ポート番号/</tt> です。
+ * The URI format is <tt>ctip://hostname:port/</tt>.
  * </p>
  * 
  * @author MIYABE Tatsuhiko
@@ -27,7 +27,7 @@ public class CTIPDriver implements CTIDriver {
 		if (uri == null) {
 			return false;
 		}
-		// ctip: または ctips:で始まる透明URI
+		// A hierarchical URI starting with ctip: or ctips:
 		return !uri.isOpaque() && ("ctip".equals(uri.getScheme()) || "ctips".equals(uri.getScheme()));
 	}
 
@@ -43,7 +43,7 @@ public class CTIPDriver implements CTIDriver {
 			String[] params = query.split("&");
 			for (int i = 0; i < params.length; ++i) {
 				if (params[0].equals("version=1")) {
-					// ctips: は v2 だけが担う。v1 で受けると平文へ落ちる
+					// Only v2 supports ctips:. Accepting it in v1 falls back to plaintext.
 					V1Session.rejectSecureScheme(uri);
 					return new V1Session(uri, ENCODING, user, password);
 				}

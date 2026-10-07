@@ -8,9 +8,9 @@ import net.zamasoft.zstream.resolver.Source;
 import net.zamasoft.zstream.resolver.util.URIHelper;
 
 /**
- * デフォルトのデータのメタ情報です。
+ * Default metadata for data.
  * 
- * @deprecated net.zamasoft.zstream.resolver.util.SimpleSourceMetadataを使ってください。
+ * @deprecated Use net.zamasoft.zstream.resolver.util.SimpleSourceMetadata.
  * @author MIYABE Tatsuhiko
  * @version $Id: DefaultMetaSource.java 1552 2018-04-26 01:43:24Z miyabe $
  */

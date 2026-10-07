@@ -16,7 +16,7 @@ import jp.cssj.cti2.CTISession;
 import net.zamasoft.zstream.resolver.SourceMetadata;
 
 /**
- * 転送先のサーブレット/JSPの出力をキャプチャしてCTISessionに渡します。
+ * Captures output from the servlet/JSP that receives a forwarded request and passes it to CTISession.
  * 
  * @author MIYABE Tatsuhiko
  * @version $Id: CTIHttpServletResponseWrapper.java 694 2011-09-27 11:48:14Z
@@ -107,16 +107,16 @@ public class CTIHttpServletResponseWrapper extends HttpServletResponseWrapper im
 	};
 
 	/**
-	 * 指定したレスポンスをラップし、セッションにデータを送るレスポンスを構築します。
+	 * Wraps the specified response to create a response that sends data to the session.
 	 * 
 	 * @param response
-	 *            ラップするレスポンス。
+	 *            The response to wrap.
 	 * @param session
-	 *            データ送信先のセッション。
+	 *            The session to send data to.
 	 * @param uri
-	 *            データのURI。
+	 *            The URI of the data.
 	 * @param transcode
-	 *            falseであればリソースとして、trueであればメインドキュメントとして渡す。
+	 *            If false, passes the data as a resource; if true, as the main document.
 	 */
 	public CTIHttpServletResponseWrapper(HttpServletResponse response, CTISession session, URI uri, boolean transcode) {
 		super(response);
@@ -128,14 +128,14 @@ public class CTIHttpServletResponseWrapper extends HttpServletResponseWrapper im
 	}
 
 	/**
-	 * new CTIHttpServletResponseWrapper(response, session, uri, true)を呼び出すのと同等です。
+	 * Equivalent to calling new CTIHttpServletResponseWrapper(response, session, uri, true).
 	 * 
 	 * @param response
-	 *            ラップするレスポンス。
+	 *            The response to wrap.
 	 * @param session
-	 *            データ送信先のセッション。
+	 *            The session to send data to.
 	 * @param uri
-	 *            データのURI。
+	 *            The URI of the data.
 	 */
 	public CTIHttpServletResponseWrapper(HttpServletResponse response, CTISession session, URI uri) {
 		this(response, session, uri, true);

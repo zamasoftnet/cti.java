@@ -15,19 +15,19 @@ import jp.cssj.cti2.CTISession;
 import jp.cssj.driver.ctip.v2.V2ClientPackets;
 
 /**
- * 本文・資源の読み取り中に届いた中断({@link V2ClientPackets#ABORT})の扱いです(2026-09-21)。
+ * Handling of abort requests ({@link V2ClientPackets#ABORT}) received while reading a body or resource (2026-09-21).
  *
  * <p>
- * 従来は {@link V2RequestProducerInputStream} の想定外パケットとして
- * {@code IllegalStateException("不正なリクエストです: 32")} になっていた。client には中断ではなく
- * 内部エラーが届き、先読みバッファを持つエンジン(copper4)では
- * 「I/O error. I/O error. prefetch read-ahead terminated」まで化けていた。
- * 正しくはセッションへ中断を伝え、この入力を終端する。
+ * Previously, {@link V2RequestProducerInputStream} treated this as an unexpected packet and threw
+ * {@code IllegalStateException("Bad request: 32")}. The client received an internal error instead of an abort,
+ * and engines with a read-ahead buffer (copper4) even reported it as
+ * "I/O error. I/O error. prefetch read-ahead terminated".
+ * The correct behavior is to notify the session of the abort and end this input.
  * </p>
  */
 class V2RequestProducerInputStreamAbortTest {
 
-	/** DATA 1 つ、続けて ABORT(mode 1=強制)を送るバイト列。 */
+	/** A byte sequence that sends one DATA packet followed by ABORT (mode 1 = force). */
 	private static byte[] dataThenAbort(final byte[] data, final int abortMode) throws IOException {
 		final ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 		final DataOutputStream out = new DataOutputStream(bytes);
@@ -41,7 +41,7 @@ class V2RequestProducerInputStreamAbortTest {
 		return bytes.toByteArray();
 	}
 
-	/** 中断が来たら、セッションへ中断を伝えて入力は EOF になる。 */
+	/** When an abort arrives, notify the session and return EOF for the input. */
 	@Test
 	void mainBodyAbortIsForwardedToTheSessionAndEndsTheInput() throws Exception {
 		final byte[] data = "<html><body><p>a".getBytes("UTF-8");
@@ -61,12 +61,12 @@ class V2RequestProducerInputStreamAbortTest {
 		assertEquals(data.length, off, "DATA を読み切れていない");
 		assertEquals(new String(data, "UTF-8"), new String(buf, "UTF-8"));
 
-		// 続きを読むと ABORT に当たる。例外ではなく EOF で終わる
+		// Reading further reaches ABORT. End with EOF instead of an exception
 		assertEquals(-1, in.read(), "中断のあと入力が終端していない");
 		assertEquals(CTISession.ABORT_FORCE, seen[0], "強制中断としてセッションへ伝わっていない");
 	}
 
-	/** mode 0(きりのよいところまで)は {@code ABORT_NORMAL} として伝わる。 */
+	/** Mode 0 (stop at a suitable stopping point) is passed as {@code ABORT_NORMAL}. */
 	@Test
 	void normalAbortModeIsMapped() throws Exception {
 		final V2RequestProducer producer = new V2RequestProducer("UTF-8",
@@ -77,12 +77,12 @@ class V2RequestProducerInputStreamAbortTest {
 			seen[0] = mode;
 		});
 		while (in.read() >= 0) {
-			// DATA を読み進める
+			// Read through DATA
 		}
 		assertEquals(CTISession.ABORT_NORMAL, seen[0]);
 	}
 
-	/** 受け口を渡さない場合も、落ちずに終端する(資源の読み取り等)。 */
+	/** Even without a handler, end the input without failing (e.g., when reading a resource). */
 	@Test
 	void abortWithoutHandlerStillEndsTheInput() throws Exception {
 		final V2RequestProducer producer = new V2RequestProducer("UTF-8",
@@ -96,7 +96,7 @@ class V2RequestProducerInputStreamAbortTest {
 		assertEquals(1, n);
 	}
 
-	/** 中断以外の想定外パケットは従来どおり断る。 */
+	/** Reject unexpected packets other than aborts as before. */
 	@Test
 	void otherUnexpectedPacketsStillFail() throws Exception {
 		final ByteArrayOutputStream bytes = new ByteArrayOutputStream();
@@ -114,7 +114,7 @@ class V2RequestProducerInputStreamAbortTest {
 		});
 		final IllegalStateException e = assertThrows(IllegalStateException.class, () -> {
 			while (in.read() >= 0) {
-				// CLOSE に当たるまで読む
+				// Read until CLOSE
 			}
 		});
 		assertTrue(e.getMessage().contains("不正なリクエストです"), e.getMessage());

@@ -13,11 +13,11 @@ import jp.cssj.driver.ctip.v2.V2ClientPackets;
  */
 public class V2RequestProducerInputStream extends InputStream implements Progressive {
 	/**
-	 * 本文や資源を読んでいる途中で中断({@link V2ClientPackets#ABORT})が来たときの受け口です。
+	 * Handles abort requests ({@link V2ClientPackets#ABORT}) received while reading a body or resource.
 	 *
 	 * <p>
-	 * 引数は {@link jp.cssj.cti2.CTISession#abort(byte)} に渡す値
-	 * ({@code ABORT_NORMAL} / {@code ABORT_FORCE})です。
+	 * The argument is the value passed to {@link jp.cssj.cti2.CTISession#abort(byte)}
+	 * ({@code ABORT_NORMAL} / {@code ABORT_FORCE}).
 	 * </p>
 	 */
 	public interface AbortRequest {
@@ -34,12 +34,12 @@ public class V2RequestProducerInputStream extends InputStream implements Progres
 
 	private boolean abortNotified = false;
 
-	/** {@link #drain()} の後。読み手が残っていても、次の要求のパケットに触らせない。 */
+	/** Set after {@link #drain()}. Prevent any remaining readers from accessing packets for the next request. */
 	private boolean drained = false;
 
 	/**
-	 * この入力の EOF を読み手が見た。以後の読み位置は資源のやり取りなど他の用途に進むことがあるので、
-	 * {@link #drain()} はそれに触れない。
+	 * A reader has seen EOF for this input. The read position may then advance for other purposes, such as
+	 * resource exchange, so {@link #drain()} does not touch it.
 	 */
 	private boolean ended = false;
 
@@ -57,22 +57,23 @@ public class V2RequestProducerInputStream extends InputStream implements Progres
 	}
 
 	/**
-	 * 読み手が途中でやめた入力を、client の EOF まで読み捨てます(2026-09-28)。
+	 * Drains input abandoned by the reader through the client's EOF (2026-09-28).
 	 *
 	 * <p>
-	 * 中断や変換の失敗で本文の途中で読むのをやめても、client は残りの本文と EOF を送ってくる
-	 * (7 言語のドライバとも abort() は送るだけで応答を待たない)。その前に終端の応答(ABORT)を返すと、
-	 * 「EOF の後に終端が来る」前提のドライバが待ち続けたり接続を捨てたりしていた。
-	 * 呼び手はこれが返ってから終端の応答を送る。
+	 * Even if reading stops midway through the body due to an abort or conversion failure, the client sends the
+	 * rest of the body and EOF (abort() only sends a request and does not wait for a response in all 7 language
+	 * drivers). Returning a terminal response (ABORT) earlier caused drivers expecting a terminal response after
+	 * EOF to wait indefinitely or discard the connection. The caller sends the terminal response after this returns.
 	 * </p>
 	 *
 	 * <p>
-	 * 読み取りと同じ錠で動くので、先読みのスレッドが読みかけの 1 回を終えるまで待つ。
-	 * このあとの読み取りは -1 を返し、次の要求のパケットには触れない。
+	 * This uses the same lock as reading, so it waits for any read in progress on the read-ahead thread to finish.
+	 * Subsequent reads return -1 without touching packets for the next request.
 	 * </p>
 	 *
-	 * @return client の EOF で止まったら true。EOF を送らずに次の要求(RESET・CLOSE など)が来たら false で、
-	 *         そのパケットは現在位置に残す(client はこの入力の終端の応答を待っていない)。
+	 * @return true if draining stops at the client's EOF; false if the next request (RESET, CLOSE, etc.) arrives
+	 *         without EOF. Leave that packet at the current position (the client is not waiting for this input's
+	 *         terminal response).
 	 */
 	public synchronized boolean drain() throws IOException {
 		this.drained = true;
@@ -106,12 +107,12 @@ public class V2RequestProducerInputStream extends InputStream implements Progres
 			return true;
 
 		case V2ClientPackets.ABORT:
-			// **本文・資源の途中で中断が来た**(2026-09-21)。従来はここが default に落ちて
-			// 「不正なリクエストです: 32」の IllegalStateException になっていた。client には
-			// 中断ではなく内部エラーとして届き、先読みを持つエンジンでは
-			// 「I/O error. I/O error. prefetch read-ahead terminated」にまで化けていた。
-			// 中断をセッションへ伝え、この入力はここで終端する(読み手は -1 のあとも呼ぶことがあるので、伝えるのは 1 回)。
-			// 残りの本文と EOF は、呼び手が終端の応答を送る前に drain() で読み捨てる。
+			// **Abort during a body or resource** (2026-09-21). This previously fell through to default
+			// and threw an IllegalStateException with "Bad request: 32". The client received
+			// an internal error instead of an abort, and engines with read-ahead even reported it as
+			// "I/O error. I/O error. prefetch read-ahead terminated".
+			// Notify the session of the abort once and end this input here (readers may call again after -1).
+			// The caller uses drain() to discard the remaining body and EOF before sending the terminal response.
 			if (!this.abortNotified) {
 				this.abortNotified = true;
 				if (this.onAbort != null) {

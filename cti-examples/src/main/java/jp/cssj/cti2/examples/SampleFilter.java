@@ -25,13 +25,13 @@ import net.zamasoft.zstream.resolver.SourceResolver;
 import net.zamasoft.zstream.resolver.protocol.url.URLSource;
 
 public class SampleFilter implements Filter {
-	/** 接続先。 */
+	/** Server URI. */
 	private static final URI SERVER_URI = URI.create("ctip://127.0.0.1:8099/");
 
-	/** ユーザー。 */
+	/** User. */
 	private static final String USER = "user";
 
-	/** パスワード。 */
+	/** Password. */
 	private static final String PASSWORD = "kappa";
 
 	private FilterConfig config;
@@ -45,16 +45,16 @@ public class SampleFilter implements Filter {
 		HttpServletRequest req = (HttpServletRequest) _req;
 		HttpServletResponse res = (HttpServletResponse) _res;
 		try (CTISession session = CTIDriverManager.getSession(SERVER_URI, USER, PASSWORD)) {
-			// 出力先をレスポンスに設定
+			// Set the response as the output destination
 			ServletHelper.setServletResponse(session, res);
 
-			// コンテキスト上に置かれたリソースを使う
+			// Use resources stored in the servlet context
 			session.setSourceResolver(new ServletContextResolver(this.config.getServletContext()));
 
-			// 基底URLとしてコンテキスト以降のパスを使う
+			// Use the path after the context path as the base URL
 			URI uri = URI.create(req.getRequestURI().substring(req.getContextPath().length()));
 
-			// サーブレットが出力したコンテンツを変換
+			// Convert the content output by the servlet
 			try (CTIHttpServletResponseWrapper ctiRes = new CTIHttpServletResponseWrapper((HttpServletResponse) res,
 					session, uri)) {
 				chain.doFilter(req, ctiRes);
@@ -74,7 +74,7 @@ public class SampleFilter implements Filter {
 		}
 
 		public Source resolve(URI uri) throws IOException {
-			// コンテキストに置かれたファイルを取得する
+			// Retrieve a file stored in the servlet context
 			URL url = this.context.getResource(uri.toString());
 			if (url == null) {
 				throw new FileNotFoundException(uri.toString());

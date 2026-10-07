@@ -89,7 +89,7 @@ public class RestRequest {
 		}
 	}
 
-	// クエリ文字列、または読み込み済みのフィールド
+	// Query string or fields already read
 	public static class FormField {
 		public final String name, value;
 		public final byte[] data;
@@ -112,9 +112,9 @@ public class RestRequest {
 	private Object nextItem = null;
 	private byte nextType = NONE;
 
-	// 読み込み済みの値
+	// Values already read
 	private Map<String, String> nameToValue = null;
-	// クエリ文字列、読み込み済みのフィールドのリスト
+	// List of query string fields and fields already read
 	private List<FormField> fields = new ArrayList<FormField>();
 
 	public static final byte NONE = 0;
