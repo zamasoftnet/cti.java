@@ -255,7 +255,10 @@ public final class TlsStage2Probe {
             }
             check(response, "Ticket/KeyUpdate control response not observed");
             io.writeAll(ByteBuffer.wrap(new byte[] { 62 }));
-            io.close(); peer.get(2, TimeUnit.SECONDS);
+            // Let the peer read 62 before closing (2026-10-08): reading it, the peer answers the KeyUpdate this client
+            // requested long before, and a close that came first reset that answer ("Connection reset by peer" in the
+            // peer, 1 or 2 runs in 4). Closing without waiting for the peer is right for the driver; the race was the test's.
+            peer.get(2, TimeUnit.SECONDS); io.close();
             System.out.println("CONTROL_WAIT wallMs=" + elapsed + " cpuMs=" + cpuElapsed);
         }
     }
