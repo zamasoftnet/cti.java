@@ -11,6 +11,8 @@
   (`347e9dd`。暗号化された EPUB で 0 バイトの PDF とスタックトレースが残っていた)
 - **ResourceDirectoryResults**(CLI の `-outdir`): 画像出力の頁ごとの結果(`#1`、`#2`…)を `page-0001.png` などの名前で保存する。
   以前は安全でない URI として拒否していた(`dafe586`)
+- **CLI**: オプションに属さない引数(`-in` を付けないファイル名など)があれば、標準エラー出力に 1 行の警告を出す。
+  読むのは従来どおり標準入力(`copper file.html` が黙って標準入力を待っていた)
 
 ## サーバー(cti-server-ctip・cti-server-rest)
 

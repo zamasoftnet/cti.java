@@ -202,6 +202,17 @@ public final class Main {
 			return;
 		}
 
+		// Arguments that belong to no option are not read. "copper file.html" used to read standard input
+		// without a word (2026-10-08); keep that behavior, but say so.
+		if (!line.getArgList().isEmpty()) {
+			String rest = String.join(" ", line.getArgList());
+			if (line.hasOption("in") || line.hasOption("uri")) {
+				System.err.println("余った引数を無視します: " + rest);
+			} else {
+				System.err.println("入力ファイルは -in で指定してください。標準入力を読みます(無視した引数: " + rest + ")");
+			}
+		}
+
 		// Type
 		String inputType;
 		if (line.hasOption("if")) {
