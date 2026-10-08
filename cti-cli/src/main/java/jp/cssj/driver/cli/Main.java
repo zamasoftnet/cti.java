@@ -3,6 +3,7 @@ package jp.cssj.driver.cli;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
@@ -23,8 +24,10 @@ import org.w3c.dom.Element;
 
 import jp.cssj.cti2.CTIDriverManager;
 import jp.cssj.cti2.CTISession;
+import jp.cssj.cti2.TranscoderException;
 import jp.cssj.cti2.helpers.CTIMessageHelper;
 import jp.cssj.cti2.helpers.CTISessionHelper;
+import jp.cssj.cti2.message.MessageHandler;
 import jp.cssj.cti2.results.ResourceDirectoryResults;
 import jp.cssj.cti2.results.Results;
 import jp.cssj.cti2.results.SingleResult;
@@ -265,12 +268,14 @@ public final class Main {
 
 		// Output. -outdir safely saves results while preserving the relative URIs in their metadata.
 		Results results;
+		LazyFileOutputStream outFile = null;
 		if (line.hasOption("outdir")) {
 			results = new ResourceDirectoryResults(new File(line.getOptionValue("outdir")));
 		} else {
 			OutputStream out;
 			if (line.hasOption("out")) {
-				out = new FileOutputStream(new File(line.getOptionValue("out")));
+				outFile = new LazyFileOutputStream(new File(line.getOptionValue("out")));
+				out = outFile;
 			} else {
 				out = System.out;
 			}
@@ -300,6 +305,8 @@ public final class Main {
 
 		SourceResolver resolver = CompositeSourceResolver.createGenericCompositeSourceResolver();
 
+		final ErrorTrackingHandler messages = new ErrorTrackingHandler(
+				CTIMessageHelper.createStreamMessageHandler(System.err));
 		try (CTISession session = CTIDriverManager.getSession(serverURI, user, password)) {
 			if (sv) {
 				try (InputStream in = session.getServerInfo(URI.create("http://www.cssj.jp/ns/ctip/version"))) {
@@ -320,7 +327,7 @@ public final class Main {
 				}
 			} else {
 				session.setResults(results);
-				session.setMessageHandler(CTIMessageHelper.createStreamMessageHandler(System.err));
+				session.setMessageHandler(messages);
 				session.setSourceResolver(resolver);
 				CTISessionHelper.properties(session, props);
 
@@ -329,6 +336,85 @@ public final class Main {
 				} else {
 					session.transcode(uri);
 				}
+			}
+		} catch (Exception e) {
+			// A failed conversion leaves no output file (2026-10-08). A conversion error the server has reported as a
+			// message ends with that line instead of a stack trace; anything else keeps its trace for the report.
+			if (outFile != null) {
+				outFile.discard();
+			}
+			if (!(e instanceof TranscoderException)) {
+				e.printStackTrace();
+			} else if (!messages.errorReported) {
+				System.err.println(e.getMessage() != null ? e.getMessage() : e.toString());
+			}
+			System.exit(1);
+			return;
+		}
+	}
+
+	/** Remembers whether an error or a fatal error was reported. */
+	private static final class ErrorTrackingHandler implements MessageHandler {
+		private final MessageHandler delegate;
+		boolean errorReported = false;
+
+		ErrorTrackingHandler(MessageHandler delegate) {
+			this.delegate = delegate;
+		}
+
+		public void message(short code, String[] args, String message) {
+			if (CTIMessageHelper.getLevel(code) >= CTIMessageHelper.ERROR) {
+				this.errorReported = true;
+			}
+			this.delegate.message(code, args, message);
+		}
+	}
+
+	/** Creates the -out file at the first write, so a conversion that fails before writing leaves no file. */
+	private static final class LazyFileOutputStream extends OutputStream {
+		private final File file;
+		private OutputStream out = null;
+
+		LazyFileOutputStream(File file) {
+			this.file = file;
+		}
+
+		private OutputStream out() throws IOException {
+			if (this.out == null) {
+				this.out = new FileOutputStream(this.file);
+			}
+			return this.out;
+		}
+
+		public void write(int b) throws IOException {
+			this.out().write(b);
+		}
+
+		public void write(byte[] b, int off, int len) throws IOException {
+			this.out().write(b, off, len);
+		}
+
+		public void flush() throws IOException {
+			if (this.out != null) {
+				this.out.flush();
+			}
+		}
+
+		public void close() throws IOException {
+			if (this.out != null) {
+				this.out.close();
+			}
+		}
+
+		/** Removes what a failed conversion wrote. */
+		void discard() {
+			try {
+				this.close();
+			} catch (IOException e) {
+				// Deleting matters more than closing
+			}
+			if (this.out != null) {
+				this.file.delete();
 			}
 		}
 	}
