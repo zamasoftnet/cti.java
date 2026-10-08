@@ -28,7 +28,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Build dist
-        run: ./gradlew dist -Pzstream.dir=$GITHUB_WORKSPACE/zstream
+        run: ./gradlew dist javadocPages -Pzstream.dir=$GITHUB_WORKSPACE/zstream
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -36,8 +36,9 @@ jobs:
             build/cti-java-*.zip
             build/cti-java-*.tar.gz
 
+      # English at the root, Japanese under ja/ (javadocPages, from javadoc/ja.json)
       - name: Deploy API docs to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: build/apidoc
+          publish_dir: build/pages

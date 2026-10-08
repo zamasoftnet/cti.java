@@ -1,605 +1,1467 @@
 {
   "jp.cssj.cti2.CTIDriver": {
+    "hash": "d336989086fe4c9e",
+    "en": "A driver (client library) for connecting to a document conversion server.\n\n@author MIYABE Tatsuhiko\n@version $Id: CTIDriver.java 1552 2018-04-26 01:43:24Z miyabe $",
     "ja": "ドキュメント変換サーバーに接続するためのドライバです。\n\n@author MIYABE Tatsuhiko\n@version $Id: CTIDriver.java 1552 2018-04-26 01:43:24Z miyabe $"
   },
   "jp.cssj.cti2.CTIDriver#getSession(URI,Map)": {
+    "hash": "f442fbb25eb6a4f0",
+    "en": "Creates a session.\n<p>\nThe URI format depends on the driver type. Drivers for the CTIP and HTTP/REST protocols are currently available.\n</p>\n<p>\nFor a CTIP connection, use a URI in the form \"ctip://hostname:port/\". To connect to a server that only\nsupports CTIP 1.0 (Copper PDF 2.0 or earlier, or CSSJ), add the query parameter version=1,\nusing the form \"ctip://hostname:port/?version=1\".\n</p>\n<p>\nFor an HTTP/REST connection, use a URI in the form \"http://hostname:port/\".\n<strong>Remember the trailing slash.</strong>\n</p>\n\n@param uri\n           The connection URI.\n@param props\n           Connection property key-value pairs. The \"user\" key specifies the username;\n           the \"password\" key specifies the password.\n@return The session.\n@throws IOException\n@throws SecurityException\n            if authentication fails.",
     "ja": "セッションを作成します。\n<p>\nURIの形式は、ドライバの種類に依存します。 現在、実装が提供されているのはCTIPとHTTP/RESTプロトコルに対応したドライバです。\n</p>\n<p>\nCTIPによる接続の場合は、\"ctip://ホスト名:ポート番号/\"という形式のURIを使用してください。 CTIP\n1.0による接続のみに対応したサーバー(Copper PDF 2.0系以前またはCSSJ)に接続する場合は、\nクエリパラメータversion=1を加えて、\"ctip://ホスト名:ポート番号/?version=1\"という形式にしてください。\n</p>\n<p>\nHTTP/RESTによる接続の場合は、\"http://ホスト名:ポート番号/\"という形式のURIを使用してください。\n<strong>末尾のスラッシュを忘れないでください。</strong>\n</p>\n\n@param uri\n           接続先のURI。\n@param props\n           接続プロパティのキーと値の組み合わせです。キー\"user\"はユーザー名、キー\"password\"はパスワードです。\n@return セッション。\n@throws IOException\n@throws SecurityException\n            認証に失敗した場合。"
   },
   "jp.cssj.cti2.CTIDriver#match(URI)": {
+    "hash": "a55a850ed2b5e82f",
+    "en": "Returns whether this driver supports the specified URI.\n\n@param uri\n           The connection URI.\n@return true if supported.",
     "ja": "指定されたURIに対応するかどうかを返します。\n\n@param uri\n           接続先URI。\n@return 対応していればtrue。"
   },
   "jp.cssj.cti2.CTIDriverManager": {
+    "hash": "eb2b2b2c2bfac589",
+    "en": "The entry point for drivers.\n\n@author MIYABE Tatsuhiko\n@version $Id: CTIDriverManager.java 1552 2018-04-26 01:43:24Z miyabe $",
     "ja": "ドライバの窓口クラスです。\n\n@author MIYABE Tatsuhiko\n@version $Id: CTIDriverManager.java 1552 2018-04-26 01:43:24Z miyabe $"
   },
   "jp.cssj.cti2.CTIDriverManager#getDriver(URI)": {
+    "hash": "2ebce71bfcd1ce11",
+    "en": "Returns a driver for connecting to the specified URI.\n\n@see CTIDriver#getSession(URI, Map)\n@param uri\n           The connection URI.\n@return The driver.",
     "ja": "指定されたURIへ接続するためのドライバを返します。\n\n@see CTIDriver#getSession(URI, Map)\n@param uri\n           接続先URI。\n@return ドライバ。"
   },
   "jp.cssj.cti2.CTIDriverManager#getSession(URI)": {
+    "hash": "2a4baf84a47f7c7d",
+    "en": "Returns a session.\n<p>\nThis is a convenience method for <tt>CTIDriver.getDriver(uri).getSession(null)</tt>.\n</p>\n\n@see CTIDriver#getSession(URI, Map)\n@param uri\n           The connection URI.\n@return The session.\n@throws IOException",
     "ja": "セッションを返します。\n<p>\nこれは<tt>CTIDriver.getDriver(uri).getSession(null)</tt>の簡易メソッドです。\n</p>\n\n@see CTIDriver#getSession(URI, Map)\n@param uri\n           接続先URI。\n@return セッション。\n@throws IOException"
   },
   "jp.cssj.cti2.CTIDriverManager#getSession(URI,Map)": {
+    "hash": "cd739519b487c180",
+    "en": "Returns a session.\n<p>\nThis is a convenience method for <tt>CTIDriver.getDriver(uri).getSession(props)</tt>.\n</p>\n\n@see CTIDriver#getSession(URI, Map)\n@param uri\n           The connection URI.\n@return The session.\n@throws IOException",
     "ja": "セッションを返します。\n<p>\nこれは<tt>CTIDriver.getDriver(uri).getSession(props)</tt>の簡易メソッドです。\n</p>\n\n@see CTIDriver#getSession(URI, Map)\n@param uri\n           接続先URI。\n@return セッション。\n@throws IOException"
   },
   "jp.cssj.cti2.CTIDriverManager#getSession(URI,String,String)": {
+    "hash": "ae1e0d53e09717a9",
+    "en": "Returns a session.\n<p>\nThis is a convenience method for <tt>CTIDriver.getDriver(uri).getSession(props)</tt>.\nSets the user and password in the properties.\n</p>\n\n@see CTIDriver#getSession(URI, Map)\n@param uri\n           The connection URI.\n@return The session.\n@throws IOException",
     "ja": "セッションを返します。\n<p>\nこれは<tt>CTIDriver.getDriver(uri).getSession(props)</tt>の簡易メソッドです。\nプロパティにユーザー、パスワードを設定します。\n</p>\n\n@see CTIDriver#getSession(URI, Map)\n@param uri\n           接続先URI。\n@return セッション。\n@throws IOException"
   },
   "jp.cssj.cti2.CTISession": {
+    "hash": "a5cf5437e9059850",
+    "en": "A connection to a server for converting documents.\n\n@author MIYABE Tatsuhiko\n@version $Id: CTISession.java 1552 2018-04-26 01:43:24Z miyabe $",
     "ja": "ドキュメント変換処理を実行するためのサーバーとの接続です。\n\n@author MIYABE Tatsuhiko\n@version $Id: CTISession.java 1552 2018-04-26 01:43:24Z miyabe $"
   },
   "jp.cssj.cti2.CTISession#ABORT_FORCE": {
+    "hash": "7ba8e33cc7803725",
+    "en": "A constant for forcibly aborting processing. Pass this to the abort method.",
     "ja": "強制的に中断する処理の定数です。abortメソッドに渡します。"
   },
   "jp.cssj.cti2.CTISession#ABORT_NORMAL": {
+    "hash": "8cda12b7a8e11e03",
+    "en": "A constant for aborting at a suitable stopping point. Pass this to the abort method.",
     "ja": "きりのよいところまで処理する中断処理の定数です。abortメソッドに渡します。"
   },
   "jp.cssj.cti2.CTISession#abort(byte)": {
+    "hash": "6b11f8e24af39f53",
+    "en": "<p>\nAborts conversion. You must call this method asynchronously (from another thread).\nWhen processing actually stops, the thread performing the conversion (the one that called transcode)\nthrows a TranscoderException.\n</p>\n\n@param mode\n           Specify ABORT_NORMAL to output up to a suitable stopping point,\n           or ABORT_FORCE to forcibly stop processing.\n@throws IOException",
     "ja": "<p>\n変換を中断します。 このメソッドは非同期的に（別スレッドから）呼び出す必要があります。\n実際に処理が中断された場合は、変換処理を行なっている（transcodeを呼び出した\n）スレッドで、TranscoderExceptionがスローされます。\n</p>\n\n@param mode\n           きりのよいところまで出力する場合はABORT_NORMAL、強制的に処理を停止するにはABORT_FORCEを指定します。\n@throws IOException"
   },
   "jp.cssj.cti2.CTISession#close()": {
+    "hash": "0f8b530fd307ebd9",
+    "en": "<p>\nCloses the session.\n<p>\n\nYou cannot perform any operations on the session after calling this method.\n\n@throws IOException",
     "ja": "<p>\nセッションをクローズします。\n<p>\n\nこのメソッドを呼び出した後は、セッションに対して何も出来ません。\n\n@throws IOException"
   },
   "jp.cssj.cti2.CTISession#getServerInfo(URI)": {
+    "hash": "a4f1b1228f04bd01",
+    "en": "Returns server information. For details, see the <a href=\n\"http://dl.cssj.jp/docs/copper/3.0/html/3410_ctip2.html#prog-ctip2-server-info\"\n>Copper PDF documentation</a>.\n\n@param uri\n           The URI that selects the server information.\n@return A stream of server information data.",
     "ja": "サーバー情報を返します。 詳細は<a href=\n\"http://dl.cssj.jp/docs/copper/3.0/html/3410_ctip2.html#prog-ctip2-server-info\"\n>Copper PDF ドキュメント</a>を参照して下さい。\n\n@param uri\n           サーバー情報を選択するためのURI。\n@return サーバー情報データのストリーム。"
   },
   "jp.cssj.cti2.CTISession#join()": {
+    "hash": "563db925669fea40",
+    "en": "<p>\nWith setContinues(true) set, combines and outputs the results of multiple transcode calls.\n</p>\n\n@throws IOException",
     "ja": "<p>\nsetContinues(true) が設定された状態で、複数回のtranscodeにより生成された結果を結合して出力します。\n</p>\n\n@throws IOException"
   },
   "jp.cssj.cti2.CTISession#property(String,String)": {
+    "hash": "21e0eef68dc0a6c6",
+    "en": "<p>\nSets a property.\n</p>\n<p>\nYou must call this method before any transcode method.\n</p>\n\n@param name\n           The property name\n@param value\n           The value\n@throws IOException",
     "ja": "<p>\nプロパティを設定します。\n</p>\n<p>\nこのメソッドは各transcodeメソッドの前に呼ぶ必要があります。\n</p>\n\n@param name\n           プロパティ名\n@param value\n           値\n@throws IOException"
   },
   "jp.cssj.cti2.CTISession#reset()": {
+    "hash": "162dab7214de2483",
+    "en": "<p>\nClears all sent resources and all settings, including properties and the message handler,\nand restores the initial state the session had when it was created.\n</p>\n\n@throws IOException",
     "ja": "<p>\n送られたリソースと、プロパティ、メッセージハンドラ等の全ての設定をクリアして、セッションが作られた時点と同じ初期状態に戻します。\n</p>\n\n@throws IOException"
   },
   "jp.cssj.cti2.CTISession#resource(Source)": {
+    "hash": "f20ced4eed701e52",
+    "en": "<p>\nSends a resource.\n</p>\n<p>\nYou must call this method before any transcode method.\n</p>\n\n@param source\n           The data source for the resource.\n@throws IOException",
     "ja": "<p>\nリソースを送信します。\n</p>\n<p>\nこのメソッドは各transcodeメソッドの前に呼ぶ必要があります。\n</p>\n\n@param source\n           リソースのデータソース。\n@throws IOException"
   },
   "jp.cssj.cti2.CTISession#resource(SourceMetadata)": {
+    "hash": "8fb898e8a7f5927f",
+    "en": "<p>\nReturns an output stream for sending a resource.\n</p>\n<p>\n<strong>Always close the output stream after sending the resource. </strong>\n</p>\n<p>\nYou must call this method before any transcode method.\n</p>\n\n@param SourceMetadata\n           Metadata for the resource data.\n@return An output stream to the server.\n@throws IOException",
     "ja": "<p>\nリソースを送信するための出力ストリームを返します。\n</p>\n<p>\n<strong>リソースを送信した後、出力ストリームは必ずクローズしてください。 </strong>\n</p>\n<p>\nこのメソッドは各transcodeメソッドの前に呼ぶ必要があります。\n</p>\n\n@param SourceMetadata\n           リソースデータのメタ情報。\n@return サーバーへの出力ストリーム。\n@throws IOException"
   },
   "jp.cssj.cti2.CTISession#setContinuous(boolean)": {
+    "hash": "1953a3fc65e0e033",
+    "en": "<p>\nSwitches to a mode that combines multiple results.\n</p>\n\n@param continuous\n           If true, enables the mode that combines results using join.\n@throws IOException",
     "ja": "<p>\n複数の結果を結合するモードに切り替えます。\n</p>\n\n@param continuous\n           trueであればjoinにより結果を結合するモードにします。\n@throws IOException"
   },
   "jp.cssj.cti2.CTISession#setMessageHandler(MessageHandler)": {
+    "hash": "20a43cc99d2c155f",
+    "en": "<p>\nSets the object that receives messages.\n</p>\n\n<p>\nYou must call this method before any transcode method.\n</p>\n\n@see MessageHandler\n@param messageHandler\n           The message handler",
     "ja": "<p>\nメッセージを受け取るためのオブジェクトを設定します。\n</p>\n\n<p>\nこのメソッドは各transcodeメソッドの前に呼ぶ必要があります。\n</p>\n\n@see MessageHandler\n@param messageHandler\n           メッセージハンドラ"
   },
   "jp.cssj.cti2.CTISession#setProgressListener(ProgressListener)": {
+    "hash": "6fafaa62fd184ffc",
+    "en": "<p>\nSets the object that monitors progress.\n</p>\n<p>\nYou must call this method before any transcode method.\n</p>\n\n@see ProgressListener\n@param progressListener\n           The progress listener",
     "ja": "<p>\n進行状況を監視するためのオブジェクトを設定します。\n</p>\n<p>\nこのメソッドは各transcodeメソッドの前に呼ぶ必要があります。\n</p>\n\n@see ProgressListener\n@param progressListener\n           進行状況リスナ"
   },
   "jp.cssj.cti2.CTISession#setResults(Results)": {
+    "hash": "c13492190d33ba3e",
+    "en": "<p>\nSets the output destination.\n</p>\n<p>\nYou must call this method before any transcode method.\n</p>\n\n@param results\n           The output destination.",
     "ja": "<p>\n出力先を設定します。\n</p>\n<p>\nこのメソッドは各transcodeメソッドの前に呼ぶ必要があります。\n</p>\n\n@param results\n           出力先。"
   },
   "jp.cssj.cti2.CTISession#setSourceResolver(SourceResolver)": {
+    "hash": "79ec8d1edebc5567",
+    "en": "<p>\nSets the object that loads resources.\n</p>\n\n@param resolver\n           The SourceResolver that retrieves resources requested by the server.",
     "ja": "<p>\nリソースを読み込むためのオブジェクトを設定します。\n</p>\n\n@param resolver\n           サーバー側から要求したリソースを取得するためのSourceResolver。"
   },
   "jp.cssj.cti2.CTISession#transcode(Source)": {
+    "hash": "5210ed7ae1a0e3cf",
+    "en": "<p>\nRetrieves the main document from a data source and converts it.\n</p>\n\n@param source\n           The data source for the main document.\n@throws IOException",
     "ja": "<p>\nメインドキュメントをデータソースから取得して変換します。\n</p>\n\n@param source\n           メインドキュメントのデータソース。\n@throws IOException"
   },
   "jp.cssj.cti2.CTISession#transcode(SourceMetadata)": {
+    "hash": "abfeb6c234d56f33",
+    "en": "<p>\nReturns an output stream for sending the main document.\n</p>\n<p>\n<strong>Always close the output stream after sending the document body. </strong>\n</p>\n\n@param SourceMetadata\n           Metadata for the main document.\n@return An output stream to the server.\n@throws IOException",
     "ja": "<p>\nメインドキュメントを送信するための出力ストリームを返します。\n</p>\n<p>\n<strong>本体を送信した後、出力ストリームは必ずクローズしてください。 </strong>\n</p>\n\n@param SourceMetadata\n           メインドキュメントのメタ情報。\n@return サーバーへの出力ストリーム。\n@throws IOException"
   },
   "jp.cssj.cti2.CTISession#transcode(URI)": {
+    "hash": "948bb6807e850304",
+    "en": "<p>\nRetrieves and converts the main document by accessing the specified address from the server.\nThis also works with resources you previously sent using the resource method.\n</p>\n\n@param uri\n           The URI of the main document.\n@throws IOException",
     "ja": "<p>\n指定されたアドレスへサーバー側からアクセスしてメインドキュメントを取得して変換します。\nresourceメソッドで事前に送信したリソースに対しても有効です。\n</p>\n\n@param uri\n           メインドキュメントのURI。\n@throws IOException"
   },
   "jp.cssj.cti2.TLSPolicy": {
+    "hash": "a7ebf468232757f1",
+    "en": "Controls whether to verify the server certificate.\n\n<p>\n<b>Verification is enabled by default.</b> Previously, verification was disabled by default, and the setting\nwas named {@code jp.cssj.driver.tls.trust} (default {@code true})—<b>the name and meaning\nwere reversed</b>. \"Trust\" meant \"accept anything.\"\n</p>\n\n<p>\nThe new name is {@link #INSECURE} ({@code jp.cssj.driver.tls.insecure}),\nwith a default of {@code false} (verification enabled). Set it to {@code true} only when\nconnecting to a test server that uses a self-signed certificate.\n</p>\n\n<h2>Precedence</h2>\n\n<p>\nIf the new name is specified, <b>only that setting</b> is used. The legacy name is checked only when\nthe new name is absent, and {@code true} disables verification.\n<b>{@code insecure=false} is never overridden by {@code true} under the legacy name.</b>\n</p>\n\n<h2>Different meanings for CTIP and REST</h2>\n\n<p>\nWith {@code insecure=true}, CTIP <b>accepts anything</b>. REST\n<b>trusts certificate chains containing only one certificate</b> and uses normal verification\nfor all other chains (HttpClient's {@code TrustSelfSignedStrategy}). Both are\nworkarounds for testing and must not be used in production.\n</p>",
     "ja": "サーバー証明書を検証するかどうかの設定です。\n\n<p>\n<b>既定は検証します。</b>以前は検証しないのが既定で、しかも設定の名前は\n{@code jp.cssj.driver.tls.trust}(既定 {@code true})——<b>名前と意味が\n反転していました</b>。「信頼する」が「何でも通す」を意味していたのです。\n</p>\n\n<p>\n新しい名前は {@link #INSECURE}({@code jp.cssj.driver.tls.insecure})で、\n既定は {@code false}(＝検証する)。自己署名の証明書を使う試験用サーバーへ\n繋ぐときだけ {@code true} にしてください。\n</p>\n\n<h2>優先順位</h2>\n\n<p>\n新しい名前が指定されていれば<b>それだけ</b>を見ます。指定されていないときだけ\n旧名を見て、{@code true} なら検証しないものとして扱います。\n<b>{@code insecure=false} が旧名の {@code true} に負けることはありません。</b>\n</p>\n\n<h2>CTIP と REST で意味が違う</h2>\n\n<p>\n{@code insecure=true} のとき、CTIP は<b>何でも通します</b>。RESTは\n<b>証明書チェーンが1つだけのものを信頼扱いにし</b>、それ以外は通常の検証へ\n委ねます(HttpClient の {@code TrustSelfSignedStrategy})。どちらも\n試験用の逃げ道であって、本番で使うものではありません。\n</p>"
   },
   "jp.cssj.cti2.TLSPolicy#INSECURE": {
+    "hash": "d39fb87dc6eb7aca",
+    "en": "Whether to skip server certificate verification. Defaults to {@code false} (verification enabled).",
     "ja": "サーバー証明書を検証しないかどうか。既定は{@code false}(検証する)。"
   },
   "jp.cssj.cti2.TLSPolicy#LEGACY_TRUST": {
+    "hash": "ff7927ca0abb46dd",
+    "en": "The legacy name. It meant \"accept anything,\" which was the opposite of what the name suggested.\n\n@deprecated Use {@link #INSECURE}.",
     "ja": "旧名です。意味は「何でも通す」で、名前と反転していました。\n\n@deprecated {@link #INSECURE}を使ってください。"
   },
   "jp.cssj.cti2.TLSPolicy#isInsecure()": {
+    "hash": "cdc7f7aff0ef8ad3",
+    "en": "Returns whether to skip server certificate verification.",
     "ja": "サーバー証明書の検証を省くかどうかです。"
   },
   "jp.cssj.cti2.TranscoderException": {
+    "hash": "a46aa4cbdd5013f6",
+    "en": "An exception that indicates document conversion has been aborted.\n\n@author MIYABE Tatsuhiko\n@version $Id: TranscoderException.java 1552 2018-04-26 01:43:24Z miyabe $",
     "ja": "ドキュメントの変換を中断したことを示す例外です。\n\n@author MIYABE Tatsuhiko\n@version $Id: TranscoderException.java 1552 2018-04-26 01:43:24Z miyabe $"
   },
   "jp.cssj.cti2.TranscoderException#STATE_BROKEN": {
+    "hash": "2a931fcf8b737727",
+    "en": "The conversion result data is corrupt.",
     "ja": "変換結果のデータは破壊されています。"
   },
   "jp.cssj.cti2.TranscoderException#STATE_READABLE": {
+    "hash": "ee789c022cca90c2",
+    "en": "The conversion result is incomplete, but the data is usable.",
     "ja": "変換結果は不完全ですが、利用可能なデータです。"
   },
   "jp.cssj.cti2.TranscoderException#getArgs()": {
+    "hash": "d35147d70fc96203",
+    "en": "The values associated with the message.\n\n@return The message arguments.",
     "ja": "メッセージに付随する値です。\n\n@return メッセージの引数。"
   },
   "jp.cssj.cti2.TranscoderException#getCode()": {
+    "hash": "d75460bd9f5d19e9",
+    "en": "The message code that caused the abort.\n\n@return The message code.",
     "ja": "中断の原因となったメッセージコードです。\n\n@return メッセージコード。"
   },
   "jp.cssj.cti2.TranscoderException#getState()": {
+    "hash": "431c4f135f97b555",
+    "en": "Returns the state after conversion (a STATE_XXX constant).\n\n@return The state constant after conversion.",
     "ja": "変換後の状態(STATE_XXX定数)を返します。\n\n@return 変換後の状態定数。"
   },
+  "jp.cssj.cti2.examples.ClientResource": {
+    "hash": "95a25a668b9b85e7",
+    "en": "Converts data sent from the client.",
+    "ja": "クライアントから送ったデータを変換します。"
+  },
+  "jp.cssj.cti2.examples.Continuous": {
+    "hash": "95a25a668b9b85e7",
+    "en": "Converts data sent from the client.",
+    "ja": "クライアントから送ったデータを変換します。"
+  },
+  "jp.cssj.cti2.examples.ServerInfo": {
+    "hash": "df34e0a739f6f57d",
+    "en": "Retrieves server information.",
+    "ja": "サーバーの情報を取得します。"
+  },
+  "jp.cssj.cti2.examples.ServerResource": {
+    "hash": "010c5157c0405e8b",
+    "en": "Retrieves data on the server and converts it.",
+    "ja": "サーバー側のデータを取得して変換します。"
+  },
   "jp.cssj.cti2.helpers.CTIHttpServletResponseWrapper": {
+    "hash": "f77b328549b0ef36",
+    "en": "Captures output from the servlet/JSP that receives a forwarded request and passes it to CTISession.\n\n@author MIYABE Tatsuhiko\n@version $Id: CTIHttpServletResponseWrapper.java 694 2011-09-27 11:48:14Z\n         miyabe $",
     "ja": "転送先のサーブレット/JSPの出力をキャプチャしてCTISessionに渡します。\n\n@author MIYABE Tatsuhiko\n@version $Id: CTIHttpServletResponseWrapper.java 694 2011-09-27 11:48:14Z\n         miyabe $"
   },
   "jp.cssj.cti2.helpers.CTIHttpServletResponseWrapper#CTIHttpServletResponseWrapper(HttpServletResponse,CTISession,URI)": {
+    "hash": "47656eade6c92095",
+    "en": "Equivalent to calling new CTIHttpServletResponseWrapper(response, session, uri, true).\n\n@param response\n           The response to wrap.\n@param session\n           The session to send data to.\n@param uri\n           The URI of the data.",
     "ja": "new CTIHttpServletResponseWrapper(response, session, uri, true)を呼び出すのと同等です。\n\n@param response\n           ラップするレスポンス。\n@param session\n           データ送信先のセッション。\n@param uri\n           データのURI。"
   },
   "jp.cssj.cti2.helpers.CTIHttpServletResponseWrapper#CTIHttpServletResponseWrapper(HttpServletResponse,CTISession,URI,boolean)": {
+    "hash": "bd8d5af3b5501197",
+    "en": "Wraps the specified response to create a response that sends data to the session.\n\n@param response\n           The response to wrap.\n@param session\n           The session to send data to.\n@param uri\n           The URI of the data.\n@param transcode\n           If false, passes the data as a resource; if true, as the main document.",
     "ja": "指定したレスポンスをラップし、セッションにデータを送るレスポンスを構築します。\n\n@param response\n           ラップするレスポンス。\n@param session\n           データ送信先のセッション。\n@param uri\n           データのURI。\n@param transcode\n           falseであればリソースとして、trueであればメインドキュメントとして渡す。"
   },
   "jp.cssj.cti2.helpers.CTIMessageCodes": {
+    "hash": "6b9cecc399f2f08a",
+    "en": "Message code constants.\n\n@author MIYABE Tatsuhiko\n@version $Id: CTIMessageCodes.java 1552 2018-04-26 01:43:24Z miyabe $",
     "ja": "メッセージコードの定数です。\n\n@author MIYABE Tatsuhiko\n@version $Id: CTIMessageCodes.java 1552 2018-04-26 01:43:24Z miyabe $"
   },
   "jp.cssj.cti2.helpers.CTIMessageCodes#ERROR_BAD_DOCUMENT_URI": {
+    "hash": "efb231233690cd88",
+    "en": "The URI of the main document is invalid.",
     "ja": "メインドキュメントのURIが不正である。"
   },
   "jp.cssj.cti2.helpers.CTIMessageCodes#ERROR_BUSY": {
+    "hash": "3555798d3c3b32c1",
+    "en": "Conversion cannot start because the server is busy (concurrent conversion limit reached; wait briefly and retry).",
     "ja": "混雑していて変換を始められない(サーバーの同時変換数の上限。少し待ってからやり直す)。"
   },
   "jp.cssj.cti2.helpers.CTIMessageCodes#ERROR_IO": {
+    "hash": "53fc56f79bde5fef",
+    "en": "Communication error.",
     "ja": "通信エラー。"
   },
   "jp.cssj.cti2.helpers.CTIMessageCodes#FATAL_UNEXPECTED": {
+    "hash": "f1178eb9fb3d63cf",
+    "en": "Unexpected error.",
     "ja": "予期しないエラー。"
   },
   "jp.cssj.cti2.helpers.CTIMessageCodes#INFO_ABORT": {
+    "hash": "d7748fc48ebae79f",
+    "en": "Processing is aborted normally.",
     "ja": "処理を正常に中断した。"
   },
   "jp.cssj.cti2.helpers.CTIMessageCodes#WARN_BAD_BASE_URI": {
+    "hash": "ac96437eba32461d",
+    "en": "The base URI of the main document is invalid.",
     "ja": "メインドキュメントのベースURIが不正である。"
   },
   "jp.cssj.cti2.helpers.CTIMessageCodes#WARN_BAD_RESOURCE_URI": {
+    "hash": "d3d3cddbc30219d9",
+    "en": "The resource URI is invalid.",
     "ja": "リソースのURIが不正である。"
   },
   "jp.cssj.cti2.helpers.CTIMessageHelper": {
+    "hash": "7b20a1f2ff06cd8e",
+    "en": "Message utilities.\n\n@author MIYABE Tatsuhiko\n@version $Id: CTIMessageHelper.java 1552 2018-04-26 01:43:24Z miyabe $",
     "ja": "メッセージ関係の補助ツールです。\n\n@author MIYABE Tatsuhiko\n@version $Id: CTIMessageHelper.java 1552 2018-04-26 01:43:24Z miyabe $"
   },
   "jp.cssj.cti2.helpers.CTIMessageHelper#ERROR": {
+    "hash": "fd7779435dcbc2cb",
+    "en": "An error-level message.",
     "ja": "エラーレベルメッセージです。"
   },
   "jp.cssj.cti2.helpers.CTIMessageHelper#FATAL": {
+    "hash": "05b57a5ffa7c7147",
+    "en": "A fatal error message.",
     "ja": "深刻なエラーレベルメッセージです。"
   },
   "jp.cssj.cti2.helpers.CTIMessageHelper#INFO": {
+    "hash": "743fffb4fe95f0b2",
+    "en": "An information-level message.",
     "ja": "情報レベルメッセージです。"
   },
   "jp.cssj.cti2.helpers.CTIMessageHelper#NULL": {
+    "hash": "069c573b1a2d7be7",
+    "en": "A message handler that displays nothing.",
     "ja": "どこにも表示しないメッセージハンドラです。"
   },
   "jp.cssj.cti2.helpers.CTIMessageHelper#STDERR": {
+    "hash": "fc8c59015caa5d67",
+    "en": "A message handler that writes to standard error.\n\n@deprecated Use createStreamMessageHandler(System.err).",
     "ja": "標準出エラー出力に表示するメッセージハンドラです。\n\n@deprecated createStreamMessageHandler(System.err)を使用してください。"
   },
   "jp.cssj.cti2.helpers.CTIMessageHelper#STDOUT": {
+    "hash": "6139260054ee82e7",
+    "en": "A message handler that writes to standard output.\n\n@deprecated Use createStreamMessageHandler(System.out).",
     "ja": "標準出力に表示するメッセージハンドラです。\n\n@deprecated createStreamMessageHandler(System.out)を使用してください。"
   },
   "jp.cssj.cti2.helpers.CTIMessageHelper#WARN": {
+    "hash": "c1f63659c1de234f",
+    "en": "A warning-level message.",
     "ja": "警告レベルメッセージです。"
   },
   "jp.cssj.cti2.helpers.CTIMessageHelper#getFormat(short)": {
+    "hash": "fa705f065a59c444",
+    "en": "Returns the message format for the message code.\n\n@param code\n@return The java.text.MessageFormat pattern for the message code.",
     "ja": "メッセージコードに対応するメッセージフォーマットを返します。\n\n@param code\n@return メッセージコードに対応するjava.text.MessageFormat形式の文字列。"
   },
   "jp.cssj.cti2.helpers.CTIMessageHelper#getLevel(short)": {
+    "hash": "d2d39b296602009a",
+    "en": "Returns the error level.\n\n@param code\n@return The error level value.",
     "ja": "エラーレベルを返します。\n\n@param code\n@return エラーレベルの値。"
   },
   "jp.cssj.cti2.helpers.CTIMessageHelper#toString(short,String[])": {
+    "hash": "a19fca7ebeee84ed",
+    "en": "Converts the message to a string.\n\n@param code\n@return The message as a string.",
     "ja": "メッセージを文字列化します。\n\n@param code\n@return 文字列化したメッセージ。"
   },
   "jp.cssj.cti2.helpers.CTISessionHelper": {
+    "hash": "d8f8fd378f7fb997",
+    "en": "Utilities for sending client-side files, URLs, and streams.\n\n@author MIYABE Tatsuhiko\n@version $Id: CTISessionHelper.java 1552 2018-04-26 01:43:24Z miyabe $",
     "ja": "クライアント側のファイル、URL、ストリームを送るためのユーティリティです。\n\n@author MIYABE Tatsuhiko\n@version $Id: CTISessionHelper.java 1552 2018-04-26 01:43:24Z miyabe $"
   },
   "jp.cssj.cti2.helpers.CTISessionHelper#properties(CTISession,Properties)": {
+    "hash": "699fe07031bc4f1e",
+    "en": "Sets multiple properties at once.\n\n@param session\n@param props\n@throws IOException",
     "ja": "プロパティをまとめて設定します。\n\n@param session\n@param props\n@throws IOException"
   },
   "jp.cssj.cti2.helpers.CTISessionHelper#sendResourceDir(CTISession,File,String,String)": {
+    "hash": "7ea75a89a1fc1b6a",
+    "en": "Sends all files in a directory as resources. This method also processes subdirectories recursively.\n\n@param session\n           The session\n@param dir\n           The directory\n@param mimeType\n           The MIME type (null if omitted)\n@param encoding\n           The encoding (null if omitted)\n@throws IOException",
     "ja": "リソースとして、ディレクトリ内のファイルを全て送信します。 このメソッドは子ディレクトリも再帰的に処理します。\n\n@param session\n           セッション\n@param dir\n           ディレクトリ\n@param mimeType\n           MIME型(省略する場合はnull)\n@param encoding\n           エンコーディング(省略する場合はnull)\n@throws IOException"
   },
   "jp.cssj.cti2.helpers.CTISessionHelper#sendResourceFile(CTISession,File,String,String)": {
+    "hash": "2ddb2b38acbac841",
+    "en": "Sends a file as a resource.\n\n@param session\n           The session\n@param file\n           The file\n@param mimeType\n           The MIME type (null if omitted)\n@param encoding\n           The encoding (null if omitted)\n@throws IOException",
     "ja": "リソースとしてファイルを送信します。\n\n@param session\n           セッション\n@param file\n           ファイル\n@param mimeType\n           MIME型(省略する場合はnull)\n@param encoding\n           エンコーディング(省略する場合はnull)\n@throws IOException"
   },
   "jp.cssj.cti2.helpers.CTISessionHelper#sendResourceStream(CTISession,InputStream,URI,String,String)": {
+    "hash": "ce3457c702ec7619",
+    "en": "Sends data read from a stream as a resource.\n\n@param session\n           The session\n@param in\n           The input stream\n@param mimeType\n           The MIME type (null if omitted)\n@param encoding\n           The encoding (null if omitted)\n@throws IOException",
     "ja": "リソースとしてストリームから取り出されるデータを送信します。\n\n@param session\n           セッション\n@param in\n           入力ストリーム\n@param mimeType\n           MIME型(省略する場合はnull)\n@param encoding\n           エンコーディング(省略する場合はnull)\n@throws IOException"
   },
   "jp.cssj.cti2.helpers.CTISessionHelper#sendResourceURL(CTISession,URL,String,String)": {
+    "hash": "b2b44cf6fb472cac",
+    "en": "Sends a URL as a resource.\n\n@param session\n           The session\n@param url\n           URL\n@param mimeType\n           The MIME type (null if omitted)\n@param encoding\n           The encoding (null if omitted)\n@throws IOException",
     "ja": "リソースとしてURLを送信します。\n\n@param session\n           セッション\n@param url\n           URL\n@param mimeType\n           MIME型(省略する場合はnull)\n@param encoding\n           エンコーディング(省略する場合はnull)\n@throws IOException"
   },
   "jp.cssj.cti2.helpers.CTISessionHelper#setResultFile(CTISession,File)": {
+    "hash": "74bfef84bfe96f21",
+    "en": "Sets the output file.\n\n@param session\n@param file\n@throws IOException",
     "ja": "出力先ファイルを設定します。\n\n@param session\n@param file\n@throws IOException"
   },
   "jp.cssj.cti2.helpers.CTISessionHelper#setResultStream(CTISession,OutputStream)": {
+    "hash": "c5e65c3697d62e59",
+    "en": "Sets the output stream.\n\n@param session\n@param out\n@throws IOException",
     "ja": "出力先ストリームを設定します。\n\n@param session\n@param out\n@throws IOException"
   },
   "jp.cssj.cti2.helpers.CTISessionHelper#transcodeFile(CTISession,File,String,String)": {
+    "hash": "d2382c15591ad356",
+    "en": "Sends a file as the document body.\n\n@param session\n           The session\n@param file\n           The file\n@param mimeType\n           The MIME type (null if omitted)\n@param encoding\n           The encoding (null if omitted)\n@throws IOException",
     "ja": "本体としてファイルを送信します。\n\n@param session\n           セッション\n@param file\n           ファイル\n@param mimeType\n           MIME型(省略する場合はnull)\n@param encoding\n           エンコーディング(省略する場合はnull)\n@throws IOException"
   },
   "jp.cssj.cti2.helpers.CTISessionHelper#transcodeStream(CTISession,InputStream,URI,String,String)": {
+    "hash": "ff2dda961c236380",
+    "en": "Sends data read from a stream as the document body.\n\n@param session\n           The session\n@param in\n           The input stream\n@param mimeType\n           The MIME type (null if omitted)\n@param encoding\n           The encoding (null if omitted)\n@throws IOException",
     "ja": "本体としてストリームから取り出されるデータを送信します。\n\n@param session\n           セッション\n@param in\n           入力ストリーム\n@param mimeType\n           MIME型(省略する場合はnull)\n@param encoding\n           エンコーディング(省略する場合はnull)\n@throws IOException"
   },
   "jp.cssj.cti2.helpers.CTISessionHelper#transcodeURL(CTISession,URL,String,String)": {
+    "hash": "7c80a9e392050f0b",
+    "en": "Sends a URL as the document body.\n\n@param session\n           The session\n@param url\n           URL\n@param mimeType\n           The MIME type (null if omitted)\n@param encoding\n           The encoding (null if omitted)\n@throws IOException",
     "ja": "本体としてURLを送信します。\n\n@param session\n           セッション\n@param url\n           URL\n@param mimeType\n           MIME型(省略する場合はnull)\n@param encoding\n           エンコーディング(省略する場合はnull)\n@throws IOException"
   },
   "jp.cssj.cti2.helpers.DefaultMetaSource": {
+    "hash": "eaa2c1e187cdd28f",
+    "en": "Default metadata for data.\n\n@deprecated Use net.zamasoft.zstream.resolver.util.SimpleSourceMetadata.\n@author MIYABE Tatsuhiko\n@version $Id: DefaultMetaSource.java 1552 2018-04-26 01:43:24Z miyabe $",
     "ja": "デフォルトのデータのメタ情報です。\n\n@deprecated net.zamasoft.zstream.resolver.util.SimpleSourceMetadataを使ってください。\n@author MIYABE Tatsuhiko\n@version $Id: DefaultMetaSource.java 1552 2018-04-26 01:43:24Z miyabe $"
   },
   "jp.cssj.cti2.helpers.MimeTypeHelper": {
+    "hash": "c183db0bd16f8710",
+    "en": "A helper class for parsing MIME types.\n\n@author MIYABE Tatsuhiko\n@version $Id: MimeTypeHelper.java 1552 2018-04-26 01:43:24Z miyabe $",
     "ja": "MIME方を解析する補助クラスです。\n\n@author MIYABE Tatsuhiko\n@version $Id: MimeTypeHelper.java 1552 2018-04-26 01:43:24Z miyabe $"
   },
   "jp.cssj.cti2.helpers.MimeTypeHelper#equals(String,String)": {
+    "hash": "54973632c10ae9cd",
+    "en": "Determines whether two MIME types are equal, ignoring their parameters.\n\n@param type1\n           The first MIME type.\n@param type2\n           The second MIME type.\n@return true if the two types match; false otherwise.",
     "ja": "2つのMIMEタイプがパラメータを除いて同じがどうかを判別します。\n\n@param type1\n           MIME型1。\n@param type2\n           MIME型2。\n@return 2つのタイプが一致していればtrue、そうでなければfalse。"
   },
   "jp.cssj.cti2.helpers.MimeTypeHelper#getParameter(String,String)": {
+    "hash": "ba1439bae152079d",
+    "en": "Returns the value of a Content-Type header parameter.\n\n@param type\n           The Content-Type header value.\n@param name\n           The parameter name.\n@return The parameter value.",
     "ja": "Content-Typeヘッダパラメータの値を返します。\n\n@param type\n           Content-Typeヘッダ値。\n@param name\n           パラメータ名。\n@return パラメータの値。"
   },
   "jp.cssj.cti2.helpers.MimeTypeHelper#getTypePart(String)": {
+    "hash": "b9e0d538041ac538",
+    "en": "Returns the part excluding parameters.\n\n@param type\n           The MIME type.\n@return The MIME type without its parameters.",
     "ja": "パラメータを除いた部分を返します。\n\n@param type\n           MIME型。\n@return MIME型のパラメータを除いた部分。"
   },
   "jp.cssj.cti2.helpers.ServletHelper": {
+    "hash": "fc4571a8c1063229",
+    "en": "Utilities for using a document conversion server from a servlet.\n\n@author MIYABE Tatsuhiko\n@version $Id: ServletHelper.java 1552 2018-04-26 01:43:24Z miyabe $",
     "ja": "サーブレットからドキュメント変換サーバーを利用する際のユーティリティです。\n\n@author MIYABE Tatsuhiko\n@version $Id: ServletHelper.java 1552 2018-04-26 01:43:24Z miyabe $"
   },
   "jp.cssj.cti2.helpers.ServletHelper#getContentType(SourceMetadata)": {
+    "hash": "c4fcc26832a2ce10",
+    "en": "Returns a Content-Type header value with a charset parameter.\n\n@param SourceMetadata\n           Metadata for the data.\n@return The Content-Type header with a charset parameter.",
     "ja": "charsetパラメータつきのContent-Typeヘッダ値を返します。\n\n@param SourceMetadata\n           データのメタ情報。\n@return charsetパラメータつきのContent-Typeヘッダ。"
   },
   "jp.cssj.cti2.helpers.ServletHelper#setServletResponse(CTISession,ServletResponse)": {
+    "hash": "587b6b7f343b6ca9",
+    "en": "Sets a ServletResponse as the session's output destination.\n\n@param session\n           The session whose output destination you want to set.\n@param response\n           The response to output the results to.\n@throws IOException",
     "ja": "セッションの出力先にServletResponseを設定します。\n\n@param session\n           出力先を設定するセッション。\n@param response\n           結果の出力際のレスポンス。\n@throws IOException"
   },
   "jp.cssj.cti2.helpers.ServletResponseResults": {
+    "hash": "fcc15b46adf9b33a",
+    "en": "Sends the built data as a servlet response.\n\n@author MIYABE Tatsuhiko\n@version $Id: ServletResponseResults.java 1552 2018-04-26 01:43:24Z miyabe $",
     "ja": "構築したデータをサーブレットのレスポンスとして送り出します。\n\n@author MIYABE Tatsuhiko\n@version $Id: ServletResponseResults.java 1552 2018-04-26 01:43:24Z miyabe $"
   },
   "jp.cssj.cti2.helpers.URIHelper": {
+    "hash": "96607741bc4007d6",
+    "en": "A helper class for parsing URIs. It parses more flexibly than Java's URI class.\n\n@deprecated Use net.zamasoft.zstream.resolver.util.URIHelper.\n@author MIYABE Tatsuhiko\n@version $Id: URIHelper.java 1552 2018-04-26 01:43:24Z miyabe $",
     "ja": "URI解析の補助クラスです。 JavaのURIクラスよりも柔軟に解析します。\n\n@deprecated net.zamasoft.zstream.resolver.util.URIHelperを使ってください。\n@author MIYABE Tatsuhiko\n@version $Id: URIHelper.java 1552 2018-04-26 01:43:24Z miyabe $"
   },
   "jp.cssj.cti2.helpers.URIHelper#create(String,String)": {
+    "hash": "aed4ab8488f067a1",
+    "en": "Creates a URI.\n\n@param encoding\n           The encoding for multibyte characters.\n@param href\n           The URI string.\n@return The created URI.\n@throws URISyntaxException",
     "ja": "URIを生成します。\n\n@param encoding\n           マルチバイト文字のエンコーディング。\n@param href\n           URI文字列。\n@return 生成したURI。\n@throws URISyntaxException"
   },
   "jp.cssj.cti2.helpers.URIHelper#resolve(String,URI,String)": {
+    "hash": "aef6d0f82c76e34c",
+    "en": "Resolves a relative URI.\n\n@param encoding\n           The encoding for multibyte characters.\n@param baseURI\n           The base URI.\n@param href\n           The relative URI string.\n@return The created URI.\n@throws URISyntaxException",
     "ja": "相対URIを解決します。\n\n@param encoding\n           マルチバイト文字のエンコーディング。\n@param baseURI\n           基底URI。\n@param href\n           相対URI文字列。\n@return 生成したURI。\n@throws URISyntaxException"
   },
   "jp.cssj.cti2.helpers.jakarta.CTIHttpServletResponseWrapper": {
+    "hash": "f77b328549b0ef36",
+    "en": "Captures output from the servlet/JSP that receives a forwarded request and passes it to CTISession.\n\n@author MIYABE Tatsuhiko\n@version $Id: CTIHttpServletResponseWrapper.java 694 2011-09-27 11:48:14Z\n         miyabe $",
     "ja": "転送先のサーブレット/JSPの出力をキャプチャしてCTISessionに渡します。\n\n@author MIYABE Tatsuhiko\n@version $Id: CTIHttpServletResponseWrapper.java 694 2011-09-27 11:48:14Z\n         miyabe $"
   },
   "jp.cssj.cti2.helpers.jakarta.CTIHttpServletResponseWrapper#CTIHttpServletResponseWrapper(HttpServletResponse,CTISession,URI)": {
+    "hash": "47656eade6c92095",
+    "en": "Equivalent to calling new CTIHttpServletResponseWrapper(response, session, uri, true).\n\n@param response\n           The response to wrap.\n@param session\n           The session to send data to.\n@param uri\n           The URI of the data.",
     "ja": "new CTIHttpServletResponseWrapper(response, session, uri, true)を呼び出すのと同等です。\n\n@param response\n           ラップするレスポンス。\n@param session\n           データ送信先のセッション。\n@param uri\n           データのURI。"
   },
   "jp.cssj.cti2.helpers.jakarta.CTIHttpServletResponseWrapper#CTIHttpServletResponseWrapper(HttpServletResponse,CTISession,URI,boolean)": {
+    "hash": "bd8d5af3b5501197",
+    "en": "Wraps the specified response to create a response that sends data to the session.\n\n@param response\n           The response to wrap.\n@param session\n           The session to send data to.\n@param uri\n           The URI of the data.\n@param transcode\n           If false, passes the data as a resource; if true, as the main document.",
     "ja": "指定したレスポンスをラップし、セッションにデータを送るレスポンスを構築します。\n\n@param response\n           ラップするレスポンス。\n@param session\n           データ送信先のセッション。\n@param uri\n           データのURI。\n@param transcode\n           falseであればリソースとして、trueであればメインドキュメントとして渡す。"
   },
   "jp.cssj.cti2.helpers.jakarta.ServletHelper": {
+    "hash": "fc4571a8c1063229",
+    "en": "Utilities for using a document conversion server from a servlet.\n\n@author MIYABE Tatsuhiko\n@version $Id: ServletHelper.java 1552 2018-04-26 01:43:24Z miyabe $",
     "ja": "サーブレットからドキュメント変換サーバーを利用する際のユーティリティです。\n\n@author MIYABE Tatsuhiko\n@version $Id: ServletHelper.java 1552 2018-04-26 01:43:24Z miyabe $"
   },
   "jp.cssj.cti2.helpers.jakarta.ServletHelper#getContentType(SourceMetadata)": {
+    "hash": "c4fcc26832a2ce10",
+    "en": "Returns a Content-Type header value with a charset parameter.\n\n@param SourceMetadata\n           Metadata for the data.\n@return The Content-Type header with a charset parameter.",
     "ja": "charsetパラメータつきのContent-Typeヘッダ値を返します。\n\n@param SourceMetadata\n           データのメタ情報。\n@return charsetパラメータつきのContent-Typeヘッダ。"
   },
   "jp.cssj.cti2.helpers.jakarta.ServletHelper#setServletResponse(CTISession,ServletResponse)": {
+    "hash": "587b6b7f343b6ca9",
+    "en": "Sets a ServletResponse as the session's output destination.\n\n@param session\n           The session whose output destination you want to set.\n@param response\n           The response to output the results to.\n@throws IOException",
     "ja": "セッションの出力先にServletResponseを設定します。\n\n@param session\n           出力先を設定するセッション。\n@param response\n           結果の出力際のレスポンス。\n@throws IOException"
   },
   "jp.cssj.cti2.helpers.jakarta.ServletResponseResults": {
+    "hash": "fcc15b46adf9b33a",
+    "en": "Sends the built data as a servlet response.\n\n@author MIYABE Tatsuhiko\n@version $Id: ServletResponseResults.java 1552 2018-04-26 01:43:24Z miyabe $",
     "ja": "構築したデータをサーブレットのレスポンスとして送り出します。\n\n@author MIYABE Tatsuhiko\n@version $Id: ServletResponseResults.java 1552 2018-04-26 01:43:24Z miyabe $"
   },
   "jp.cssj.cti2.message.MessageHandler": {
+    "hash": "49335811839afde1",
+    "en": "An interface for receiving messages.\n\n@author MIYABE Tatsuhiko\n@version $Id: MessageHandler.java 1552 2018-04-26 01:43:24Z miyabe $",
     "ja": "メッセージを受け取るインターフェースです。\n\n@author MIYABE Tatsuhiko\n@version $Id: MessageHandler.java 1552 2018-04-26 01:43:24Z miyabe $"
   },
   "jp.cssj.cti2.message.MessageHandler#message(short,String[],String)": {
+    "hash": "a4d675be4f58919f",
+    "en": "Receives a message.\n\n@param code\n           The message code.\n@param args\n           The values associated with the message.\n@param mes\n           The message in a human-readable format.",
     "ja": "メッセージ受け取ります。\n\n@param code\n           メッセージコード。\n@param args\n           メッセージに付随する値。\n@param mes\n           人間が読める形式のメッセージ。"
   },
   "jp.cssj.cti2.progress.ProgressAdapter": {
+    "hash": "31f82f5ff7fe1b75",
+    "en": "An adapter that simplifies implementing ProgressListenter.\n\n@author MIYABE Tatsuhiko\n@version $Id: ProgressAdapter.java 1552 2018-04-26 01:43:24Z miyabe $",
     "ja": "ProgressListenterの実装を容易にするためのアダプタです。\n\n@author MIYABE Tatsuhiko\n@version $Id: ProgressAdapter.java 1552 2018-04-26 01:43:24Z miyabe $"
   },
   "jp.cssj.cti2.progress.ProgressListener": {
+    "hash": "74b8e9f7eaba5441",
+    "en": "Receives updates on the server's progress in processing the main document.\n\n@author MIYABE Tatsuhiko\n@version $Id: ProgressListener.java 1552 2018-04-26 01:43:24Z miyabe $",
     "ja": "サーバ側でのメインドキュメントの処理状況を受け取ります。\n\n@author MIYABE Tatsuhiko\n@version $Id: ProgressListener.java 1552 2018-04-26 01:43:24Z miyabe $"
   },
   "jp.cssj.cti2.progress.ProgressListener#progress(long)": {
+    "hash": "11f0ae2e6662d9dd",
+    "en": "Receives the number of bytes of the main document that have been processed.\n<p>\nThis method may not be called, and the value passed to it may be inaccurate.\n</p>\n\n@param serverRead\n           The number of bytes read.",
     "ja": "処理されたメインドキュメントのバイト数が渡されます。\n<p>\nこのメソッドは呼ばれないことがあり、不正確な値が渡される可能性もあります。\n</p>\n\n@param serverRead\n           読み込み済みバイト数。"
   },
   "jp.cssj.cti2.progress.ProgressListener#sourceLength(long)": {
+    "hash": "6b6d386185efbc5a",
+    "en": "<p>\nReceives the server's estimate of the main document's size.\n</p>\n<p>\nThis method may not be called, and the value passed to it may be inaccurate.\n</p>\n\n@param sourceLength\n           The size of the main document in bytes.",
     "ja": "<p>\nサーバ側で見積もられたメインドキュメントの大きさが渡されます。\n</p>\n<p>\nこのメソッドは呼ばれないことがあり、不正確な値が渡される可能性もあります。\n</p>\n\n@param sourceLength\n           メインドキュメントのバイト数。"
   },
   "jp.cssj.cti2.progress.Progressive": {
+    "hash": "2238c4ba1fa9e5ee",
+    "en": "An interface that represents progress.\n\n@author MIYABE Tatsuhiko\n@version $Id: Progressive.java 1552 2018-04-26 01:43:24Z miyabe $",
     "ja": "進行状況を表すインターフェースです。\n\n@author MIYABE Tatsuhiko\n@version $Id: Progressive.java 1552 2018-04-26 01:43:24Z miyabe $"
   },
   "jp.cssj.cti2.progress.Progressive#getProgress()": {
+    "hash": "9ca25edea4beafe7",
+    "en": "Returns the number of bytes of the original data that have been processed.\n\n@return The number of bytes processed.",
     "ja": "元のデータで処理済のバイト数を返します。\n\n@return 処理済のバイト数。"
   },
   "jp.cssj.cti2.results.DirectoryResults": {
+    "hash": "c94dec30d8793933",
+    "en": "A Results implementation that outputs multiple results to a directory.\n\n@author MIYABE Tatsuhiko\n@version $Id: DirectoryResults.java 1552 2018-04-26 01:43:24Z miyabe $",
     "ja": "ディレクトリに複数の結果を出力するResultsです。\n\n@author MIYABE Tatsuhiko\n@version $Id: DirectoryResults.java 1552 2018-04-26 01:43:24Z miyabe $"
   },
   "jp.cssj.cti2.results.DirectoryResults#DirectoryResults(File,String,String)": {
+    "hash": "a2e3eb2f9ec22f52",
+    "en": "Constructs an object with the specified output directory and file name prefix and suffix.\n<p>\nOutputs files to dir, with file names formed by concatenating prefix,\na sequence number starting at 1, and suffix.\n</p>\n\n@param dir\n           The output directory.\n@param prefix\n           The string to prepend to the file name.\n@param suffix\n           The string to append to the file name.",
     "ja": "出力先ディレクトリとファイル名の前後を指定してオブジェクトを構築します。\n<p>\nファイルはdirに出力され、ファイル名は prefix, 1から始まる通し番号, suffixを連結したものとなります。\n</p>\n\n@param dir\n           出力先ディレクトリです。\n@param prefix\n           ファイル名の前に付ける文字列です。\n@param suffix\n           ファイル名の後に付ける文字列です。"
   },
   "jp.cssj.cti2.results.NopResults": {
+    "hash": "d34c8f90589b656c",
+    "en": "A Results implementation that outputs nothing.\n\n@author MIYABE Tatsuhiko\n@version $Id: NopResults.java 1552 2018-04-26 01:43:24Z miyabe $",
     "ja": "何も出力しないResultsです。\n\n@author MIYABE Tatsuhiko\n@version $Id: NopResults.java 1552 2018-04-26 01:43:24Z miyabe $"
   },
+  "jp.cssj.cti2.results.ResourceDirectoryResults": {
+    "hash": "ecc8da9a8f0ddfe5",
+    "en": "Stores multi-part results at the relative URI supplied in each result's\nmetadata.  Unlike {@link DirectoryResults}, this preserves resource paths\nsuch as {@code pages/0001.svg} and {@code assets/fonts/font-0001.woff2}.\n\n<p>The URI is treated as untrusted input. Absolute paths, traversal,\nfragments, queries, duplicate names and existing targets are rejected.</p>\n\n<p>A result numbered by the engine ({@code #1}, {@code #2}... — one page of\nPNG or JPEG output each) is stored as {@code page-0001.png} and so on, the\nextension taken from its media type (2026-10-04; the CLI's {@code -outdir}\nrefused image output as an unsafe URI).</p>\n\n@since 2.2",
+    "ja": "複数の部分からなる結果を、各結果のメタ情報が示す相対URIの位置に保存します。\n{@link DirectoryResults}と違い、{@code pages/0001.svg}や{@code assets/fonts/font-0001.woff2}のような\nリソースのパスを保ちます。\n\n<p>URIは信頼できない入力として扱います。絶対パス、上位ディレクトリへの遡り、\nフラグメント、クエリ、重複する名前、既存の保存先は拒否します。</p>\n\n<p>エンジンが番号を付けた結果({@code #1}、{@code #2}…——PNGやJPEGの出力の1ページずつ)は、\n{@code page-0001.png}などの名前で保存し、拡張子はそのMIME型から決めます(2026-10-04。\nCLIの{@code -outdir}が画像出力を安全でないURIとして拒否していた)。</p>\n\n@since 2.2"
+  },
   "jp.cssj.cti2.results.Results": {
+    "hash": "f9498031e7b4a683",
+    "en": "Processing results.\n\n@author MIYABE Tatsuhiko\n@version $Id: Results.java 1552 2018-04-26 01:43:24Z miyabe $",
     "ja": "処理結果です。\n\n@author MIYABE Tatsuhiko\n@version $Id: Results.java 1552 2018-04-26 01:43:24Z miyabe $"
   },
   "jp.cssj.cti2.results.Results#end()": {
+    "hash": "7d58216c20ee0505",
+    "en": "Completes the sequence of data outputs.\n<p>\nFor a normal conversion, this is called once after all result builders are closed. For continuous conversion,\nit is not called for individual {@code transcode} calls, but is called once at the final {@code join}.\n</p>\n\n@throws IOException",
     "ja": "一連のデータ出力を完了します。\n<p>\n通常の変換では全結果のビルダが閉じられた後に1回呼ばれます。連続変換では\n個々の{@code transcode}では呼ばれず、最終的な{@code join}で1回呼ばれます。\n</p>\n\n@throws IOException"
   },
   "jp.cssj.cti2.results.Results#hasNext()": {
+    "hash": "bf2c84c629e6eb9c",
+    "en": "Returns true if the next result can be output.\n\n@return true if the next result can be output; false otherwise.",
     "ja": "次の結果を出力可能であればtrueを返します。\n\n@return 次の結果を出力可能であればtrueそうでなければfalse。"
   },
   "jp.cssj.cti2.results.Results#nextBuilder(SourceMetadata)": {
+    "hash": "e9af6f804a4b0149",
+    "en": "Returns a builder for constructing the next processing result.\n\n@param SourceMetadata\n           Metadata for the output data.\n@return The data builder object.\n@throws IOException",
     "ja": "次の処理結果を構築するためのビルダを返します。\n\n@param SourceMetadata\n           出力データのメタ情報。\n@return データ構築オブジェクト。\n@throws IOException"
   },
   "jp.cssj.cti2.results.SingleResult": {
+    "hash": "bdf84507c9f7ecb1",
+    "en": "A Results implementation that outputs a single result.\n\n@author MIYABE Tatsuhiko\n@version $Id: SingleResult.java 1552 2018-04-26 01:43:24Z miyabe $",
     "ja": "単一の結果を出力するResultsです。\n\n@author MIYABE Tatsuhiko\n@version $Id: SingleResult.java 1552 2018-04-26 01:43:24Z miyabe $"
   },
   "jp.cssj.cti2.results.SingleResult#SingleResult(File)": {
+    "hash": "96d84ec0a1be8d95",
+    "en": "Outputs data to a file.\n\n@param file",
     "ja": "ファイルにデータを出力します。\n\n@param file"
   },
   "jp.cssj.cti2.results.SingleResult#SingleResult(FragmentedOutput)": {
+    "hash": "8847b16308d41d51",
+    "en": "Outputs to a single data builder object.\n\n@param builder",
     "ja": "1つのデータ構築オブジェクトに対して出力します。\n\n@param builder"
   },
   "jp.cssj.cti2.results.SingleResult#SingleResult(OutputStream)": {
+    "hash": "0aff13eebe7e1123",
+    "en": "Outputs data to an OutputStream.\n\n@param out",
     "ja": "OutputStreamにデータを出力します。\n\n@param out"
   },
   "jp.cssj.cti2.results.SingleResult#builder": {
+    "hash": "3673e300647a057f",
+    "en": "The data builder object that receives output.",
     "ja": "出力先のデータ構築オブジェクトです。"
   },
+  "jp.cssj.driver.ant.TranscodeTask": {
+    "hash": "006b18b02f5ebefd",
+    "en": "A task that converts documents with Copper PDF.\n\n@author MIYABE Tatsuhiko\n@version $Id: TranscodeTask.java 1552 2018-04-26 01:43:24Z miyabe $",
+    "ja": "Copper PDFで文書を変換するタスクです。\n\n@author MIYABE Tatsuhiko\n@version $Id: TranscodeTask.java 1552 2018-04-26 01:43:24Z miyabe $"
+  },
+  "jp.cssj.driver.ant.TranscodeTask#createProperty()": {
+    "hash": "bbf2e9ede3038f32",
+    "en": "Creates a &lt;property name=\"\" value=\"\"&gt; element.\n\n@return",
+    "ja": "&lt;property name=\"\" value=\"\"&gt;要素を作成します。\n\n@return"
+  },
+  "jp.cssj.driver.ant.TranscodeTask#setDestDir(File)": {
+    "hash": "340b289452cf9117",
+    "en": "Sets the output directory.\n\n@param destDir",
+    "ja": "出力先ディレクトリを設定します。\n\n@param destDir"
+  },
+  "jp.cssj.driver.ant.TranscodeTask#setSrcDir(File)": {
+    "hash": "10cc9ba02c0ab171",
+    "en": "Sets the source directory.\n\n@param srcDir",
+    "ja": "変換元ディレクトリを設定します。\n\n@param srcDir"
+  },
+  "jp.cssj.driver.ant.TranscodeTask#setSuffix(String)": {
+    "hash": "b3f4b5b575d2024a",
+    "en": "Sets the output file extension.\n\n@param suffix",
+    "ja": "出力ファイルの拡張子を設定します。\n\n@param suffix"
+  },
+  "jp.cssj.driver.ant.TranscodeTask.Connection#setUri(String)": {
+    "hash": "18b6612dcdb3e9f5",
+    "en": "Sets the URI of the document conversion server.\n\n@param uri",
+    "ja": "ドキュメント変換サーバーのURIを設定します。\n\n@param uri"
+  },
+  "jp.cssj.driver.ant.TranscodeTask.Property": {
+    "hash": "f0c6a5b6ff67eccc",
+    "en": "A property.\n\n@author MIYABE Tatsuhiko\n@version $Id: TranscodeTask.java 1552 2018-04-26 01:43:24Z miyabe $",
+    "ja": "プロパティです。\n\n@author MIYABE Tatsuhiko\n@version $Id: TranscodeTask.java 1552 2018-04-26 01:43:24Z miyabe $"
+  },
+  "jp.cssj.driver.cli.Main": {
+    "hash": "f487f74247c3187f",
+    "en": "@author MIYABE Tatsuhiko\n@version $Id: Main.java 1593 2019-12-03 07:02:17Z miyabe $",
+    "ja": "@author MIYABE Tatsuhiko\n@version $Id: Main.java 1593 2019-12-03 07:02:17Z miyabe $"
+  },
   "jp.cssj.driver.ctip.CTIPDriver": {
+    "hash": "1e22ad930fb2eeb5",
+    "en": "<p>\nA driver (client library) that uses socket communication.\n</p>\n<p>\nThe URI format is <tt>ctip://hostname:port/</tt>.\n</p>\n\n@author MIYABE Tatsuhiko\n@version $Id: CTIPDriver.java 1552 2018-04-26 01:43:24Z miyabe $",
     "ja": "<p>\nソケット通信を利用するドライバです。\n</p>\n<p>\nURIの形式は <tt>ctip://ホスト名:ポート番号/</tt> です。\n</p>\n\n@author MIYABE Tatsuhiko\n@version $Id: CTIPDriver.java 1552 2018-04-26 01:43:24Z miyabe $"
   },
+  "jp.cssj.driver.ctip.common.ChannelIO": {
+    "hash": "654ea838af4bcb0c",
+    "en": "Nonblocking channel operations and deadline-based waits.",
+    "ja": "ノンブロッキングのチャネル操作と、期限に基づく待機です。"
+  },
   "jp.cssj.driver.ctip.common.ChannelIO#MAX_STRING_BYTES": {
+    "hash": "81f014220309742a",
+    "en": "The limit for one string (its length is sent as an unsigned 16-bit value).",
     "ja": "文字列1つの上限(長さは符号なし16bitで送るため)。"
   },
+  "jp.cssj.driver.ctip.common.ChannelIO#await(int,long)": {
+    "hash": "eb98f4d1477c69eb",
+    "en": "Each waiter owns its selector: a concurrent abort never waits for the reader's monitor.",
+    "ja": "待機する側がそれぞれ自分のセレクタを持ちます。同時に行う中断が、読み込み側のモニタを待つことはありません。"
+  },
+  "jp.cssj.driver.ctip.common.ChannelIO#awaitReady(SelectableChannel,int,long)": {
+    "hash": "d24b3caf978160c3",
+    "en": "Also used before ChannelIO exists (TCP/TLS connect) and after it closes (TLS shutdown).",
+    "ja": "ChannelIOができる前(TCP/TLSの接続時)と、閉じた後(TLSの終了処理)にも使います。"
+  },
   "jp.cssj.driver.ctip.common.ChannelIO#readByte(ByteBuffer)": {
+    "hash": "a23d2e3928651e2d",
+    "en": "Reads a 1-byte integer.\n\n@param destByte\n@return The value read.\n@throws IOException",
     "ja": "1バイト整数を読み込みます。\n\n@param destByte\n@return 読み込んだ値。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.common.ChannelIO#readBytes(int)": {
+    "hash": "0753c986a7e5c52e",
+    "en": "Reads the specified number of bytes.\n\n@param len\n@return The data read.\n@throws IOException",
     "ja": "指定された長さだけバイト列を読み込みます。\n\n@param len\n@return 読み込んだデータ。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.common.ChannelIO#readInt(ByteBuffer)": {
+    "hash": "33d74b176d8381dd",
+    "en": "Reads a 4-byte integer.\n\n@param destInt\n@return The value read.\n@throws IOException",
     "ja": "4バイト整数を読み込みます。\n\n@param destInt\n@return 読み込んだ値。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.common.ChannelIO#readLong(ByteBuffer)": {
+    "hash": "775c6d8282860a60",
+    "en": "Reads an 8-byte integer.\n\n@param destLong\n@return The value read.\n@throws IOException",
     "ja": "8バイト整数を読み込みます。\n\n@param destLong\n@return 読み込んだ値。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.common.ChannelIO#readShort(ByteBuffer)": {
+    "hash": "c0bb68de62d0d192",
+    "en": "Reads a 2-byte integer.\n\n@param destShort\n@return The value read.\n@throws IOException",
     "ja": "2バイト整数を読み込みます。\n\n@param destShort\n@return 読み込んだ値。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.common.ChannelIO#readString(ByteBuffer,String)": {
+    "hash": "fb36348fbbad484a",
+    "en": "Reads a string: a 2-byte length (in bytes) followed by the bytes of the string itself.\nConverts the bytes to a string using the specified encoding.\n\n@param destShort\n@param encoding\n@return The string read.\n@throws IOException",
     "ja": "文字列を読み込みます。 文字列は2バイトの文字列長(バイト数)に続く文字列本体のバイト列で構成されます。\nバイト列は指定したエンコーディングで文字列に変換します。\n\n@param destShort\n@param encoding\n@return 読み込んだ文字列。\n@throws IOException"
   },
+  "jp.cssj.driver.ctip.common.ChannelIO#rwselect()": {
+    "hash": "b9a5b2229b148899",
+    "en": "Legacy v1 readiness API. v2 uses internal progress before await().",
+    "ja": "v1用の旧来の準備完了待ちAPIです。v2はawait()の前に内部で処理を進めます。"
+  },
+  "jp.cssj.driver.ctip.v1.V1ContentProducer": {
+    "hash": "717028f9c6a61235",
+    "en": "@author MIYABE Tatsuhiko\n@version $Id: V1ContentProducer.java 1554 2018-04-26 03:34:02Z miyabe $",
+    "ja": "@author MIYABE Tatsuhiko\n@version $Id: V1ContentProducer.java 1554 2018-04-26 03:34:02Z miyabe $"
+  },
   "jp.cssj.driver.ctip.v1.V1ContentProducer#ADD": {
+    "hash": "32623e370b6da63d",
+    "en": "A packet that adds a fragment.",
     "ja": "断片追加パケットです。"
   },
   "jp.cssj.driver.ctip.v1.V1ContentProducer#DATA": {
+    "hash": "85149e7befa7a29e",
+    "en": "A data packet.\n\nUse getId and read to obtain the fragment ID and data.",
     "ja": "データパケットです。\n\ngetId,readで断片IDとデータを得ることができます。"
   },
   "jp.cssj.driver.ctip.v1.V1ContentProducer#ERROR_ERROR": {
+    "hash": "301f52df1520f155",
+    "en": "An error that causes information to be missing from the generated document, such as a resource retrieval failure.",
     "ja": "リソースの取得失敗など、生成される文書の情報が欠落すようなエラーです。"
   },
   "jp.cssj.driver.ctip.v1.V1ContentProducer#ERROR_FATAL": {
+    "hash": "596efb6b0c29641e",
+    "en": "A fatal error that prevents processing from continuing.",
     "ja": "処理の続行を妨げるような深刻なエラーです。"
   },
   "jp.cssj.driver.ctip.v1.V1ContentProducer#ERROR_WARN": {
+    "hash": "c7f3b2cb2650f9fa",
+    "en": "Indicates a warning, such as a CSS syntax error.",
     "ja": "CSSの文法エラーなどの警告を表します。"
   },
   "jp.cssj.driver.ctip.v1.V1ContentProducer#INSERT": {
+    "hash": "12824fd1b86eb7b5",
+    "en": "A packet that inserts a fragment.\n\nUse getAnchorId to obtain the ID of the immediately following fragment.",
     "ja": "断片挿入パケットです。\n\ngetAnchorIdで直後の断片IDを得ることができます。"
   },
   "jp.cssj.driver.ctip.v1.V1ContentProducer#MESSAGE": {
+    "hash": "27856dc5d970f998",
+    "en": "An error message packet.\n\nUse getLevel and getMessage to obtain the error level and message.",
     "ja": "エラーメッセージパケットです。\n\ngetLevel,getMessageでエラーレベルとメッセージを得ることができます。"
   },
   "jp.cssj.driver.ctip.v1.V1ContentProducer#connect()": {
+    "hash": "2980e7bfcb3e3fac",
+    "en": "Connects to the server and starts a request.\n\n@throws IOException",
     "ja": "サーバーに接続し、リクエストを開始します。\n\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v1.V1ContentProducer#getAnchorId()": {
+    "hash": "eb9852e09ed0fea8",
+    "en": "Returns the ID of the anchor fragment.\n\n@return The fragment ID.\n@throws IOException",
     "ja": "アンカーとなる断片のIDを返します。\n\n@return 断片のID。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v1.V1ContentProducer#getArgs()": {
+    "hash": "082e18d5aecd59b1",
+    "en": "Returns the message value.\n\n@return The message value.\n@throws IOException",
     "ja": "メッセージの値を返します。\n\n@return メッセージの値。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v1.V1ContentProducer#getCode()": {
+    "hash": "723278dfc8809bdf",
+    "en": "Returns the message code.\n\n@return The message code.\n@throws IOException",
     "ja": "メッセージコードを返します。\n\n@return メッセージコード。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v1.V1ContentProducer#getId()": {
+    "hash": "9351ea0086f8cfa0",
+    "en": "Returns the fragment ID.\n\n@return The fragment ID.\n@throws IOException",
     "ja": "断片のIDを返します。\n\n@return 断片のID。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v1.V1ContentProducer#getMessage()": {
+    "hash": "72523dabc68d4878",
+    "en": "Returns the message.\n\n@return The message string.\n@throws IOException",
     "ja": "メッセージを返します。\n\n@return メッセージの文字列。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v1.V1ContentProducer#getProgress()": {
+    "hash": "f338c821440cb616",
+    "en": "Returns the progress.\n\n@return The number of bytes read by the server.\n@throws IOException",
     "ja": "進行状況を返します。\n\n@return サーバー側での読み込みバイト数。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v1.V1ContentProducer#getType()": {
+    "hash": "985cc92575e1495b",
+    "en": "Returns the data type of the current packet.\n\n@return The packet type.\n@throws IOException",
     "ja": "現在のパケットのデータのタイプを返します。\n\n@return パケットのタイプ。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v1.V1ContentProducer#next()": {
+    "hash": "d7bdf661bc584bf6",
+    "en": "Moves the cursor to the next packet.\n\n@return false if an end packet is received; otherwise true.\n@throws IOException",
     "ja": "次のパケットにカーソルを移します。\n\n@return 終了パケットを受信した場合はfalse、それ以外はtrue。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v1.V1ContentProducer#read(byte[],int,int)": {
+    "hash": "e71bfa37cedfaeba",
+    "en": "Retrieves data.\n\n@param b\n           The buffer in which to store the data.\n@param off\n           The starting position in the buffer.\n@param len\n           The number of bytes the buffer can hold.\n@return The length of the retrieved data, or -1 if there is no data.\n@throws IOException",
     "ja": "データを取得します。\n\n@param b\n           データが格納されるバッファ。\n@param off\n           バッファの開始位置。\n@param len\n           バッファに格納可能なバイト数。\n@return 取得されたデータの長さ。データがない場合は-1。\n@throws IOException"
   },
+  "jp.cssj.driver.ctip.v1.V1RequestConsumer": {
+    "hash": "4c0887b9a6a99861",
+    "en": "@author MIYABE Tatsuhiko\n@version $Id: V1RequestConsumer.java 1552 2018-04-26 01:43:24Z miyabe $",
+    "ja": "@author MIYABE Tatsuhiko\n@version $Id: V1RequestConsumer.java 1552 2018-04-26 01:43:24Z miyabe $"
+  },
   "jp.cssj.driver.ctip.v1.V1RequestConsumer#DATA": {
+    "hash": "82aa0f3fab3381a6",
+    "en": "A data packet. Use read to obtain the data.",
     "ja": "データパケットです。 readでデータを取得できます。"
   },
   "jp.cssj.driver.ctip.v1.V1RequestConsumer#END": {
+    "hash": "50c5d11272957b2d",
+    "en": "An end packet.",
     "ja": "終了パケットです。"
   },
   "jp.cssj.driver.ctip.v1.V1RequestConsumer#MAIN": {
+    "hash": "4adc3525435e373a",
+    "en": "A content start packet. Use getURI, getMimeType, and getEncoding to obtain the URI, MIME type, and encoding.",
     "ja": "内容開始パケットです。 getURI,getMimeType,getEncodingでURIとMIMEタイプとエンコーディングを取得できます。"
   },
   "jp.cssj.driver.ctip.v1.V1RequestConsumer#PROPERTY": {
+    "hash": "f2551f36c13adf76",
+    "en": "A property packet. Use getName and getValue to obtain the name and value.",
     "ja": "プロパティパケットです。 getName,getValueで名前と値を取得できます。"
   },
   "jp.cssj.driver.ctip.v1.V1RequestConsumer#RESOURCE": {
+    "hash": "abc4e479478639b2",
+    "en": "A resource start packet. Use getURI, getMimeType, and getEncoding to obtain the URI, MIME type, and encoding.",
     "ja": "リソース開始パケットです。 getURI,getMimeType,getEncodingでURIとMIMEタイプとエンコーディングを取得できます。"
   },
   "jp.cssj.driver.ctip.v1.V1RequestConsumer#end()": {
+    "hash": "271a2a3942bfeb13",
+    "en": "Sends an end packet.\n\n@throws IOException",
     "ja": "終了パケットを送ります。\n\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v1.V1RequestConsumer#main(URI,String,String)": {
+    "hash": "28085ee1e3346743",
+    "en": "Signals the start of the body.\n\n@param uri\n           The virtual URI.\n@param mimeType\n           The MIME type.\n@param encoding\n           The character encoding.\n@throws IOException",
     "ja": "本体の開始を通知します。\n\n@param uri\n           仮想URI。\n@param mimeType\n           MIME型。\n@param encoding\n           キャラクタ・エンコーディング。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v1.V1RequestConsumer#property(String,String)": {
+    "hash": "68267fb6ccf1fb2b",
+    "en": "Sends a property.\n\n@param name\n           The property name.\n@param value\n           The value.\n@throws IOException",
     "ja": "プロパティを送ります。\n\n@param name\n           プロパティ名。\n@param value\n           値。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v1.V1RequestConsumer#resource(URI,String,String)": {
+    "hash": "46751995a7fbba90",
+    "en": "Signals the start of a resource.\n\n@param uri\n           The virtual URI.\n@param mimeType\n           The MIME type.\n@param encoding\n           The character encoding.\n@throws IOException",
     "ja": "リソースの開始を通知します。\n\n@param uri\n           仮想URI。\n@param mimeType\n           MIME型。\n@param encoding\n           キャラクタ・エンコーディング。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v1.V1RequestConsumer#write(byte[],int,int)": {
+    "hash": "15d4407518fd77bc",
+    "en": "Sends a data packet.\n\n@param b\n           The byte buffer.\n@param off\n           The starting position of the data.\n@param len\n           The data length.\n@throws IOException",
     "ja": "データパケットを送ります。\n\n@param b\n           バイト列バッファ。\n@param off\n           データの開始位置。\n@param len\n           データの長さ。\n@throws IOException"
   },
+  "jp.cssj.driver.ctip.v1.V1RequestConsumerOutputStream": {
+    "hash": "4bd45faac1480dfd",
+    "en": "@author MIYABE Tatsuhiko\n@version $Id: RequestConsumerOutputStream.java,v 1.1 2005/03/26 10:22:30\n         harumanx Exp $",
+    "ja": "@author MIYABE Tatsuhiko\n@version $Id: RequestConsumerOutputStream.java,v 1.1 2005/03/26 10:22:30\n         harumanx Exp $"
+  },
+  "jp.cssj.driver.ctip.v1.V1Session": {
+    "hash": "747cd8710acdcccb",
+    "en": "@author MIYABE Tatsuhiko\n@version $Id: V1Session.java 1552 2018-04-26 01:43:24Z miyabe $",
+    "ja": "@author MIYABE Tatsuhiko\n@version $Id: V1Session.java 1552 2018-04-26 01:43:24Z miyabe $"
+  },
   "jp.cssj.driver.ctip.v1.V1Session#rejectSecureScheme(URI)": {
+    "hash": "ef44ecc01dbd331f",
+    "en": "Only CTIP v2 supports {@code ctips:}. v1 does not establish TLS, so\naccepting {@code ctips://…/?version=1} as-is **establishes a plaintext connection and sends credentials\nin plaintext too** (discovered on 2026-09-08). Reject it before connecting.",
     "ja": "{@code ctips:} は CTIP v2 だけが担います。v1 は TLS を張らないので、\n{@code ctips://…/?version=1} をそのまま通すと**平文で接続し、認証情報も\n平文で流れます**(2026-09-08 に発見)。接続する前に拒否します。"
   },
+  "jp.cssj.driver.ctip.v2.TLSSocketChannel": {
+    "hash": "cc9007abd6c6f612",
+    "en": "Nonblocking TLS transport. Waiting belongs to ChannelIO, never to an engine lock.",
+    "ja": "ノンブロッキングのTLSの転送路です。待機はChannelIOが受け持ち、エンジン(SSLEngine)のロックを持ったまま待つことはありません。"
+  },
+  "jp.cssj.driver.ctip.v2.TLSSocketChannel#addWaiter(Selector)": {
+    "hash": "8482f08c45b29404",
+    "en": "ChannelIO wait registration also makes a direct TLS close wake its selectors.",
+    "ja": "ChannelIOの待機の登録により、TLSを直接閉じた場合にもそのセレクタが起こされます。"
+  },
+  "jp.cssj.driver.ctip.v2.TLSSocketChannel#connect(SocketAddress,String,int,long)": {
+    "hash": "4eae7a6d57e2646c",
+    "en": "Connects, then verifies the peer unless the caller asked not to.",
+    "ja": "接続し、呼び出し側が不要と指定しない限り相手を検証します。"
+  },
+  "jp.cssj.driver.ctip.v2.TLSSocketChannel#flushOutbound()": {
+    "hash": "2e12c8be384e00d4",
+    "en": "Advance pending ciphertext and TLS control output without more application data.",
+    "ja": "アプリケーションデータを追加せずに、保留中の暗号文とTLSの制御出力を送り進めます。"
+  },
   "jp.cssj.driver.ctip.v2.V2ClientPackets": {
+    "hash": "0fb55915ce8f31fc",
+    "en": "Types of packets sent from the client to the server.\n\n@author MIYABE Tatsuhiko\n@version $Id: V2ClientPackets.java 1552 2018-04-26 01:43:24Z miyabe $",
     "ja": "クライアントからサーバーに送られるパケットの種類です。\n\n@author MIYABE Tatsuhiko\n@version $Id: V2ClientPackets.java 1552 2018-04-26 01:43:24Z miyabe $"
   },
   "jp.cssj.driver.ctip.v2.V2ClientPackets#ABORT": {
+    "hash": "27fe4f8283ac973f",
+    "en": "Processing abort packet.",
     "ja": "処理中断パケットです。"
   },
   "jp.cssj.driver.ctip.v2.V2ClientPackets#CLIENT_RESOURCE": {
+    "hash": "5ce2a4acc1f4dbd3",
+    "en": "Packet that switches to a mode that resolves resources on the client.",
     "ja": "クライアント側でリソースを解決するモードに切り替えるパケットです。"
   },
   "jp.cssj.driver.ctip.v2.V2ClientPackets#CLOSE": {
+    "hash": "250fc1340c0ec541",
+    "en": "Communication end packet.",
     "ja": "通信終了パケットです。"
   },
   "jp.cssj.driver.ctip.v2.V2ClientPackets#CONTINUOUS": {
+    "hash": "9253242e53198874",
+    "en": "Packet that switches to a mode that combines multiple results.",
     "ja": "複数の結果を結合するモードに切り替えるパケットです。"
   },
   "jp.cssj.driver.ctip.v2.V2ClientPackets#DATA": {
+    "hash": "71d76f0f9ad4dbf9",
+    "en": "Data packet.",
     "ja": "データパケットです。"
   },
   "jp.cssj.driver.ctip.v2.V2ClientPackets#EOF": {
+    "hash": "12fb9a4f50a5bd51",
+    "en": "Packet that indicates the end of data.",
     "ja": "データの終了を示すパケットです。"
   },
   "jp.cssj.driver.ctip.v2.V2ClientPackets#JOIN": {
+    "hash": "9a633c3d84d367fd",
+    "en": "Result join packet.",
     "ja": "結果の結合パケットです。"
   },
   "jp.cssj.driver.ctip.v2.V2ClientPackets#MISSING_RESOURCE": {
+    "hash": "1871ef1fd7c9d305",
+    "en": "Packet that indicates a missing resource.",
     "ja": "存在しないリソースを示すパケットです。"
   },
   "jp.cssj.driver.ctip.v2.V2ClientPackets#PROPERTY": {
+    "hash": "3dd646eed82d2071",
+    "en": "Property packet.",
     "ja": "プロパティパケットです。"
   },
   "jp.cssj.driver.ctip.v2.V2ClientPackets#RESET": {
+    "hash": "fc7fb849bcbd55b7",
+    "en": "State reset packet.",
     "ja": "状態リセットパケットです。"
   },
   "jp.cssj.driver.ctip.v2.V2ClientPackets#SERVER_INFO": {
+    "hash": "10853a3cd4ad025a",
+    "en": "Server information packet.",
     "ja": "サーバー情報パケットです。"
   },
   "jp.cssj.driver.ctip.v2.V2ClientPackets#SERVER_MAIN": {
+    "hash": "41dcd10ac05107e1",
+    "en": "Packet that requests retrieval of the main document on the server.",
     "ja": "サーバー側でメインドキュメントの取得を要求するパケットです。"
   },
   "jp.cssj.driver.ctip.v2.V2ClientPackets#START_MAIN": {
+    "hash": "c7e7605a08321ce6",
+    "en": "Content start packet.",
     "ja": "内容開始パケットです。"
   },
   "jp.cssj.driver.ctip.v2.V2ClientPackets#START_RESOURCE": {
+    "hash": "342e078381c20645",
+    "en": "Resource start packet.",
     "ja": "リソース開始パケットです。"
   },
+  "jp.cssj.driver.ctip.v2.V2ContentProducer": {
+    "hash": "f162673b527b03ed",
+    "en": "@author MIYABE Tatsuhiko\n@version $Id: V2ContentProducer.java 1554 2018-04-26 03:34:02Z miyabe $",
+    "ja": "@author MIYABE Tatsuhiko\n@version $Id: V2ContentProducer.java 1554 2018-04-26 03:34:02Z miyabe $"
+  },
   "jp.cssj.driver.ctip.v2.V2ContentProducer#connect(String,String)": {
+    "hash": "4a56e1dd820a3af3",
+    "en": "Connects to the server and starts a request.\n\n@param user\n@param password\n@throws IOException",
     "ja": "サーバーに接続し、リクエストを開始します。\n\n@param user\n@param password\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v2.V2ContentProducer#getAnchorId()": {
+    "hash": "eb9852e09ed0fea8",
+    "en": "Returns the ID of the anchor fragment.\n\n@return The fragment ID.\n@throws IOException",
     "ja": "アンカーとなる断片のIDを返します。\n\n@return 断片のID。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v2.V2ContentProducer#getArgs()": {
+    "hash": "5de51e4adaeaeb29",
+    "en": "Returns the message arguments.\n\n@return The message arguments.\n@throws IOException",
     "ja": "メッセージの引数返します。\n\n@return メッセージの引数。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v2.V2ContentProducer#getBlockId()": {
+    "hash": "9351ea0086f8cfa0",
+    "en": "Returns the fragment ID.\n\n@return The fragment ID.\n@throws IOException",
     "ja": "断片のIDを返します。\n\n@return 断片のID。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v2.V2ContentProducer#getCode()": {
+    "hash": "723278dfc8809bdf",
+    "en": "Returns the message code.\n\n@return The message code.\n@throws IOException",
     "ja": "メッセージコードを返します。\n\n@return メッセージコード。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v2.V2ContentProducer#getEncoding()": {
+    "hash": "3dcfe5f495528408",
+    "en": "Returns the encoding of the data.\n\n@return The encoding of the data.\n@throws IOException",
     "ja": "データのエンコーディングを返します。\n\n@return データのエンコーディング。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v2.V2ContentProducer#getLength()": {
+    "hash": "a08a71c1b5c22ca1",
+    "en": "Returns the progress.\n\n@return The number of bytes.\n@throws IOException",
     "ja": "進行状況を返します。\n\n@return バイト数。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v2.V2ContentProducer#getMessage()": {
+    "hash": "72523dabc68d4878",
+    "en": "Returns the message.\n\n@return The message string.\n@throws IOException",
     "ja": "メッセージを返します。\n\n@return メッセージの文字列。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v2.V2ContentProducer#getMimeType()": {
+    "hash": "9748725f69cec091",
+    "en": "Returns the MIME type of the data.\n\n@return The MIME type of the data.\n@throws IOException",
     "ja": "データのMIME型を返します。\n\n@return データのMIME型。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v2.V2ContentProducer#getMode()": {
+    "hash": "f9da36e94387d1aa",
+    "en": "Returns the abort mode.\n\n@return The abort mode.\n@throws IOException",
     "ja": "中断処理のモードを返します。\n\n@return 中断処理のモード。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v2.V2ContentProducer#getType()": {
+    "hash": "985cc92575e1495b",
+    "en": "Returns the data type of the current packet.\n\n@return The packet type.\n@throws IOException",
     "ja": "現在のパケットのデータのタイプを返します。\n\n@return パケットのタイプ。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v2.V2ContentProducer#getURI()": {
+    "hash": "125f3467da55a264",
+    "en": "Returns the URI of the data.\n\n@return The URI of the data.\n@throws IOException",
     "ja": "データのURIを返します。\n\n@return データのURI。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v2.V2ContentProducer#read(byte[],int,int)": {
+    "hash": "28ddd6804b62b4b0",
+    "en": "Reads data.\n\n@param b\n           The buffer that receives the data.\n@param off\n           The starting offset in the buffer.\n@param len\n           The number of bytes that can be stored in the buffer.\n@return The length of the data read, or -1 if no data is available.\n@throws IOException",
     "ja": "データを取得します。\n\n@param b\n           データが格納されるバッファ。\n@param off\n           バッファの開始位置。\n@param len\n           バッファに格納可能なバイト数。\n@return 取得されたデータの長さ。データがない場合は-1。\n@throws IOException"
   },
+  "jp.cssj.driver.ctip.v2.V2RequestConsumer": {
+    "hash": "13c77b9c79caaf44",
+    "en": "@author MIYABE Tatsuhiko\n@version $Id: V2RequestConsumer.java 1554 2018-04-26 03:34:02Z miyabe $",
+    "ja": "@author MIYABE Tatsuhiko\n@version $Id: V2RequestConsumer.java 1554 2018-04-26 03:34:02Z miyabe $"
+  },
   "jp.cssj.driver.ctip.v2.V2RequestConsumer#abort(byte)": {
+    "hash": "ff7d04b669c0a962",
+    "en": "Requests that processing be aborted.\n\n@param mode\n           The abort mode.\n@throws IOException",
     "ja": "処理の中断を要求します。\n\n@param mode\n           中断モード。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v2.V2RequestConsumer#clientResource(boolean)": {
+    "hash": "bf1c2e6bea78f200",
+    "en": "Sets the mode for resolving resources on the client.\n\n@param on\n           true to enable the mode, false to disable it.\n@throws IOException",
     "ja": "クライアント側でリソースを解決するモードを設定します。\n\n@param on\n           trueであれば切り替え、falseであれば解除。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v2.V2RequestConsumer#close()": {
+    "hash": "ddac710e1a56287d",
+    "en": "Ends communication.\n\n@throws IOException",
     "ja": "通信を終了します。\n\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v2.V2RequestConsumer#continuous(boolean)": {
+    "hash": "9441bf7981053a34",
+    "en": "Switches the mode for combining multiple results.\n\n@param continuous\n           The mode for combining results.\n@throws IOException",
     "ja": "複数の結果を結合するモードを切り替えます。\n\n@param continuous\n           結合モード。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v2.V2RequestConsumer#data(byte[],int,int)": {
+    "hash": "ab39eee0ccb4e134",
+    "en": "Sends a data packet.\n\n@param b\n           The byte array buffer.\n@param off\n           The starting offset of the data.\n@param len\n           The length of the data.\n@throws IOException",
     "ja": "データパケットを送ります。\n\n@param b\n           バイト列バッファ。\n@param off\n           データの開始位置。\n@param len\n           データの長さ。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v2.V2RequestConsumer#eof()": {
+    "hash": "2a4490c6e5ae5f29",
+    "en": "Signals the end of data.\n\n@throws IOException",
     "ja": "データの終了を通知します。\n\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v2.V2RequestConsumer#join()": {
+    "hash": "48315602722555ab",
+    "en": "Requests that the results be combined.\n\n@throws IOException",
     "ja": "結果の結合を要求します。\n\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v2.V2RequestConsumer#missingResource(URI)": {
+    "hash": "fab5a8e850e34bbb",
+    "en": "Reports a resource as missing.\n\n@param uri\n           The URI of the resource.\n@throws IOException",
     "ja": "存在しないリソースとして通知します。\n\n@param uri\n           リソースのURI。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v2.V2RequestConsumer#property(String,String)": {
+    "hash": "68267fb6ccf1fb2b",
+    "en": "Sends a property.\n\n@param name\n           The property name.\n@param value\n           The value.\n@throws IOException",
     "ja": "プロパティを送ります。\n\n@param name\n           プロパティ名。\n@param value\n           値。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v2.V2RequestConsumer#reset()": {
+    "hash": "ed8460309b01872a",
+    "en": "Resets the state.\n\n@throws IOException",
     "ja": "状態をリセットします。\n\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v2.V2RequestConsumer#serverInfo(URI)": {
+    "hash": "61f767565631e8d4",
+    "en": "Requests server information.\n\n@param uri\n           The URI of the server information.\n@throws IOException",
     "ja": "サーバー情報を要求します。\n\n@param uri\n           サーバー情報のURI。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v2.V2RequestConsumer#serverMain(URI)": {
+    "hash": "19f76f7fca578834",
+    "en": "Retrieves the main document on the server.\n\n@param uri\n           The URI of the main document.\n@throws IOException",
     "ja": "サーバー側でメインドキュメントを取得します。\n\n@param uri\n           メインドキュメントのURI。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v2.V2RequestConsumer#startMain(URI,String,String,long)": {
+    "hash": "56229e2da4e10012",
+    "en": "Signals the start of the main document.\n\n@param uri\n           The virtual URI.\n@param mimeType\n           The MIME type.\n@param encoding\n           The character encoding.\n@throws IOException",
     "ja": "本体の開始を通知します。\n\n@param uri\n           仮想URI。\n@param mimeType\n           MIME型。\n@param encoding\n           キャラクタ・エンコーディング。\n@throws IOException"
   },
   "jp.cssj.driver.ctip.v2.V2RequestConsumer#startResource(URI,String,String,long)": {
+    "hash": "46751995a7fbba90",
+    "en": "Signals the start of a resource.\n\n@param uri\n           The virtual URI.\n@param mimeType\n           The MIME type.\n@param encoding\n           The character encoding.\n@throws IOException",
     "ja": "リソースの開始を通知します。\n\n@param uri\n           仮想URI。\n@param mimeType\n           MIME型。\n@param encoding\n           キャラクタ・エンコーディング。\n@throws IOException"
   },
+  "jp.cssj.driver.ctip.v2.V2RequestConsumerOutputStream": {
+    "hash": "4bd45faac1480dfd",
+    "en": "@author MIYABE Tatsuhiko\n@version $Id: RequestConsumerOutputStream.java,v 1.1 2005/03/26 10:22:30\n         harumanx Exp $",
+    "ja": "@author MIYABE Tatsuhiko\n@version $Id: RequestConsumerOutputStream.java,v 1.1 2005/03/26 10:22:30\n         harumanx Exp $"
+  },
   "jp.cssj.driver.ctip.v2.V2ServerPackets": {
+    "hash": "149f02c53a56856f",
+    "en": "Types of packets sent from the server to the client.\n\n@author MIYABE Tatsuhiko\n@version $Id: V2ServerPackets.java 1552 2018-04-26 01:43:24Z miyabe $",
     "ja": "サーバーからクライアントに送られるパケットの種類です。\n\n@author MIYABE Tatsuhiko\n@version $Id: V2ServerPackets.java 1552 2018-04-26 01:43:24Z miyabe $"
   },
   "jp.cssj.driver.ctip.v2.V2ServerPackets#ABORT": {
+    "hash": "118f4228a67c7bd0",
+    "en": "Data abort packet.",
     "ja": "データ中断パケットです。"
   },
   "jp.cssj.driver.ctip.v2.V2ServerPackets#ADD_BLOCK": {
+    "hash": "f85fb88eda26bf4e",
+    "en": "Fragment addition packet.",
     "ja": "断片追加パケットです。"
   },
   "jp.cssj.driver.ctip.v2.V2ServerPackets#BLOCK_DATA": {
+    "hash": "71d76f0f9ad4dbf9",
+    "en": "Data packet.",
     "ja": "データパケットです。"
   },
   "jp.cssj.driver.ctip.v2.V2ServerPackets#CLOSE_BLOCK": {
+    "hash": "b7ce1ee87da31aef",
+    "en": "Packet that signals the closure of a fragment.",
     "ja": "断片のクローズを通知するパケットです。"
   },
   "jp.cssj.driver.ctip.v2.V2ServerPackets#DATA": {
+    "hash": "880e62ab5c8307bc",
+    "en": "Data packet independent of fragmentation.",
     "ja": "断片化とは無関係なデータパケットです。"
   },
   "jp.cssj.driver.ctip.v2.V2ServerPackets#EOF": {
+    "hash": "d47ffd5589cea8d2",
+    "en": "End-of-data packet.",
     "ja": "データ終了パケットです。"
   },
   "jp.cssj.driver.ctip.v2.V2ServerPackets#INSERT_BLOCK": {
+    "hash": "363bed7ce70223e5",
+    "en": "Fragment insertion packet.",
     "ja": "断片挿入パケットです。"
   },
   "jp.cssj.driver.ctip.v2.V2ServerPackets#MAIN_LENGTH": {
+    "hash": "09359c13e8c07be6",
+    "en": "Packet that reports the length of the main document.",
     "ja": "メインドキュメントの長さを通知するパケットです。"
   },
   "jp.cssj.driver.ctip.v2.V2ServerPackets#MAIN_READ": {
+    "hash": "83985653901ba6d7",
+    "en": "Packet that reports the number of bytes read from the main document.",
     "ja": "メインドキュメントの読み込みバイト数を通知するパケットです。"
   },
   "jp.cssj.driver.ctip.v2.V2ServerPackets#MESSAGE": {
+    "hash": "fade6b6cef169520",
+    "en": "Error message packet.",
     "ja": "エラーメッセージパケットです。"
   },
   "jp.cssj.driver.ctip.v2.V2ServerPackets#NEXT": {
+    "hash": "aec3177cd0d0cca5",
+    "en": "Data continuation packet.",
     "ja": "データ継続パケットです。"
   },
   "jp.cssj.driver.ctip.v2.V2ServerPackets#RESOURCE_REQUEST": {
+    "hash": "c62c99d90d7bef5b",
+    "en": "Resource request packet.",
     "ja": "リソース要求パケットです。"
   },
   "jp.cssj.driver.ctip.v2.V2ServerPackets#START_DATA": {
+    "hash": "47278fd0d7990e6c",
+    "en": "Starts the data.",
     "ja": "データを開始します。"
+  },
+  "jp.cssj.driver.ctip.v2.V2Session": {
+    "hash": "65bcbfd74fafd9a3",
+    "en": "@author MIYABE Tatsuhiko\n@version $Id: V2Session.java 1552 2018-04-26 01:43:24Z miyabe $",
+    "ja": "@author MIYABE Tatsuhiko\n@version $Id: V2Session.java 1552 2018-04-26 01:43:24Z miyabe $"
+  },
+  "jp.cssj.driver.rest.RestDriver": {
+    "hash": "84ce91d3a5588e1e",
+    "en": "<p>\nA driver (client library) that communicates over HTTP/REST.\n</p>\n<p>\nThe URI format is <tt>http://hostname:port/</tt>.\n</p>\n\n@author MIYABE Tatsuhiko\n@version $Id: RestDriver.java 1552 2018-04-26 01:43:24Z miyabe $",
+    "ja": "<p>\nHTTP/RESTで通信するドライバ(クライアントライブラリ)です。\n</p>\n<p>\nURIの形式は<tt>http://hostname:port/</tt>です。\n</p>\n\n@author MIYABE Tatsuhiko\n@version $Id: RestDriver.java 1552 2018-04-26 01:43:24Z miyabe $"
+  },
+  "jp.cssj.driver.rest.RestSession": {
+    "hash": "f80f462b36c35359",
+    "en": "@author MIYABE Tatsuhiko\n@version $Id: RestSession.java 1635 2023-04-03 08:16:41Z miyabe $",
+    "ja": "@author MIYABE Tatsuhiko\n@version $Id: RestSession.java 1635 2023-04-03 08:16:41Z miyabe $"
+  },
+  "jp.cssj.driver.rest.RestSession#abortWhileBuffering": {
+    "hash": "2a8e1145f065b65f",
+    "en": "Tracks whether {@link #transcode(SourceMetadata)} is buffering the body in a temporary file and whether\nan abort was requested during buffering (2026-09-28). Closing the stream sends the body in a single\nrequest, so there is no conversion for the server to stop during buffering. Previously, abort had\nno effect and the entire body was converted.",
+    "ja": "{@link #transcode(SourceMetadata)}が本体を一時ファイルに溜めている最中かどうかと、その最中に中断が\n要求されたかどうかを記録します(2026-09-28)。ストリームを閉じたときに本体を1回の要求で送るので、\n溜めている間はサーバー側に止めるべき変換がありません。以前は中断が効かず、\n本体全体が変換されていました。"
+  },
+  "jp.cssj.driver.rest.RestSession#buffering": {
+    "hash": "2a8e1145f065b65f",
+    "en": "Tracks whether {@link #transcode(SourceMetadata)} is buffering the body in a temporary file and whether\nan abort was requested during buffering (2026-09-28). Closing the stream sends the body in a single\nrequest, so there is no conversion for the server to stop during buffering. Previously, abort had\nno effect and the entire body was converted.",
+    "ja": "{@link #transcode(SourceMetadata)}が本体を一時ファイルに溜めている最中かどうかと、その最中に中断が\n要求されたかどうかを記録します(2026-09-28)。ストリームを閉じたときに本体を1回の要求で送るので、\n溜めている間はサーバー側に止めるべき変換がありません。以前は中断が効かず、\n本体全体が変換されていました。"
+  },
+  "jp.cssj.server.ConversionGate": {
+    "hash": "ec20f50e828555a6",
+    "en": "Limits the number of concurrent conversions (2026-10-03, shared service resource limits, increment 3).\n\n<p>\nREST and CTIP share one gate that counts <b>active conversions</b> (sessions that are only waiting do not\ncount). When no capacity is available, it <b>rejects requests without waiting</b>: waiting occupies request\nthreads or connection slots and prevents reading abort requests during the wait. Rejected users receive\nonly the message \"The server is busy. Please wait a little and try again.\"\n</p>\n\n<p>\nRelease a permit ({@link Permit}) with {@link Permit#close()}, which takes effect only once.\nReleasing it twice does not increase the limit.\n</p>",
+    "ja": "同時に行う変換の数を制限します(2026-10-03、共有サービスの資源制限、増分3)。\n\n<p>\nRESTとCTIPは、<b>実行中の変換</b>を数える1つのゲートを共有します(待っているだけのセッションは\n数えません)。空きが無いときは<b>待たずに要求を拒否します</b>。待つと要求のスレッドや接続の枠を\n占有し、待っている間は中断の要求を読めなくなるためです。拒否された利用者には\n「混雑しています。少し待ってからやり直してください。」というメッセージだけが届きます。\n</p>\n\n<p>\n許可({@link Permit})は{@link Permit#close()}で返します。これは1回だけ効きます。\n2回返しても上限は増えません。\n</p>"
+  },
+  "jp.cssj.server.ConversionGate#ConversionGate(int)": {
+    "hash": "b533af8df0121b1d",
+    "en": "@param limit the number of concurrent conversions; zero or less means no limit",
+    "ja": "@param limit 同時変換数。0以下なら無制限"
+  },
+  "jp.cssj.server.ConversionGate#UNLIMITED": {
+    "hash": "156077f10c1b596f",
+    "en": "No limit (count only).",
+    "ja": "無制限(数えるだけ)です。"
+  },
+  "jp.cssj.server.ConversionGate#limit()": {
+    "hash": "fd7a9c974458de62",
+    "en": "@return the maximum number of concurrent conversions (0 means no limit)",
+    "ja": "@return 同時変換数の上限(0は無制限)"
+  },
+  "jp.cssj.server.ConversionGate#refused()": {
+    "hash": "66693ba26344b00e",
+    "en": "@return the number of requests rejected due to lack of capacity (total since startup)",
+    "ja": "@return 空きが無いため拒否した要求の数(起動からの累計)"
+  },
+  "jp.cssj.server.ConversionGate#running()": {
+    "hash": "50c91c3fd446ffb1",
+    "en": "@return the number of active conversions",
+    "ja": "@return 実行中の変換の数"
+  },
+  "jp.cssj.server.ConversionGate#tryEnter()": {
+    "hash": "546be17d132590f2",
+    "en": "Acquires a permit without waiting.\n\n@return a permit, or null if no capacity is available (counted as a rejected request)",
+    "ja": "待たずに許可を取得します。\n\n@return 許可。空きが無い場合はnull(拒否した要求として数えます)"
+  },
+  "jp.cssj.server.ConversionGate.Permit": {
+    "hash": "1c7ae02bf53d5c4f",
+    "en": "A permit for one conversion.",
+    "ja": "変換1つ分の許可です。"
+  },
+  "jp.cssj.server.ConversionGate.Permit#close()": {
+    "hash": "caccce3add0b6873",
+    "en": "Releases the permit. Subsequent calls do nothing.",
+    "ja": "許可を返します。2回目以降の呼び出しは何もしません。"
+  },
+  "jp.cssj.server.acl.Acl": {
+    "hash": "ab6dd2363776cc4f",
+    "en": "An access control list.\n\n@author MIYABE Tatsuhiko\n@version $Id: Acl.java 1552 2018-04-26 01:43:24Z miyabe $",
+    "ja": "アクセス制御リストです。\n\n@author MIYABE Tatsuhiko\n@version $Id: Acl.java 1552 2018-04-26 01:43:24Z miyabe $"
+  },
+  "jp.cssj.server.rest.ConversionRefusedException": {
+    "hash": "3f367959b1089afe",
+    "en": "Indicates that conversion did not start (it was refused without waiting) (2026-10-03).\nThe servlet returns a message with this code, HTTP 503, and {@code Retry-After}.\n\n<ul>\n<li>{@link jp.cssj.cti2.helpers.CTIMessageCodes#ERROR_BUSY}(0x3003): Server's concurrent conversion limit</li>\n<li>{@link RestServlet#ERROR_SESSION_BUSY}(0x3017): This session is converting</li>\n</ul>",
+    "ja": "変換が始まらなかった(待たずに拒否された)ことを示します(2026-10-03)。\nサーブレットはこのコードのメッセージを、HTTP 503と{@code Retry-After}を付けて返します。\n\n<ul>\n<li>{@link jp.cssj.cti2.helpers.CTIMessageCodes#ERROR_BUSY}(0x3003): サーバーの同時変換数の上限</li>\n<li>{@link RestServlet#ERROR_SESSION_BUSY}(0x3017): このセッションが変換中</li>\n</ul>"
+  },
+  "jp.cssj.server.rest.RestServlet": {
+    "hash": "18a0f5cfe84c4285",
+    "en": "@author MIYABE Tatsuhiko\n@version $Id: RestServlet.java 1554 2018-04-26 03:34:02Z miyabe $",
+    "ja": "@author MIYABE Tatsuhiko\n@version $Id: RestServlet.java 1554 2018-04-26 03:34:02Z miyabe $"
+  },
+  "jp.cssj.server.rest.RestServlet#ERROR_AUTHENTICATION_FAILURE": {
+    "hash": "0ddedf905779bc0b",
+    "en": "Authentication failed.",
+    "ja": "認証に失敗しました。"
+  },
+  "jp.cssj.server.rest.RestServlet#ERROR_BAD_ACTION": {
+    "hash": "d195c331bb24351a",
+    "en": "Invalid action.",
+    "ja": "不正なアクションです。"
+  },
+  "jp.cssj.server.rest.RestServlet#ERROR_BAD_REQUEST": {
+    "hash": "af92524e4c086f56",
+    "en": "Invalid request.",
+    "ja": "不正な要求です。"
+  },
+  "jp.cssj.server.rest.RestServlet#ERROR_NO_DOCUMENT": {
+    "hash": "8b2609bf95efeb98",
+    "en": "The document to convert does not exist.",
+    "ja": "変換するドキュメントがありません。"
+  },
+  "jp.cssj.server.rest.RestServlet#ERROR_NO_RESULT": {
+    "hash": "65e2660fa03e9f62",
+    "en": "The result does not exist.",
+    "ja": "結果がありません。"
+  },
+  "jp.cssj.server.rest.RestServlet#ERROR_NO_SESSION": {
+    "hash": "bb1cf5fc08d131f3",
+    "en": "The session does not exist.",
+    "ja": "セッションがありません。"
+  },
+  "jp.cssj.server.rest.RestServlet#ERROR_SESSION_BUSY": {
+    "hash": "217f8db8a4d55d76",
+    "en": "This session is converting (2026-10-03; previously, the request waited for it to finish).",
+    "ja": "このセッションは変換中です(2026-10-03。以前は変換が終わるまで要求を待たせていた)。"
+  },
+  "jp.cssj.server.rest.RestServlet#INFO_NEW_SESSION": {
+    "hash": "b64756dcd7e99b19",
+    "en": "A new session has been created.",
+    "ja": "新しいセッションを作成しました。"
+  },
+  "jp.cssj.server.rest.RestServlet#INFO_OK": {
+    "hash": "5051840789dbd86e",
+    "en": "Successfully processed.",
+    "ja": "正常に処理しました。"
+  },
+  "jp.cssj.server.rest.RestServlet#INFO_TRANDCODED": {
+    "hash": "27aeb8a63f169848",
+    "en": "Conversion has completed.",
+    "ja": "変換が完了しました。"
+  },
+  "jp.cssj.server.rest.RestServlet#INFO_TRANSCODING": {
+    "hash": "de2d0d07737fdf7b",
+    "en": "Conversion is in progress.",
+    "ja": "変換中です。"
+  },
+  "jp.cssj.server.rest.RestServlet#clean()": {
+    "hash": "b4610ced52fedbbb",
+    "en": "Checks for expired sessions.",
+    "ja": "期限切れのセッションを確認します。"
+  },
+  "jp.cssj.server.rest.RestServlet#getConversionGate()": {
+    "hash": "7220650e38022aaa",
+    "en": "Concurrent conversion limit (for status reporting).",
+    "ja": "同時変換数の制限(状態の報告用)。"
+  },
+  "jp.cssj.server.rest.RestServlet#loadSession(String)": {
+    "hash": "341785bdf589e39f",
+    "en": "Returns a session.\n\n@param id\n@return",
+    "ja": "セッションを返します。\n\n@param id\n@return"
+  },
+  "jp.cssj.server.rest.RestServlet#setConversionGate(ConversionGate)": {
+    "hash": "72bc46b6b68a7e33",
+    "en": "Sets the concurrent conversion limit.",
+    "ja": "同時変換数の制限を設定します。"
+  },
+  "jp.cssj.server.rest.RestServlet#startSession(HttpServletRequest,String,RestRequest,long)": {
+    "hash": "ae34ac6e4df4da76",
+    "en": "Starts a session.\n\n@param req\n@param id\n@param props\n@param timeout\n@throws IOException\n@throws SecurityException\n@throws FileUploadException",
+    "ja": "セッションを開始します。\n\n@param req\n@param id\n@param props\n@param timeout\n@throws IOException\n@throws SecurityException\n@throws FileUploadException"
+  },
+  "jp.cssj.server.rest.RestSession": {
+    "hash": "08b551a458cb35b8",
+    "en": "Session information for the REST interface.\n\n@author MIYABE Tatsuhiko\n@version $Id: RestSession.java 1635 2023-04-03 08:16:41Z miyabe $",
+    "ja": "RESTインターフェースのセッション情報です。\n\n@author MIYABE Tatsuhiko\n@version $Id: RestSession.java 1635 2023-04-03 08:16:41Z miyabe $"
+  },
+  "jp.cssj.server.rest.RestSession.Message": {
+    "hash": "7ca665feb45f170c",
+    "en": "Messages already received.",
+    "ja": "受信済みのメッセージです。"
+  },
+  "jp.cssj.server.rest.RestSession.Messages": {
+    "hash": "e148b5cfb9f33e28",
+    "en": "Receives messages.\n\n@author MIYABE Tatsuhiko\n@version $Id: RestSession.java 1635 2023-04-03 08:16:41Z miyabe $",
+    "ja": "メッセージを受け取ります。\n\n@author MIYABE Tatsuhiko\n@version $Id: RestSession.java 1635 2023-04-03 08:16:41Z miyabe $"
+  },
+  "jp.cssj.server.rest.RestSession.TranscodeTask#run()": {
+    "hash": "5bbc256c188afac8",
+    "en": "Performs asynchronous conversion.",
+    "ja": "非同期に変換を行います。"
+  },
+  "jp.cssj.server.rest.RestUtils": {
+    "hash": "ae88e07811332e8f",
+    "en": "Utilities for the REST interface.\n\n@author MIYABE Tatsuhiko\n@version $Id: RestUtils.java 1552 2018-04-26 01:43:24Z miyabe $",
+    "ja": "RESTインターフェースのユーティリティです。\n\n@author MIYABE Tatsuhiko\n@version $Id: RestUtils.java 1552 2018-04-26 01:43:24Z miyabe $"
+  },
+  "jp.cssj.server.rest.RestUtils#htmlEscape(String)": {
+    "hash": "4ac2bf64a68527df",
+    "en": "Escapes an HTML string.\n\n@param strVar\n@return",
+    "ja": "HTMLの文字列をエスケープします。\n\n@param strVar\n@return"
+  },
+  "jp.cssj.server.socket.CTIServer": {
+    "hash": "bd24673a744913fe",
+    "en": "A server that listens on sockets.\n\n@author MIYABE Tatsuhiko\n@version $Id: CTIServer.java 1552 2018-04-26 01:43:24Z miyabe $",
+    "ja": "ソケットで待ち受けるサーバーです。\n\n@author MIYABE Tatsuhiko\n@version $Id: CTIServer.java 1552 2018-04-26 01:43:24Z miyabe $"
+  },
+  "jp.cssj.server.socket.CTIServer#shutdown()": {
+    "hash": "e63fb490a2a0b517",
+    "en": "Stops the server.",
+    "ja": "サーバーを停止します。"
+  },
+  "jp.cssj.server.socket.CTIServer#startup()": {
+    "hash": "db114d0e557c1551",
+    "en": "Starts the server.\n\n@throws IOException",
+    "ja": "サーバーを起動します。\n\n@throws IOException"
+  },
+  "jp.cssj.server.socket.ProtocolProcessor": {
+    "hash": "6ab70d97062e3994",
+    "en": "Communicates with the client after a connection is established.\n\n@author MIYABE Tatsuhiko\n@version $Id: ProtocolProcessor.java 1552 2018-04-26 01:43:24Z miyabe $",
+    "ja": "接続を確立した後のクライアントとの通信を行います。\n\n@author MIYABE Tatsuhiko\n@version $Id: ProtocolProcessor.java 1552 2018-04-26 01:43:24Z miyabe $"
+  },
+  "jp.cssj.server.socket.ProtocolProcessor#close()": {
+    "hash": "ddac710e1a56287d",
+    "en": "Ends communication.\n\n@throws IOException",
+    "ja": "通信を終了します。\n\n@throws IOException"
+  },
+  "jp.cssj.server.socket.ProtocolProcessor#message(short,String[],String)": {
+    "hash": "f1791c699e8a3baf",
+    "en": "Sends a message to the client.\n\n@param code\n@param args\n@param message\n@throws IOException",
+    "ja": "クライアントにメッセージを送ります。\n\n@param code\n@param args\n@param message\n@throws IOException"
+  },
+  "jp.cssj.server.socket.ProtocolProcessor#process(Socket,InputStream,OutputStream,String)": {
+    "hash": "5baf091a10212dfa",
+    "en": "Communicates with the client.\n\n@param in\n@param out\n@param firstLine\n           The first line sent by the client.\n@throws IOException",
+    "ja": "クライアントと通信します。\n\n@param in\n@param out\n@param firstLine\n           クライアントが送ってきた最初の行。\n@throws IOException"
+  },
+  "jp.cssj.server.socket.ctip.helpers.ResponseConsumer": {
+    "hash": "18493154cd49366b",
+    "en": "An interface for sending data from the server to the client.\n\nIn addition to receiving fragmented data, it tracks progress and receives error messages.\n\n@author MIYABE Tatsuhiko\n@version $Id: ResponseConsumer.java 1554 2018-04-26 03:34:02Z miyabe $",
+    "ja": "サーバーからクライアントへデータを送るためのインターフェースです。\n\n断片化されたデータの受け取りに加えて、進行状況の追跡とエラーメッセージの受け取りを行います。\n\n@author MIYABE Tatsuhiko\n@version $Id: ResponseConsumer.java 1554 2018-04-26 03:34:02Z miyabe $"
+  },
+  "jp.cssj.server.socket.ctip.helpers.ResponseConsumer#message(short,String[],String)": {
+    "hash": "8804ac2771d40c0b",
+    "en": "Sends a message.\n\n@param code\n@param args\n@param message\n@throws IOException",
+    "ja": "メッセージを送ります。\n\n@param code\n@param args\n@param message\n@throws IOException"
+  },
+  "jp.cssj.server.socket.ctip.helpers.ServerMessageHandler": {
+    "hash": "4abe34c923f906cb",
+    "en": "@author MIYABE Tatsuhiko\n@version $Id: ServerMessageHandler.java,v 1.1 2007/02/11 13:23:25 harumanx\n         Exp $",
+    "ja": "@author MIYABE Tatsuhiko\n@version $Id: ServerMessageHandler.java,v 1.1 2007/02/11 13:23:25 harumanx\n         Exp $"
+  },
+  "jp.cssj.server.socket.ctip.v2.V2ProtocolHandler": {
+    "hash": "686eb8b5f5919736",
+    "en": "@author MIYABE Tatsuhiko\n@version $Id: V2ProtocolHandler.java 1552 2018-04-26 01:43:24Z miyabe $",
+    "ja": "@author MIYABE Tatsuhiko\n@version $Id: V2ProtocolHandler.java 1552 2018-04-26 01:43:24Z miyabe $"
+  },
+  "jp.cssj.server.socket.ctip.v2.V2ProtocolHandler#setConversionGate(ConversionGate)": {
+    "hash": "07d091683252920a",
+    "en": "Sets the concurrent conversion limit (a gate shared with REST; 2026-10-03).",
+    "ja": "同時変換数の制限を設定します(RESTと共有するゲート。2026-10-03)。"
+  },
+  "jp.cssj.server.socket.ctip.v2.V2ProtocolProcessor": {
+    "hash": "5531a32072b8e036",
+    "en": "@author MIYABE Tatsuhiko\n@version $Id: V2ProtocolProcessor.java 1552 2018-04-26 01:43:24Z miyabe $",
+    "ja": "@author MIYABE Tatsuhiko\n@version $Id: V2ProtocolProcessor.java 1552 2018-04-26 01:43:24Z miyabe $"
+  },
+  "jp.cssj.server.socket.ctip.v2.V2RequestProducer": {
+    "hash": "bdc683caed5b10e0",
+    "en": "@author MIYABE Tatsuhiko\n@version $Id: V2RequestProducer.java 1554 2018-04-26 03:34:02Z miyabe $",
+    "ja": "@author MIYABE Tatsuhiko\n@version $Id: V2RequestProducer.java 1554 2018-04-26 03:34:02Z miyabe $"
+  },
+  "jp.cssj.server.socket.ctip.v2.V2RequestProducer#getEncoding()": {
+    "hash": "06976dbb331d6227",
+    "en": "Returns the character encoding of the data.\n\n@return",
+    "ja": "データの文字エンコーディングを返します。\n\n@return"
+  },
+  "jp.cssj.server.socket.ctip.v2.V2RequestProducer#getMimeType()": {
+    "hash": "477a8a34ac2038b4",
+    "en": "Returns the MIME type of the data.\n\n@return",
+    "ja": "データのMIME型を返します。\n\n@return"
+  },
+  "jp.cssj.server.socket.ctip.v2.V2RequestProducer#getName()": {
+    "hash": "3e8d2f998c54f7c5",
+    "en": "Returns the property name.\n\n@return",
+    "ja": "プロパティ名を返します。\n\n@return"
+  },
+  "jp.cssj.server.socket.ctip.v2.V2RequestProducer#getType()": {
+    "hash": "49d8575531431915",
+    "en": "Returns the packet type.\n\n@return",
+    "ja": "パケットの種類を返します。\n\n@return"
+  },
+  "jp.cssj.server.socket.ctip.v2.V2RequestProducer#getURI()": {
+    "hash": "1ae8166cf848c801",
+    "en": "Returns the virtual URI of the data.\n\n@return",
+    "ja": "データの仮想URIを返します。\n\n@return"
+  },
+  "jp.cssj.server.socket.ctip.v2.V2RequestProducer#getValue()": {
+    "hash": "ef5665370ecd4938",
+    "en": "Returns the property value.\n\n@return",
+    "ja": "プロパティの値を返します。\n\n@return"
+  },
+  "jp.cssj.server.socket.ctip.v2.V2RequestProducer#next()": {
+    "hash": "cf58b9cb0cdaeb10",
+    "en": "Moves the cursor to the next packet.\n\n@throws IOException",
+    "ja": "カーソルを次のパケットに移動します。\n\n@throws IOException"
+  },
+  "jp.cssj.server.socket.ctip.v2.V2RequestProducer#read(byte[],int,int)": {
+    "hash": "b72f80a63e48235c",
+    "en": "Receives data.\n\n@param b\n           The byte buffer.\n@param off\n           The starting offset at which to write the received data.\n@param len\n           The maximum length of data to receive.\n@return The number of bytes received.",
+    "ja": "データを受信します。\n\n@param b\n           バイトバッファ。\n@param off\n           受信したデータを書き込む開始位置。\n@param len\n           受信するデータの最大長。\n@return 受信したバイト数。"
+  },
+  "jp.cssj.server.socket.ctip.v2.V2RequestProducerInputStream": {
+    "hash": "f5840e81e9cbb40e",
+    "en": "@author MIYABE Tatsuhiko\n@version $Id: RequestProducerInputStream.java,v 1.1 2005/03/26 10:22:30\n         harumanx Exp $",
+    "ja": "@author MIYABE Tatsuhiko\n@version $Id: RequestProducerInputStream.java,v 1.1 2005/03/26 10:22:30\n         harumanx Exp $"
+  },
+  "jp.cssj.server.socket.ctip.v2.V2RequestProducerInputStream#drain()": {
+    "hash": "0f150f75ea1f9e1e",
+    "en": "Drains input abandoned by the reader through the client's EOF (2026-09-28).\n\n<p>\nEven if reading stops midway through the body due to an abort or conversion failure, the client sends the\nrest of the body and EOF (abort() only sends a request and does not wait for a response in all 7 language\ndrivers). Returning a terminal response (ABORT) earlier caused drivers expecting a terminal response after\nEOF to wait indefinitely or discard the connection. The caller sends the terminal response after this returns.\n</p>\n\n<p>\nThis uses the same lock as reading, so it waits for any read in progress on the read-ahead thread to finish.\nSubsequent reads return -1 without touching packets for the next request.\n</p>\n\n@return true if draining stops at the client's EOF; false if the next request (RESET, CLOSE, etc.) arrives\n        without EOF. Leave that packet at the current position (the client is not waiting for this input's\n        terminal response).",
+    "ja": "読み手が途中で手放した入力を、クライアントのEOFまで読み捨てます(2026-09-28)。\n\n<p>\n中断や変換の失敗で本体の途中で読むのをやめても、クライアントは本体の残りとEOFを送ってきます\n(7つの言語のドライバのすべてで、abort()は要求を送るだけで応答を待ちません)。以前のように終端の応答\n(ABORT)をそれより先に返すと、EOFの後で終端の応答を待つドライバが無期限に待ち続けたり、\n接続を捨てたりしていました。呼び出し側は、このメソッドから戻った後で終端の応答を送ります。\n</p>\n\n<p>\n読み込みと同じロックを使うので、先読みスレッドで進行中の読み込みがあれば、それが終わるのを待ちます。\nこれ以降の読み込みは、次の要求のパケットに触れずに-1を返します。\n</p>\n\n@return クライアントのEOFで読み捨てを終えた場合はtrue。EOFなしに次の要求(RESET、CLOSEなど)が\n        届いた場合はfalse。そのパケットは現在の位置に残しておくこと(クライアントはこの入力の\n        終端の応答を待っていません)。"
+  },
+  "jp.cssj.server.socket.ctip.v2.V2RequestProducerInputStream.AbortRequest": {
+    "hash": "cb4dd5be0a574c8c",
+    "en": "Handles abort requests ({@link V2ClientPackets#ABORT}) received while reading a body or resource.\n\n<p>\nThe argument is the value passed to {@link jp.cssj.cti2.CTISession#abort(byte)}\n({@code ABORT_NORMAL} / {@code ABORT_FORCE}).\n</p>",
+    "ja": "本体またはリソースの読み込み中に受け取った中断要求({@link V2ClientPackets#ABORT})を扱います。\n\n<p>\n引数は{@link jp.cssj.cti2.CTISession#abort(byte)}に渡された値\n({@code ABORT_NORMAL} / {@code ABORT_FORCE})です。\n</p>"
   }
 }
