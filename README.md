@@ -1,5 +1,5 @@
 # CTI Java版
-バージョン 2.3.3
+バージョン 2.3.4
 
 Javaを使ってCopper PDFにアクセスするためのプログラムです。
 Copper PDF 2.1.0以降が必要です。
@@ -23,7 +23,7 @@ https://github.com/zamasoftnet/cti.java
 
 ### Maven / Gradle（JitPack 経由）
 
-JitPack リポジトリを追加した上で、`com.github.zamasoftnet:cti.java:v2.3.3` を利用してください。
+JitPack リポジトリを追加した上で、`com.github.zamasoftnet:cti.java:v2.3.4` を利用してください。
 
 #### Gradle
 
@@ -34,7 +34,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.github.zamasoftnet:cti.java:v2.3.3'
+    implementation 'com.github.zamasoftnet:cti.java:v2.3.4'
 }
 ```
 
@@ -51,7 +51,7 @@ dependencies {
 <dependency>
   <groupId>com.github.zamasoftnet</groupId>
   <artifactId>cti.java</artifactId>
-  <version>v2.3.3</version>
+  <version>v2.3.4</version>
 </dependency>
 ```
 
@@ -66,8 +66,8 @@ dependencies {
 
 ## 付属物
 
-- `cti-driver-2.3.3.jar` -- ドライバ本体（CTIP, REST, CLIが利用可能）
-- `cti-driver-min-2.3.3.jar` -- 最小構成のドライバ（REST, CLIは利用不可）
+- `cti-driver-2.3.4.jar` -- ドライバ本体（CTIP, REST, CLIが利用可能）
+- `cti-driver-min-2.3.4.jar` -- 最小構成のドライバ（REST, CLIは利用不可）
 - `apidoc` -- APIドキュメント(Javadoc)
 - `lib` -- サンプルのコンパイルに必要なライブラリ
 - `examples` -- サンプルプログラム
@@ -157,12 +157,12 @@ Linuxでは`compile-examples.sh`、Windowsでは`compile-examples.bat`を実行�
 
 ### Linux
 ```bash
-java -cp cti-driver-2.3.3.jar:classes クラス名
+java -cp cti-driver-2.3.4.jar:classes クラス名
 ```
 
 ### Windows
 ```cmd
-java -cp cti-driver-2.3.3.jar;classes クラス名
+java -cp cti-driver-2.3.4.jar;classes クラス名
 ```
 
 Servlet/JSPのサンプル実行する場合は、`examples/webapp`をサーブレットコンテナに配備して、以下のアドレスをブラウザで表示してください。
@@ -283,6 +283,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 ## 変更履歴
+
+### v2.3.4 2026-10-12
+
+- **CLI**: 変換に失敗したとき、`-out` のファイルを残さなくなりました(出力は最初の書き込みで作り、失敗したら消します)。
+  サーバーが誤りをメッセージで報告済みの失敗は、その 1 行で終了コード 1 にします(スタックトレースを出しません)。
+- **CLI**: オプションに属さない引数(`-in` を付けないファイル名など)があれば、標準エラー出力に 1 行の警告を出します。
+  読むのは従来どおり標準入力です。
+- **CLI の `-outdir`**(`ResourceDirectoryResults`): 画像出力の頁ごとの結果を `page-0001.png` などの名前で保存します
+  (以前は安全でない URI として拒否していました)。
+- サーバー(`cti-server-ctip`・`cti-server-rest`。Copper PDF 4 の一部): 同時に走る変換の数に上限を置き、空きが無ければ
+  待たずに断ります(新しい誤り `0x3003`「サーバーが混んでいる」。REST では変換中のセッションへの要求に 503 と `0x3017`)。
+  REST の非同期変換が失敗しても、最初の誤りより前に閉じた結果は残します。CTIP v2 の応答のパケットを 1 つずつまとめて書き、
+  クライアントの中断と変換のデータが混ざって「Trailing bytes in CTIP response」で失敗することがあったのを直しました。
+- ソースのコメントを英語に統一し、日本語の Javadoc は訳文(`javadoc/ja.json`)から作ります
+  (英語版は https://zamasoftnet.github.io/cti.java/ 、日本語版はその `ja/`)。
 
 ### v2.3.3 2026-09-28
 

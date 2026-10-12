@@ -1,8 +1,7 @@
-# cti.java 2.3.4 リリースノート(下書き、2026-10-08)
+# cti.java 2.3.4 リリースノート(2026-10-12 公開)
 
-2.3.3(`5c235bf`、タグ `v2.3.3`)からの変更。公開(`build.gradle` の版の更新・タグの push)はユーザーの指示を待つ。
-サーバー側の上限・REST の変更を公開版に入れるかは、copper4 の公開の切り替えと同じ判断
-(copper4 の `copperpdf4/docs/NEXT-SESSION.md` §3-1 の 1)。
+2.3.3(`5c235bf`、タグ `v2.3.3`)からの変更。2026-10-12 にユーザーの指示(「cti.javaの最新はリリースしよう」)で
+公開した(タグ `v2.3.4`)。
 
 ## ドライバ・CLI
 
@@ -30,7 +29,7 @@
 - ビルド: cti-driver の jar を作る前に zstream の jar を作る、`gradlew` に実行権(`603aa4b`)
 - 試験: `TlsStage2Test` の control-wait がときどき落ちたのは試験の相手役の競合だった(`828cdd9`)
 
-## 公開の手順(ユーザーの指示があってから)
+## 公開の手順
 
 1. `build.gradle`・`README.md`・`DRIVERS.md`・`PUBLISHING.md` の 2.3.3 を 2.3.4 に
 2. `git tag v2.3.4 && git push origin v2.3.4`(GitHub Actions が Releases・Pages・JitPack 向けの成果物を作る)
