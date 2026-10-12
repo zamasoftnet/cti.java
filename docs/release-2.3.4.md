@@ -33,3 +33,9 @@
 
 1. `build.gradle`・`README.md`・`DRIVERS.md`・`PUBLISHING.md` の 2.3.3 を 2.3.4 に
 2. `git tag v2.3.4 && git push origin v2.3.4`(GitHub Actions が Releases・Pages・JitPack 向けの成果物を作る)
+
+## JitPack(公開後)
+
+JitPack の `v2.3.4` は組み立てが「No build artifacts found」で失敗した(組み立て環境 latest、ログは残っていない)。同じコミットの
+`2.3.4`(環境 legacy)は成功し、jar 1 本と依存の無い POM を Gradle で取れることを確かめた。README・DRIVERS の案内を `2.3.4` にした。
+`publishToMavenLocal` が build.gradle の固定の版(2.3.4)で出すため、要求された版名(v2.3.4)の成果物が無かったと見られる。

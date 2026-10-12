@@ -23,7 +23,8 @@ https://github.com/zamasoftnet/cti.java
 
 ### Maven / Gradle（JitPack 経由）
 
-JitPack リポジトリを追加した上で、`com.github.zamasoftnet:cti.java:v2.3.4` を利用してください。
+JitPack リポジトリを追加した上で、`com.github.zamasoftnet:cti.java:2.3.4` を利用してください
+(2.3.4 は版の先頭に `v` を付けません。JitPack での `v2.3.4` の組み立てが成果物なしで失敗したため)。
 
 #### Gradle
 
@@ -34,7 +35,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.github.zamasoftnet:cti.java:v2.3.4'
+    implementation 'com.github.zamasoftnet:cti.java:2.3.4'
 }
 ```
 
@@ -51,7 +52,7 @@ dependencies {
 <dependency>
   <groupId>com.github.zamasoftnet</groupId>
   <artifactId>cti.java</artifactId>
-  <version>v2.3.4</version>
+  <version>2.3.4</version>
 </dependency>
 ```
 
@@ -298,6 +299,8 @@ limitations under the License.
   クライアントの中断と変換のデータが混ざって「Trailing bytes in CTIP response」で失敗することがあったのを直しました。
 - ソースのコメントを英語に統一し、日本語の Javadoc は訳文(`javadoc/ja.json`)から作ります
   (英語版は https://zamasoftnet.github.io/cti.java/ 、日本語版はその `ja/`)。
+- JitPack では `com.github.zamasoftnet:cti.java:2.3.4`(`v` なし)で取ります。`v2.3.4` は JitPack での組み立てが
+  成果物なしで失敗しました。
 
 ### v2.3.3 2026-09-28
 

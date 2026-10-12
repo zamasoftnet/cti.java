@@ -32,7 +32,7 @@ GitHub Releases からダウンロードできます。
 
 | 言語 | パッケージマネージャー | 現在のインストール方法 |
 |------|---------------------|----------------------|
-| Java | Maven / Gradle（JitPack 経由） | `implementation 'com.github.zamasoftnet:cti.java:v2.3.4'`（要: JitPack リポジトリ追加） |
+| Java | Maven / Gradle（JitPack 経由） | `implementation 'com.github.zamasoftnet:cti.java:2.3.4'`（要: JitPack リポジトリ追加。2.3.4 は `v` なし） |
 | .NET | NuGet | `dotnet add package Zamasoft.CTI` |
 | Node.js | npm | `npm install https://github.com/zamasoftnet/cti.nodejs.git` |
 | PHP | Composer / Packagist | `composer require zamasoft/cti-php` |
